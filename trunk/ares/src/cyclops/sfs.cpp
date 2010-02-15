@@ -79,7 +79,8 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
    whichAlg->Append("Worthington & Hancock");
    whichAlg->Append("Haines & Wilson 1");
    whichAlg->Append("Haines & Wilson 2");
-   whichAlg->Set(3);
+   whichAlg->Append("Haines & Wilson 3");
+   whichAlg->Set(4);
    lab6->Set("Albedo:");
    albedo->Set("1.0");
    albedo->SetSize(24,24);
@@ -102,11 +103,11 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
    alg1->Expand(false);
    
    gui::Label * lab8 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   zacMu = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   zacMu = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); zacMu->SetSize(48,24);
    gui::Label * lab9 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   zacIters = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   zacIters = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); zacIters->SetSize(48,24);
    gui::Label * lab10 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   zacDelta = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   zacDelta = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); zacDelta->SetSize(48,24);
    
    gui::Horizontal * horiz3 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
    alg1->SetChild(horiz3);
@@ -154,18 +155,18 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
    vert3->AttachBottom(horiz9,false);
    
    lab24->Set("   Outer Iterations:");
-   lakOuterIters->Set("512");
+   lakOuterIters->Set("512"); lakOuterIters->SetSize(64,24);
    lab28->Set("   Start/End Lambda:");
-   lakStartLambda->Set("32.0");
-   lakEndLambda->Set("32.0");
+   lakStartLambda->Set("32.0"); lakStartLambda->SetSize(48,24);
+   lakEndLambda->Set("32.0"); lakEndLambda->SetSize(48,24);
    lab25->Set("   Inner Iterations:");
-   lakInnerIters->Set("512");
+   lakInnerIters->Set("512"); lakInnerIters->SetSize(48,24);
    lab27->Set("   Tolerance:");
-   lakTolerance->Set("0.001");
+   lakTolerance->Set("0.001"); lakTolerance->SetSize(48,24);
    lab29->Set("   Speed:");
-   lakSpeed->Set("1.0");
+   lakSpeed->Set("1.0"); lakSpeed->SetSize(48,24);
    lab30->Set("   Init Radius:");
-   lakInitRad->Set("32.0");
+   lakInitRad->Set("32.0"); lakInitRad->SetSize(48,24);
    
    horiz8->AttachRight(lab24,false);
    horiz8->AttachRight(lakOuterIters,false);
@@ -204,7 +205,7 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
    alg4 = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
    vert1->AttachBottom(alg4,false);
    alg4->Visible(false);
-   alg4->Set("Unpublished 1 Parameters");
+   alg4->Set("Haines & Wilson 1 Parameters");
    alg4->Expand(false);
    
    gui::Label * lab12 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
@@ -219,17 +220,17 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
    gui::Label * lab21 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab22 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab23 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   hawBlur = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   hawLength = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   hawExp = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   hawStopChance = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   hawSimK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   hawConeK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   hawFadeTo = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   hawIters = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   hawGradDisc = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   hawGradBias = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   hawBorderK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   hawBlur = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); hawBlur->SetSize(48,24);
+   hawLength = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); hawLength->SetSize(48,24);
+   hawExp = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); hawExp->SetSize(48,24);
+   hawStopChance = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); hawStopChance->SetSize(48,24);
+   hawSimK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); hawSimK->SetSize(48,24);
+   hawConeK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); hawConeK->SetSize(48,24);
+   hawFadeTo = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); hawFadeTo->SetSize(48,24);
+   hawIters = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); hawIters->SetSize(48,24);
+   hawGradDisc = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); hawGradDisc->SetSize(48,24);
+   hawGradBias = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); hawGradBias->SetSize(48,24);
+   hawBorderK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); hawBorderK->SetSize(48,24);
    hawProject = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
    
    lab12->Set("   Blur:");
@@ -297,8 +298,8 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
 
    alg5 = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
    vert1->AttachBottom(alg5,false);
-   alg5->Visible(true);
-   alg5->Set("Unpublished 2 Parameters");
+   alg5->Visible(false);
+   alg5->Set("Haines & Wilson 2 Parameters");
    alg5->Expand(false);
    
    gui::Vertical * vert4 = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));         
@@ -324,18 +325,19 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
    gui::Label * lab40 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab41 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab42 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   haw2SimK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   haw2ConeK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   haw2FadeTo = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   haw2Iters = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   haw2AngMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   haw2Momentum = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   haw2BoundK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   haw2BoundLength = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   haw2BoundExp = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   haw2GradK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   haw2GradLength = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   haw2GradExp = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   
+   haw2SimK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw2SimK->SetSize(48,24);
+   haw2ConeK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw2ConeK->SetSize(48,24);
+   haw2FadeTo = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw2FadeTo->SetSize(48,24);
+   haw2Iters = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw2Iters->SetSize(48,24);
+   haw2AngMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw2AngMult->SetSize(48,24);
+   haw2Momentum = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw2Momentum->SetSize(48,24);
+   haw2BoundK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw2BoundK->SetSize(48,24);
+   haw2BoundLength = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw2BoundLength->SetSize(48,24);
+   haw2BoundExp = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw2BoundExp->SetSize(48,24);
+   haw2GradK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw2GradK->SetSize(48,24);
+   haw2GradLength = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw2GradLength->SetSize(48,24);
+   haw2GradExp = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw2GradExp->SetSize(48,24);
    
    lab31->Set("   Similarity K:");
    lab32->Set(" Cone K:");
@@ -390,7 +392,135 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
    horiz13->AttachRight(haw2GradLength,false);
    horiz13->AttachRight(lab42,false);
    horiz13->AttachRight(haw2GradExp,false);
+   
+   
+   alg6 = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
+   vert1->AttachBottom(alg6,false);
+   alg6->Visible(true);
+   alg6->Set("Haines & Wilson 3 Parameters");
+   alg6->Expand(false);
+   
+   gui::Vertical * vert5 = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));         
+   gui::Horizontal * horiz14 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   gui::Horizontal * horiz15 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   gui::Horizontal * horiz16 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   gui::Horizontal * horiz17 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   alg6->SetChild(vert5);
+   vert5->AttachBottom(horiz14,false);
+   vert5->AttachBottom(horiz15,false);
+   vert5->AttachBottom(horiz16,false);
+   vert5->AttachBottom(horiz17,false);
+   
+   gui::Label * lab43 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab44 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab45 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab46 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab47 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab48 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab49 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab50 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab51 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab52 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab53 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab54 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab55 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab56 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab57 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab58 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab59 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
 
+   haw3SmoothChance = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3SmoothChance->SetSize(48,24);
+   haw3SmoothBase = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3SmoothBase->SetSize(48,24);
+   haw3SmoothMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3SmoothMult->SetSize(48,24);
+   haw3SmoothMinK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3SmoothMinK->SetSize(48,24);
+   haw3SmoothMaxK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3SmoothMaxK->SetSize(48,24);
+   haw3Cone0 = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3Cone0->SetSize(48,24);
+   haw3Cone45 = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3Cone45->SetSize(48,24);
+   haw3Cone90 = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3Cone90->SetSize(48,24);
+   haw3Iters = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3Iters->SetSize(48,24);
+   haw3BoundK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3BoundK->SetSize(48,24);
+   haw3BoundLength = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3BoundLength->SetSize(48,24);
+   haw3BoundExp = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3BoundExp->SetSize(48,24);
+   haw3GradK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3GradK->SetSize(48,24);
+   haw3GradLength = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3GradLength->SetSize(48,24);
+   haw3GradExp = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3GradExp->SetSize(48,24);
+   haw3AngMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3AngMult->SetSize(48,24);
+   haw3Momentum = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); haw3Momentum->SetSize(48,24);
+   
+   lab43->Set("   Smooth Chance:");
+   lab44->Set(" Smooth Base:");
+   lab45->Set(" Smooth Mult:");
+   lab46->Set(" Smooth Min K:");
+   lab47->Set(" Smooth Max K:");
+   lab48->Set("   Cone 0 K:");
+   lab49->Set(" Cone 45 K:");
+   lab50->Set(" Cone 90 K:");
+   lab51->Set(" Iters:");
+   lab52->Set("   Boundary K:");
+   lab53->Set(" Boundary Length:");
+   lab54->Set(" Boundary Exp:");
+   lab55->Set("   Gradient K:");
+   lab56->Set(" Gradient Length:");
+   lab57->Set(" Gradient Exp:");
+   lab58->Set(" Angle Multiplier:");
+   lab59->Set(" Momentum:");
+   
+   haw3SmoothChance->Set("0.02");
+   haw3SmoothBase->Set("2.0");
+   haw3SmoothMult->Set("0.5");
+   haw3SmoothMinK->Set("0.1");
+   haw3SmoothMaxK->Set("8.0");
+   haw3Cone0->Set("24.0");
+   haw3Cone45->Set("32.0");
+   haw3Cone90->Set("24.0");
+   haw3Iters->Set("10");
+   haw3BoundK->Set("16.0");
+   haw3BoundLength->Set("8");
+   haw3BoundExp->Set("6.0");
+   haw3GradK->Set("2.0");
+   haw3GradLength->Set("8");
+   haw3GradExp->Set("6.0");
+   haw3AngMult->Set("1.0");
+   haw3Momentum->Set("0.01");
+   
+   horiz14->AttachRight(lab43,false);
+   horiz14->AttachRight(haw3SmoothChance,false);
+   horiz14->AttachRight(lab44,false);
+   horiz14->AttachRight(haw3SmoothBase,false);
+   horiz14->AttachRight(lab45,false);
+   horiz14->AttachRight(haw3SmoothMult,false);
+   horiz14->AttachRight(lab46,false);
+   horiz14->AttachRight(haw3SmoothMinK,false);
+   horiz14->AttachRight(lab47,false);
+   horiz14->AttachRight(haw3SmoothMaxK,false);
+   
+   horiz15->AttachRight(lab48,false);
+   horiz15->AttachRight(haw3Cone0,false);
+   horiz15->AttachRight(lab49,false);
+   horiz15->AttachRight(haw3Cone45,false);
+   horiz15->AttachRight(lab50,false);
+   horiz15->AttachRight(haw3Cone90,false);
+   
+   horiz16->AttachRight(lab52,false);
+   horiz16->AttachRight(haw3BoundK,false);
+   horiz16->AttachRight(lab53,false);
+   horiz16->AttachRight(haw3BoundLength,false);
+   horiz16->AttachRight(lab54,false);
+   horiz16->AttachRight(haw3BoundExp,false);
+   horiz16->AttachRight(lab51,false);
+   horiz16->AttachRight(haw3Iters,false);
+   
+   horiz17->AttachRight(lab55,false);
+   horiz17->AttachRight(haw3GradK,false);
+   horiz17->AttachRight(lab56,false);
+   horiz17->AttachRight(haw3GradLength,false);
+   horiz17->AttachRight(lab57,false);
+   horiz17->AttachRight(haw3GradExp,false);
+   horiz17->AttachRight(lab58,false);
+   horiz17->AttachRight(haw3AngMult,false);
+   horiz17->AttachRight(lab59,false);
+   horiz17->AttachRight(haw3Momentum,false);
+   
 
    gui::Panel * panel = static_cast<gui::Panel*>(cyclops.Fact().Make("Panel"));
    vert1->AttachBottom(panel);
@@ -640,7 +770,7 @@ void SfS::Run(gui::Base * obj,gui::Event * event)
      real32 gradExp = haw2GradExp->GetReal(6.0);
      
     // Make and setup the algorithm object...
-      sfs::SfS_BP_Nice2 alg;
+     sfs::SfS_BP_Nice2 alg;
       alg.SetImage(l);
       alg.SetAlbedo(a);
       alg.SetLight(toLight);
@@ -656,7 +786,48 @@ void SfS::Run(gui::Base * obj,gui::Event * event)
     // Extract the result...
      alg.GetNeedle(needle);
    }
-   break;   
+   break;
+   case 4: // Haines & Wilson #3...
+   {
+    // Get algorithm specific parameters...
+     real32 smoothChance = haw3SmoothChance->GetReal(0.02);
+     real32 smoothBase = haw3SmoothBase->GetReal(2.0);
+     real32 smoothMult = haw3SmoothMult->GetReal(0.5);
+     real32 smoothMinK = haw3SmoothMinK->GetReal(0.1);
+     real32 smoothMaxK = haw3SmoothMaxK->GetReal(8.0);
+     real32 cone0 = haw3Cone0->GetReal(24.0);
+     real32 cone45 = haw3Cone45->GetReal(32.0);
+     real32 cone90 = haw3Cone90->GetReal(24.0);
+     nat32 iters = haw3Iters->GetInt(10);
+     real32 boundK = haw3BoundK->GetReal(16.0);
+     nat32 boundLength = haw3BoundLength->GetInt(8);
+     real32 boundExp = haw3BoundExp->GetReal(6.0);
+     real32 gradK = haw3GradK->GetReal(2.0);
+     nat32 gradLength = haw3GradLength->GetInt(8);
+     real32 gradExp = haw3GradExp->GetReal(6.0);
+     real32 angMult = haw3AngMult->GetReal(1.0);
+     real32 momentum = haw3Momentum->GetReal(0.01);
+    
+    // Make and setup the algorithm object...
+     sfs::SfS_BP_Nice3 alg;
+      alg.SetImage(l);
+      alg.SetAlbedo(a);
+      alg.SetLight(toLight);
+      alg.SetSmooth(smoothChance,smoothBase,smoothMult,smoothMinK,smoothMaxK);
+      alg.SetCone(cone0,cone45,cone90);
+      alg.SetIters(iters);
+      alg.SetBound(boundK,boundLength,boundExp);
+      alg.SetGrad(gradK,gradLength,gradExp);
+      alg.SetExtract(angMult,momentum);
+      
+    // Run...
+     alg.Run(cyclops.BeginProg());
+     cyclops.EndProg();
+    
+    // Extract the result...
+     alg.GetNeedle(needle);
+   }
+   break;  
   }      
 
 
@@ -727,6 +898,7 @@ void SfS::ChangeAlg(gui::Base * obj,gui::Event * event)
    alg3->Visible(false);
    alg4->Visible(false);
    alg5->Visible(false);
+   alg6->Visible(false);
   break;*/
   case 0:
    alg1->Visible(false);
@@ -734,6 +906,7 @@ void SfS::ChangeAlg(gui::Base * obj,gui::Event * event)
    alg3->Visible(false);
    alg4->Visible(false);
    alg5->Visible(false);
+   alg6->Visible(false);
   break;
   case 1:
    alg1->Visible(false);
@@ -741,6 +914,7 @@ void SfS::ChangeAlg(gui::Base * obj,gui::Event * event)
    alg3->Visible(true);
    alg4->Visible(false);
    alg5->Visible(false);
+   alg6->Visible(false);
   break;
   case 2:
    alg1->Visible(false);
@@ -748,6 +922,7 @@ void SfS::ChangeAlg(gui::Base * obj,gui::Event * event)
    alg3->Visible(false);
    alg4->Visible(true);
    alg5->Visible(false);
+   alg6->Visible(false);
   break;
   case 3:
    alg1->Visible(false);
@@ -755,7 +930,16 @@ void SfS::ChangeAlg(gui::Base * obj,gui::Event * event)
    alg3->Visible(false);
    alg4->Visible(false);
    alg5->Visible(true);
-  break;  
+   alg6->Visible(false);
+  break;
+  case 4:
+   alg1->Visible(false);
+   alg2->Visible(false);
+   alg3->Visible(false);
+   alg4->Visible(false);
+   alg5->Visible(false);
+   alg6->Visible(true);
+  break;   
  }
 }
 

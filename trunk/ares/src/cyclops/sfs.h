@@ -69,6 +69,25 @@ class SfS
   gui::EditBox * haw2GradK;
   gui::EditBox * haw2GradLength;
   gui::EditBox * haw2GradExp;
+  
+  gui::Expander * alg6;
+  gui::EditBox * haw3SmoothChance;
+  gui::EditBox * haw3SmoothBase;
+  gui::EditBox * haw3SmoothMult;
+  gui::EditBox * haw3SmoothMinK;
+  gui::EditBox * haw3SmoothMaxK;
+  gui::EditBox * haw3Cone0;
+  gui::EditBox * haw3Cone45;
+  gui::EditBox * haw3Cone90;
+  gui::EditBox * haw3Iters;
+  gui::EditBox * haw3BoundK;
+  gui::EditBox * haw3BoundLength;
+  gui::EditBox * haw3BoundExp;
+  gui::EditBox * haw3GradK;
+  gui::EditBox * haw3GradLength;
+  gui::EditBox * haw3GradExp;
+  gui::EditBox * haw3AngMult;
+  gui::EditBox * haw3Momentum;
 
   math::Func crf;
 
