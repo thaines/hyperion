@@ -1,11 +1,11 @@
 //------------------------------------------------------------------------------
 // Copyright 2008 Tom Haines
 
-#include "cyclops/light_est.h"
+#include "cyclops/ambient_est.h"
 
 //------------------------------------------------------------------------------
-LightEst::LightEst(Cyclops & cyc)
-:cyclops(cyc),win(null<gui::Window*>()),lightD(0.0,0.0,1.0),
+AmbientEst::AmbientEst(Cyclops & cyc)
+:cyclops(cyc),win(null<gui::Window*>()),
 irrVar(null<svt::Var*>()),segVar(null<svt::Var*>()),dispVar(null<svt::Var*>()),
 imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 {
@@ -52,7 +52,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 
  // Build gui...
   win = static_cast<gui::Window*>(cyclops.Fact().Make("Window"));
-  win->SetTitle("Light Source Estimation");
+  win->SetTitle("Ambient Estimation");
   cyclops.App().Attach(win);
   win->SetSize(image.Size(0)+16,image.Size(1)+96);
 
@@ -64,11 +64,11 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    gui::Horizontal * horiz2 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
    vert1->AttachBottom(horiz2,false);
 
-   lightDir = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   lightDir2 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   lightDir->Set("Not yet run");
-   vert1->AttachBottom(lightDir,false);
-   vert1->AttachBottom(lightDir2,false);
+   results = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   results2 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   results->Set("Not yet run");
+   vert1->AttachBottom(results,false);
+   vert1->AttachBottom(results2,false);
 
    gui::Button * but1 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but2 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
@@ -90,11 +90,11 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    but5->SetChild(lab5); lab5->Set("Run");
    but6->SetChild(lab6); lab6->Set("Save View...");   
    
-   ambient = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   lightDirection = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    gui::Label * lab15 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    
-   ambient->Set("0.0");
-   lab15->Set(" Ambient:");
+   lightDirection->Set("(0.0,0.0,1.0)");
+   lab15->Set(" Light Dir:");
 
 
    viewSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
@@ -103,11 +103,9 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    viewSelect->Append("Segmentation");
    viewSelect->Append("Fisher Direction");
    viewSelect->Append("Fisher Concentration (log10)");
-   viewSelect->Append("Sphere Rendered with Estimate");
-   viewSelect->Append("Cost of Direction Sphere");
    viewSelect->Append("Linear Albedo");
-   viewSelect->Append("Per Pixel Solution Cost");
-   viewSelect->Append("Segment Value");
+   viewSelect->Append("Corrected Image");
+   viewSelect->Append("Fully Corrected Image");
    viewSelect->Set(0);
 
    algSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
@@ -120,7 +118,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    horiz1->AttachRight(but3,false);
    horiz1->AttachRight(but4,false);
    horiz1->AttachRight(lab15,false);
-   horiz1->AttachRight(ambient,false);
+   horiz1->AttachRight(lightDirection,false);
    horiz2->AttachRight(viewSelect,false);
    horiz2->AttachRight(algSelect,false);
    horiz2->AttachRight(but5,false);
@@ -150,59 +148,61 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    gui::Label * lab13 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab14 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
 
+   bfMinAmb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   bfMaxAmb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfMinAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfMaxAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfMaxSegCost = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfIrrErr = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfPruneThresh = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfSampleSubdiv = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfFurtherSubdiv = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   bfAmbRecursion = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));   
    bfAlbRecursion = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   bfPruneThresh = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   bfIrrErr = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
 
-   lab7->Set("  Minimum Albedo");
-   lab8->Set(" Maximum Albedo");
-   lab9->Set(" Maximum Segment Cost PP");
-   lab10->Set("  Irradiance Error sd");
-   lab11->Set(" Pruning Threshold");
-   lab12->Set(" Base Subdivs");
-   lab13->Set(" Albedo Recursion");
-   lab14->Set(" Refine Subdivs");
+   lab7->Set("  Minimum Ambient");
+   lab8->Set(" Maximum Ambient");
+   lab9->Set("  Minimum Albedo");
+   lab10->Set(" Maximum Albedo");
+   lab11->Set(" Ambient Recursion");
+   lab12->Set(" Albedo Recursion");
+   lab13->Set(" Pruning Threshold");
+   lab14->Set(" Irradiance Error sd");
+   
 
+   bfMinAmb->Set("0.001");
+   bfMaxAmb->Set("0.75");
    bfMinAlb->Set("0.001");
    bfMaxAlb->Set("1.5");
-   bfMaxSegCost->Set("0.1");
-   bfIrrErr->Set("0.0078");
-   bfPruneThresh->Set("0.2");
-   bfSampleSubdiv->Set("1");
-   bfFurtherSubdiv->Set("3");
+   bfAmbRecursion->Set("7");
    bfAlbRecursion->Set("7");
+   bfPruneThresh->Set("0.2");
+   bfIrrErr->Set("0.0078");
 
+   bfMinAmb->SetSize(48,24);
+   bfMaxAmb->SetSize(48,24);
    bfMinAlb->SetSize(48,24);
    bfMaxAlb->SetSize(48,24);
-   bfMaxSegCost->SetSize(48,24);
-   bfIrrErr->SetSize(64,24);
-   bfPruneThresh->SetSize(48,24);
-   bfSampleSubdiv->SetSize(48,24);
-   bfFurtherSubdiv->SetSize(48,24);
+   bfAmbRecursion->SetSize(48,24);
    bfAlbRecursion->SetSize(48,24);
+   bfPruneThresh->SetSize(48,24);
+   bfIrrErr->SetSize(64,24);
+
 
    horiz3->AttachRight(lab7,false);
-   horiz3->AttachRight(bfMinAlb,false);
+   horiz3->AttachRight(bfMinAmb,false);
    horiz3->AttachRight(lab8,false);
-   horiz3->AttachRight(bfMaxAlb,false);
-   horiz3->AttachRight(lab9,false);
-   horiz3->AttachRight(bfMaxSegCost,false);
+   horiz3->AttachRight(bfMaxAmb,false);
+   horiz3->AttachRight(lab11,false);
+   horiz3->AttachRight(bfAmbRecursion,false);
    horiz3->AttachRight(lab13,false);
-   horiz3->AttachRight(bfAlbRecursion,false);
+   horiz3->AttachRight(bfPruneThresh,false);
 
+   horiz4->AttachRight(lab9,false);
+   horiz4->AttachRight(bfMinAlb,false);
    horiz4->AttachRight(lab10,false);
-   horiz4->AttachRight(bfIrrErr,false);
-   horiz4->AttachRight(lab11,false);
-   horiz4->AttachRight(bfPruneThresh,false);
+   horiz4->AttachRight(bfMaxAlb,false);
    horiz4->AttachRight(lab12,false);
-   horiz4->AttachRight(bfSampleSubdiv,false);
+   horiz4->AttachRight(bfAlbRecursion,false);
    horiz4->AttachRight(lab14,false);
-   horiz4->AttachRight(bfFurtherSubdiv,false);
+   horiz4->AttachRight(bfIrrErr,false);
 
 
 
@@ -216,19 +216,19 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 
 
  // Event handlers...
-  win->OnDeath(MakeCB(this,&LightEst::Quit));
-  canvas->OnResize(MakeCB(this,&LightEst::Resize));
-  but1->OnClick(MakeCB(this,&LightEst::LoadIrr));
-  but2->OnClick(MakeCB(this,&LightEst::LoadCRF));
-  but3->OnClick(MakeCB(this,&LightEst::LoadSeg));
-  but4->OnClick(MakeCB(this,&LightEst::LoadDisp));
-  but5->OnClick(MakeCB(this,&LightEst::Run));
-  but6->OnClick(MakeCB(this,&LightEst::SaveView));
-  viewSelect->OnChange(MakeCB(this,&LightEst::ChangeView));
-  algSelect->OnChange(MakeCB(this,&LightEst::ChangeAlg));
+  win->OnDeath(MakeCB(this,&AmbientEst::Quit));
+  canvas->OnResize(MakeCB(this,&AmbientEst::Resize));
+  but1->OnClick(MakeCB(this,&AmbientEst::LoadIrr));
+  but2->OnClick(MakeCB(this,&AmbientEst::LoadCRF));
+  but3->OnClick(MakeCB(this,&AmbientEst::LoadSeg));
+  but4->OnClick(MakeCB(this,&AmbientEst::LoadDisp));
+  but5->OnClick(MakeCB(this,&AmbientEst::Run));
+  but6->OnClick(MakeCB(this,&AmbientEst::SaveView));
+  viewSelect->OnChange(MakeCB(this,&AmbientEst::ChangeView));
+  algSelect->OnChange(MakeCB(this,&AmbientEst::ChangeAlg));
 }
 
-LightEst::~LightEst()
+AmbientEst::~AmbientEst()
 {
  delete win;
  delete irrVar;
@@ -238,14 +238,14 @@ LightEst::~LightEst()
  delete imgVar;
 }
 
-void LightEst::Quit(gui::Base * obj,gui::Event * event)
+void AmbientEst::Quit(gui::Base * obj,gui::Event * event)
 {
  gui::DeathEvent * e = static_cast<gui::DeathEvent*>(event);
  e->doDeath = false;
  delete this;
 }
 
-void LightEst::Resize(gui::Base * obj,gui::Event * event)
+void AmbientEst::Resize(gui::Base * obj,gui::Event * event)
 {
  // Clear the canvas to a nice shade of grey...
   canvas->P().Rectangle(bs::Rect(bs::Pos(0,0),bs::Pos(canvas->P().Width(),canvas->P().Height())),bs::ColourRGB(0.5,0.5,0.5));
@@ -259,7 +259,7 @@ void LightEst::Resize(gui::Base * obj,gui::Event * event)
   canvas->Update();
 }
 
-void LightEst::LoadIrr(gui::Base * obj,gui::Event * event)
+void AmbientEst::LoadIrr(gui::Base * obj,gui::Event * event)
 {
  str::String fn;
  if (cyclops.App().LoadFileDialog("Select Irradiance Image","*.bmp,*.jpg,*.png,*.tif",fn))
@@ -284,7 +284,7 @@ void LightEst::LoadIrr(gui::Base * obj,gui::Event * event)
  }
 }
 
-void LightEst::LoadCRF(gui::Base * obj,gui::Event * event)
+void AmbientEst::LoadCRF(gui::Base * obj,gui::Event * event)
 {
  str::String fn;
  if (cyclops.App().LoadFileDialog("Select Camera Response Function","*.crf",fn))
@@ -300,7 +300,7 @@ void LightEst::LoadCRF(gui::Base * obj,gui::Event * event)
  }
 }
 
-void LightEst::LoadSeg(gui::Base * obj,gui::Event * event)
+void AmbientEst::LoadSeg(gui::Base * obj,gui::Event * event)
 {
  str::String fn;
  if (cyclops.App().LoadFileDialog("Select Segmentation File","*.seg",fn))
@@ -343,7 +343,7 @@ void LightEst::LoadSeg(gui::Base * obj,gui::Event * event)
    Update();
  }
 }
-void LightEst::LoadDisp(gui::Base * obj,gui::Event * event)
+void AmbientEst::LoadDisp(gui::Base * obj,gui::Event * event)
 {
  str::String fn;
  if (cyclops.App().LoadFileDialog("Select Disparity File","*.dis",fn))
@@ -398,19 +398,26 @@ void LightEst::LoadDisp(gui::Base * obj,gui::Event * event)
  }
 }
 
-void LightEst::Run(gui::Base * obj,gui::Event * event)
+void AmbientEst::Run(gui::Base * obj,gui::Event * event)
 {
  // Get the parameters...
-  real32 amb = ambient->GetReal(0.0);
-   
+  bs::Normal toLight;
+  {
+   str::String s = lightDirection->Get();
+   str::String::Cursor cur = s.GetCursor();
+   cur.ClearError();
+   cur >> toLight;
+   if (cur.Error()) toLight = bs::Normal(0.0,0.0,1.0);
+  }
+  
+  real32 minAmb = bfMinAmb->GetReal(0.001);
+  real32 maxAmb = bfMaxAmb->GetReal(0.75);
   real32 minAlb = bfMinAlb->GetReal(0.001);
-  real32 maxAlb = bfMaxAlb->GetReal(3.0);
-  real32 maxCost = bfMaxSegCost->GetReal(1.0);
+  real32 maxAlb = bfMaxAlb->GetReal(1.5);
+  nat32 ambRec = bfAmbRecursion->GetInt(7);
+  nat32 albRec = bfAlbRecursion->GetInt(7);
   real32 irrErr = bfIrrErr->GetReal(0.0078);
   real32 pruneThresh = bfPruneThresh->GetReal(0.2);
-  nat32 subdiv = bfSampleSubdiv->GetInt(2);
-  nat32 further = bfFurtherSubdiv->GetInt(3);
-  nat32 recursion = bfAlbRecursion->GetInt(8);
 
 
  // Calculate the corrected irradiance...
@@ -430,67 +437,60 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
 
 
  // Setup the algorithm object...
-  fit::LightDir ld;
-  ld.SetData(seg,irradiance,fish);
-  ld.SetAlbRange(minAlb,maxAlb);
-  ld.SetAmbient(amb);
-  ld.SetSegCapPP(maxCost);
-  ld.SetIrrErr(irrErr);
-  ld.SetPruneThresh(pruneThresh);
-  ld.SetSampleSubdiv(subdiv,further);
-  ld.SetRecursion(recursion);
-
+  fit::LightAmb la;
+  la.SetData(seg,irradiance,fish);
+  la.SetLightDir(toLight);
+  la.SetAlbRange(minAlb,maxAlb);
+  la.SetAmbRange(minAmb,maxAmb);
+  la.SetIrrErr(irrErr);
+  la.SetPruneThresh(pruneThresh);
+  la.SetSubdivs(ambRec,albRec);
+ 
 
  // Run the algorithm...
-  ld.Run(cyclops.BeginProg());
+  la.Run(cyclops.BeginProg());
   cyclops.EndProg();
 
 
  // Get the output...
-  lightD = ld.BestLightDir();
+  real32 bestAmb = la.BestAmb();
 
-  samples.Size(ld.SampleSize());
-  for (nat32 i=0;i<samples.Size();i++)
-  {
-   samples[i].cost = ld.SampleCost(i);
-   samples[i].dir = ld.SampleDir(i);
-   //LogDebug("sample {dir,cost}" << LogDiv() << samples[i].dir << LogDiv() << samples[i].cost);
-  }
 
-  albedo.Size(ld.SegmentCount());
+  albedo.Size(la.SegmentCount());
   real32 maxAlbedo = 0.0;
   for (nat32 i=0;i<albedo.Size();i++)
   {
-   albedo[i] = ld.SegmentAlbedo(i);
+   albedo[i] = la.SegmentAlbedo(i);
    maxAlbedo = math::Max(maxAlbedo,albedo[i]);
   }
 
 
+ // Display the output strings...
   str::String s;
-  s << lightD << " (" << ld.SampleSize() << " samples)";
-  lightDir->Set(s);
-
+  s << "Best ambient = " << bestAmb;
+  results->Set(s);
+  
   str::String s2;
   s2 << "Highest albedo is " << maxAlbedo << ", which is " << crf.Inverse(maxAlbedo)
      << " in the uncorrected irradiance.";
-  lightDir2->Set(s2);
+  results2->Set(s2);
 
 
  // Update the view...
   Update();
 }
 
-void LightEst::ChangeView(gui::Base * obj,gui::Event * event)
+void AmbientEst::ChangeView(gui::Base * obj,gui::Event * event)
 {
  Update();
 }
 
-void LightEst::ChangeAlg(gui::Base * obj,gui::Event * event)
+void AmbientEst::ChangeAlg(gui::Base * obj,gui::Event * event)
 {
  // Noop.
 }
 
-void LightEst::SaveView(gui::Base * obj,gui::Event * event)
+void AmbientEst::SaveView(gui::Base * obj,gui::Event * event)
 {
  str::String fn("");
  if (cyclops.App().SaveFileDialog("Save Image",fn))
@@ -505,29 +505,10 @@ void LightEst::SaveView(gui::Base * obj,gui::Event * event)
  }
 }
 
-// Helper class for calculating the segment value below...
-struct SegValue
+void AmbientEst::Update()
 {
- real32 div;
-
- real32 expI; // Expectation of irradiance and axes multiplied by div.
- real32 expX;
- real32 expY;
- real32 expZ;
-
- real32 expSqrI; // As above but squared (Before calcaulting expectation).
- real32 expSqrX;
- real32 expSqrY;
- real32 expSqrZ;
-
- real32 expIrrX; // Expectation multiplied by div of irradiance multiplied by each of the axes.
- real32 expIrrY;
- real32 expIrrZ;
-};
-
-void LightEst::Update()
-{
- // Find what size we need to be operatinf at...
+ /*
+ // Find what size we need to be operating at...
   nat32 width=320, height=240;
   nat32 mode = viewSelect->Get();
   switch(mode)
@@ -1027,7 +1008,7 @@ void LightEst::Update()
   {
    for (nat32 x=0;x<img.Size(0);x++) img.Get(x,y) = image.Get(x,y);
   }
-
+*/
 
  // Redraw...
   canvas->SetSize(img.Size(0),img.Size(1));
