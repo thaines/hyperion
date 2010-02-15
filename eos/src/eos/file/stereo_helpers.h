@@ -23,6 +23,10 @@ namespace eos
 /// Returns true on success.
 EOS_FUNC bit SaveReal(const svt::Field<real32> & map,cstrconst fn);
 
+/// Saves a map of reals, scales and offsets so the lowest is baclk and the highest white.
+/// Returns true on success.
+EOS_FUNC bit SaveSignedReal(const svt::Field<real32> & map,cstrconst fn);
+
 /// Saves a segmentation as a colour map. You provide the segmentation and an
 /// extensionless filename, it outputs a .bmp.
 /// Returns true on success.

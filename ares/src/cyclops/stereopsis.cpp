@@ -624,7 +624,7 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    gui::Label * lab29 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab29->Set(" Prob:");
    fisherProb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   fisherProb->Set("0.1");
+   fisherProb->Set("0.75");
    fisherProb->SetSize(48,24);
 
    //gui::Label * lab29 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
@@ -1233,50 +1233,81 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     case 1: // Smoothing...
     {
      prog->Report(step++,steps);
-     svt::Var sdTemp(leftLuv);
-     {
-      real32 realIni = 0.0;
-      sdTemp.Add("sd",realIni);
-      sdTemp.Commit();
-     }
-     svt::Field<real32> sdOR(&sdTemp,"sd");
-
-
-     stereo::LuvDSC luvDSC(leftLuv,rightLuv);
-
-     fit::DispNorm dispNorm;
-     dispNorm.Set(disp,luvDSC,gaussianMult->GetReal(1.0));
-     dispNorm.SetMask(leftMask);
-     dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
-     dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
-     dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
-     dispNorm.SetMaxIters(gaussianIters->GetInt(1000));
-    
-     dispNorm.Run(prog);
-    
-     dispNorm.Get(sdOR);
-
      
-     prog->Report(step++,steps);
-     stereo::CleanDSI cdsi;
-     cdsi.Set(leftLuv);
-     cdsi.Set(*dsi);
-     cdsi.SetMask(leftMask);
-     cdsi.SetSD(sdOR);
-     cdsi.Set(smoothStrength->GetReal(16.0),smoothCutoff->GetReal(16.0),
-              smoothWidth->GetReal(2.0),smoothIters->GetInt(256));
-
-     cdsi.Run(prog);
-
-     cdsi.GetMap(disp);
-     
-     for (nat32 y=0;y<disp.Size(1);y++)
-     {
-      for (nat32 x=0;x<disp.Size(0);x++)
+     // Extract a disparity map...
+      for (nat32 y=0;y<disp.Size(1);y++)
       {
-       mask.Get(x,y) = math::IsFinite(disp.Get(x,y))&&leftMask.Get(x,y);
+       for (nat32 x=0;x<disp.Size(0);x++)
+       {
+        if (dsi->Size(x,y)!=0)
+        {
+         real32 bestCost = dsi->Cost(x,y,0);
+         disp.Get(x,y) = dsi->Disp(x,y,0);
+         for (nat32 i=1;i<dsi->Size(x,y);i++)
+         {
+          if (dsi->Cost(x,y,i)<bestCost)
+          {
+           bestCost = dsi->Cost(x,y,i);
+           disp.Get(x,y) = dsi->Disp(x,y,i);
+          }
+         }
+         mask.Get(x,y) = true;
+        }
+        else
+        {
+         disp.Get(x,y) = 0.0;
+         mask.Get(x,y) = false;
+        }
+       }
       }
-     }
+
+     // Create tempory standard deviation storage...
+      svt::Var sdTemp(leftLuv);
+      {
+       real32 realIni = 0.0;
+       sdTemp.Add("sd",realIni);
+       sdTemp.Commit();
+      }
+      svt::Field<real32> sdOR(&sdTemp,"sd");
+
+
+     // Calculate standard deviations for the disparity values...
+      stereo::LuvDSC luvDSC(leftLuv,rightLuv);
+
+      fit::DispNorm dispNorm;
+      dispNorm.Set(disp,luvDSC,gaussianMult->GetReal(1.0));
+      dispNorm.SetMask(leftMask);
+      dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
+      dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
+      dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
+      dispNorm.SetMaxIters(gaussianIters->GetInt(1000));
+     
+      dispNorm.Run(prog);
+    
+      dispNorm.Get(sdOR);
+
+
+     // Smooth it...
+      prog->Report(step++,steps);
+      stereo::CleanDSI cdsi;
+      cdsi.Set(leftLuv);
+      cdsi.Set(*dsi);
+      cdsi.SetMask(leftMask);
+      cdsi.SetSD(sdOR);
+      cdsi.Set(smoothStrength->GetReal(16.0),smoothCutoff->GetReal(16.0),
+               smoothWidth->GetReal(2.0),smoothIters->GetInt(256));
+
+      cdsi.Run(prog);
+
+      cdsi.GetMap(disp);
+     
+      for (nat32 y=0;y<disp.Size(1);y++)
+      {
+       for (nat32 x=0;x<disp.Size(0);x++)
+       {
+        mask.Get(x,y) = math::IsFinite(disp.Get(x,y))&&leftMask.Get(x,y);
+       }
+      }
     }
     break;
     case 2: // Plane fitting...

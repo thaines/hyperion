@@ -468,8 +468,11 @@ template <typename T>
 inline const T & Clamp(const T & val,const T & low,const T & high)
 {
  if (val<low) return low;
- else if (val>high) return high;
- else return val;
+ else
+ {
+  if (val>high) return high;
+  else return val;
+ }
 }
 
 //------------------------------------------------------------------------------
