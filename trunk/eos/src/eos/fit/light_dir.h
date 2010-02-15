@@ -41,6 +41,9 @@ class EOS_CLASS LightDir
   /// Sets the albedo range to consider, noting that we presume a light source
   /// of strength 1 with no falloff. Defaults to 0.001 to 1.5
    void SetAlbRange(real32 min,real32 max);
+  
+  /// Sets the presumed ambient term, defaults to 0.
+   void SetAmbient(real32 ambient);
    
   /// Sets the maximum cost per segment per pixel, relative to the minimum cost
   /// of that segment - used to cap influence so no one segment biases things 
@@ -68,8 +71,8 @@ class EOS_CLASS LightDir
   /// whilst 1 initial is 25 samples to start with. (0 initial is 8, 2 is 625.)
    void SetSampleSubdiv(nat32 subdiv,nat32 furtherSubdiv);
   
-  /// Sets the recursionn depth when finding the optimal albedo value via a 
-  /// recursive search. Defaults to 8.
+  /// Sets the recursion depth when finding the optimal albedo value via
+  /// branch and bound. Defaults to 7.
    void SetRecursion(nat32 depth);
   
   
@@ -109,6 +112,7 @@ class EOS_CLASS LightDir
   // Parameters...
    real32 minAlbedo;
    real32 maxAlbedo;
+   real32 ambient;
    real32 maxSegCostPP;
    real32 lowAlbErr;
    real32 segPruneThresh;
@@ -126,7 +130,7 @@ class EOS_CLASS LightDir
    
    struct LightCost
    {
-    bs::Normal dir; // Actually a fisher distribution.
+    bs::Normal dir;
     real32 cost;
     nat32 index;
    };
@@ -138,6 +142,7 @@ class EOS_CLASS LightDir
 
   // Runtime...
    // Structure for storing a pixel - its irradiance and distribution on surface orientation...
+   // (These are stored by segment, hence the duplication from the fields.)
     struct Pixel
     {
      real32 irr;
@@ -145,28 +150,30 @@ class EOS_CLASS LightDir
     };
     
    // Structure for storing complimentary info to Pixel, used for the light source direction costing method...
+   // (Info specific to the light source direction being sampled.)
     struct PixelAux
     {
-     real32 mult; // Multiplier of term with albedo in, -k*sqrt(1-(u*L)^2). (Always negative.)
+     real32 s;
+     real32 t;
      real32 irr;
-     real32 irrSqr; // Irradiance squared.
-     real32 c; // Added on constant, -k(u*L)I.
-     real32 lowAlbCost; // Base cost when albedo is less than irradiance.
-    }; // C = (mult*sqrt(a^2 - irrSqr) + c)/a when a^2>irrSqr, lowAlbCost + err otherwise
+     real32 minR; // r value for the minimum, where cost will be minC
+     real32 minC; // minimum cost, we subtract this from the function so 0 is the minimum cost.
+    }; // C = s*r^2 + t*sqrt(1-r^2), where r = I/a + A (I = irr, a = albedo, A = ambient.)
     
    // Cost range structure, used in calculation of light source cost for a pixel...
     struct CostRange
     {
-     real32 minA;
-     real32 maxA;
+     real32 minAlbedo;
+     real32 maxAlbedo;
      nat32 depth;
      
-     real32 minCost;
-     real32 maxCost;
+     real32 lowMinCost;
+     real32 highMinCost;
      
-     void CalcCost(ds::Array<PixelAux> & tAux,nat32 length,real32 lowAlbErr); // Fills in the cost range.
+     void CalcCost(ds::Array<PixelAux> & tAux,nat32 length,
+                   real32 ambient,real32 lowAlbErr); // Fills in the cost range.
      
-     bit operator < (const CostRange & rhs) const {return minCost < rhs.minCost;}
+     bit operator < (const CostRange & rhs) const {return lowMinCost < rhs.lowMinCost;}
     };
     
    // This is used to calculate the correlation for each segment...
@@ -196,7 +203,7 @@ class EOS_CLASS LightDir
    // (Does not cap the cost.)
    // Also given a priority queue of cost ranges, which it might make larger, and
    // a recursion depth.
-   // Uses a divide and conquer recursive approach
+   // Uses branch and bound.
     real32 SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
                         const ds::Array<Pixel> & data,nat32 startInd,nat32 length,
                         ds::Array<PixelAux> & tAux,ds::PriorityQueue<CostRange> & tWork,

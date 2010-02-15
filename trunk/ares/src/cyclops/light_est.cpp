@@ -82,13 +82,19 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    gui::Label * lab4 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab5 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab6 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-
+   
    but1->SetChild(lab1); lab1->Set("Load Irradiance...");
    but2->SetChild(lab2); lab2->Set("Load Camera Response...");
    but3->SetChild(lab3); lab3->Set("Load Segmentation...");
    but4->SetChild(lab4); lab4->Set("Load Disparity...");
    but5->SetChild(lab5); lab5->Set("Run");
-   but6->SetChild(lab6); lab6->Set("Save View...");
+   but6->SetChild(lab6); lab6->Set("Save View...");   
+   
+   ambient = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   gui::Label * lab15 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   
+   ambient->Set("0.0");
+   lab15->Set(" Ambient:");
 
 
    viewSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
@@ -113,6 +119,8 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    horiz1->AttachRight(but2,false);
    horiz1->AttachRight(but3,false);
    horiz1->AttachRight(but4,false);
+   horiz1->AttachRight(lab15,false);
+   horiz1->AttachRight(ambient,false);
    horiz2->AttachRight(viewSelect,false);
    horiz2->AttachRight(algSelect,false);
    horiz2->AttachRight(but5,false);
@@ -393,6 +401,8 @@ void LightEst::LoadDisp(gui::Base * obj,gui::Event * event)
 void LightEst::Run(gui::Base * obj,gui::Event * event)
 {
  // Get the parameters...
+  real32 amb = ambient->GetReal(0.0);
+   
   real32 minAlb = bfMinAlb->GetReal(0.001);
   real32 maxAlb = bfMaxAlb->GetReal(3.0);
   real32 maxCost = bfMaxSegCost->GetReal(1.0);
@@ -423,6 +433,7 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
   fit::LightDir ld;
   ld.SetData(seg,irradiance,fish);
   ld.SetAlbRange(minAlb,maxAlb);
+  ld.SetAmbient(amb);
   ld.SetSegCapPP(maxCost);
   ld.SetIrrErr(irrErr);
   ld.SetPruneThresh(pruneThresh);
@@ -868,6 +879,7 @@ void LightEst::Update()
      }
     }
    }
+   break;
    case 9: // Segment value
    {
     if ((seg.Size(0)==irr.Size(0))&&
