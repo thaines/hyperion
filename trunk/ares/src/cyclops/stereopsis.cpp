@@ -393,9 +393,15 @@ result(null<svt::Var*>())
    fisherRange = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    fisherRange->Set("4");
    
+   gui::Label * lab31 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab31->Set(" Max K:");
+   fisherMax = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   fisherMax->Set("24.0");
+   
    horiz8->AttachRight(lab29,false);
    horiz8->AttachRight(fisherRange,false);
-
+   horiz8->AttachRight(lab31,false);
+   horiz8->AttachRight(fisherMax,false);
 
 
    gui::Horizontal * horiz2 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
@@ -887,6 +893,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
   // If needed augment with standard deviations...
    if (aGaussian)
    {
+    prog->Report(step++,steps);
     // ***************************************************************************
    }
   
@@ -894,7 +901,17 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
   // If needed augment with Fisher distributions...
    if (aFisher)
    {
-    // ***************************************************************************
+    prog->Report(step++,steps);
+    
+    fit::DispFish dispFish;
+    dispFish.Set(disp,*dsc);
+    dispFish.SetPair(pair);
+    dispFish.SetRange(fisherRange->GetInt(4));
+    dispFish.SetMax(fisherMax->GetReal(24.0));
+   
+    dispFish.Run(prog);
+    
+    dispFish.Get(fish);
    }
 
 

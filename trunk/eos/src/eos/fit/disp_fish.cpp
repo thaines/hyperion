@@ -12,7 +12,7 @@ namespace eos
  {
 //------------------------------------------------------------------------------
 DispFish::DispFish()
-:range(3)
+:range(3),maxCon(24.0)
 {}
 
 DispFish::~DispFish()
@@ -34,12 +34,18 @@ void DispFish::SetRange(nat32 r)
  range = r;
 }
 
+void DispFish::SetMax(real32 mc)
+{
+ maxCon = mc;
+}
+
 void DispFish::Run(time::Progress * prog)
 {
  prog->Push();
  
  // First create depth/cost pairs for all pixels covering the range - for each
  // pixel offset the lowest value to 0 to get stability...
+  prog->Report(0,2);
   // Make data structure...
    svt::Var temp(disp);
    nat32 scope = range*2 + 1;
@@ -48,18 +54,20 @@ void DispFish::Run(time::Progress * prog)
     Pixel initPix;
      initPix.pos = bs::Vert(0.0,0.0,0.0);
      initPix.cost = 0.0;
-     initPix.weight = 0.0;
     temp.Add("pix",initPix);
     temp.Commit();
    }
    svt::Field<Pixel> pix(&temp,"pix");
   
   // Fill data structure...
-   real32 distMult = 1.0/real32(range+1);
+   prog->Push();
    for (nat32 y=0;y<disp.Size(1);y++)
    {
+    prog->Report(y,disp.Size(1));
+    prog->Push();
     for (nat32 x=0;x<disp.Size(0);x++)
     {
+     prog->Report(x,disp.Size(0));
      real32 bd = disp.Get(x,y);
      int32 base = int32(math::Round(bd)) - int32(range);
      real32 minCost = math::Infinity<real32>();
@@ -70,27 +78,33 @@ void DispFish::Run(time::Progress * prog)
       
       pair.Triangulate(x,y,d,p.pos);      
       p.cost = dsc->Cost(x,math::Clamp<int32>(int32(x)+d,0,disp.Size(0)-1),y);
-      p.weight = math::Max(1.0 - distMult*math::Abs(real32(d)-bd),0.0);
       
       minCost = math::Min(minCost,p.cost);
      }
      
      for (nat32 s=0;s<scope;s++) pix.Get(s,x,y).cost -= minCost;
     }
+    prog->Pop();
    }
+   prog->Pop();
 
 
  // Create the buffer to store R-contribution/weight pairs...
+  prog->Report(1,2);
   ds::Array<Rcont> rb(scope*scope*scope); // This is big.
   
   out.Resize(disp.Size(0),disp.Size(1));
  
  // Iterate the pixels and calculate the distribution for each - this consists 
  // of an easy direction and hard concentration...
+  prog->Push();
   for (nat32 y=0;y<disp.Size(1);y++)
   {
+   prog->Report(y,disp.Size(1));
+   prog->Push();
    for (nat32 x=0;x<disp.Size(0);x++)
    {
+    prog->Report(x,disp.Size(0));
     // Get differential calculation stuff - basically border handling...
      int32 dxI = 1;
      real32 dxM = 1.0;
@@ -147,7 +161,6 @@ void DispFish::Run(time::Progress * prog)
 
           // Calculate the weight...
            real32 weight = math::Exp(-(base.cost + xx.cost + yy.cost));
-           weight *= base.weight * xx.weight * yy.weight; // ************* Not sure about this ****************
            
           // Store in the rb array...
            rb[rbInd].r = r;
@@ -172,19 +185,21 @@ void DispFish::Run(time::Progress * prog)
        real32 m1 = -2.0/(weightSum*weightSum*(weightSum + 1.0));
        for (nat32 i=0;i<rb.Size();i++)
        {
-        invK += (a1 + m1*weI) * (1.0-rb[i].r);
+        invK += rb[i].weight * (a1 + m1*weI) * (1.0-rb[i].r);
         weI += rb[i].weight;
        }
        
       // Convert to concentration...
-       k = 1.0/invK;
+       k = math::Min<real32>(1.0/invK,maxCon);
      }
     
     // Store it in the output array...
      out.Get(x,y) = dir;
      out.Get(x,y) *= k;
    }
-  }  
+   prog->Pop();
+  }
+  prog->Pop();
  
  
  prog->Pop();

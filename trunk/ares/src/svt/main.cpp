@@ -266,6 +266,7 @@ bit SaveImage(os::Conversation & con,svt::Var * node,nat32 field,char * filename
       max = math::Max(max,f.Get(x,y));
      }
     }
+    con << "Saving field of reals, min=" << min << "; max=" << max << ";\n";
     
    // Convert it over...
     for (nat32 y=0;y<f.Size(1);y++)
@@ -279,6 +280,128 @@ bit SaveImage(os::Conversation & con,svt::Var * node,nat32 field,char * filename
       rgb.Get(x,y).b = val;
      }
     }
+  }
+  
+  if (node->FieldType(field)==node->GetCore().GetTT()("eos::bit"))
+  {
+   ok = true;
+   svt::Field<bit> f;
+   node->ByInd(field,f);
+   
+   con << "Saving bit mask.\n";
+    
+   // Convert it over...
+    for (nat32 y=0;y<f.Size(1);y++)
+    {
+     for (nat32 x=0;x<f.Size(0);x++)
+     {
+      real32 val = 0.0;
+      if (f.Get(x,y)) val = 1.0;
+
+      rgb.Get(x,y).r = val;
+      rgb.Get(x,y).g = val;
+      rgb.Get(x,y).b = val;
+     }
+    }
+  }
+
+  if (node->FieldType(field)==node->GetCore().GetTT()("eos::bs::Normal"))
+  {
+   ok = true;
+   svt::Field<bs::Normal> f;
+   node->ByInd(field,f);
+   
+   con << "Saving field of normals.\n";
+    
+   // Convert it over...
+    for (nat32 y=0;y<f.Size(1);y++)
+    {
+     for (nat32 x=0;x<f.Size(0);x++)
+     {
+      bs::Normal norm = f.Get(x,y); 
+      rgb.Get(x,y).r = 0.5*(norm[0]+1.0);
+      rgb.Get(x,y).g = 0.5*(norm[1]+1.0);
+      rgb.Get(x,y).b = 0.5*(norm[2]+1.0);
+     }
+    }
+  }
+
+
+  if (node->FieldType(field)==node->GetCore().GetTT()("eos::bs::Vert"))
+  {
+   ok = true;
+   svt::Field<bs::Vert> f;
+   node->ByInd(field,f);
+    
+   // Convert it over...
+    real32 maxLen = 0.01;
+    for (nat32 y=0;y<f.Size(1);y++)
+    {
+     for (nat32 x=0;x<f.Size(0);x++)
+     {
+      bs::Vert norm = f.Get(x,y); 
+      real32 length = norm.Length();
+      maxLen = math::Max(maxLen,length);
+      if (!math::IsZero(length)) norm /= length;
+      
+      rgb.Get(x,y).r = 0.5*(norm[0]+1.0);
+      rgb.Get(x,y).g = 0.5*(norm[1]+1.0);
+      rgb.Get(x,y).b = 0.5*(norm[2]+1.0);
+     }
+    }
+    
+   con << "Saving field of vectors with magnitude file, maximum magnitude is " << maxLen << ".\n";
+
+   // Create a secondary magnitude file...
+   {
+    svt::Var temp(node->GetCore());
+    temp.Setup2D(node->Size(0),node->Size(1));
+    temp.Add("rgb",rgbIni);
+    temp.Commit();
+  
+    svt::Field<bs::ColourRGB> rgb(&temp,"rgb");
+    
+    
+    for (nat32 y=0;y<f.Size(1);y++)
+    {
+     for (nat32 x=0;x<f.Size(0);x++)
+     {
+      real32 val = math::Min<real32>(f.Get(x,y).Length()/maxLen,1.0);
+
+      rgb.Get(x,y).r = val;
+      rgb.Get(x,y).g = val;
+      rgb.Get(x,y).b = val;
+     }
+    }
+    
+    
+    nat32 fnLen = str::Length(filename);
+    char * fn = mem::Malloc<char>(fnLen+5);
+    nat32 fnOff = 0;
+    bit done = false;
+    for (nat32 i=0;i<=fnLen;i++)
+    {
+     if (done||(filename[i]!='.'))
+     {
+      fn[fnOff] = filename[i];
+      ++fnOff;
+     }
+     else
+     {
+      fn[fnOff] = '_';
+      fn[fnOff+1] = 'm';
+      fn[fnOff+2] = 'a';
+      fn[fnOff+3] = 'g';
+      fn[fnOff+4] = '.';
+      fnOff += 5;
+      done = true;
+     }
+    }
+    
+    filter::SaveImageRGB(&temp,fn,true);
+    
+    mem::Free(fn);
+   }
   }
 
 
