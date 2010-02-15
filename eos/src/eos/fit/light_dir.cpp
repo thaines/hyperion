@@ -47,12 +47,6 @@ void LightDir::SetRecursion(nat32 depth)
 void LightDir::Run(time::Progress * prog)
 {
  prog->Push();
- 
- // First generate the sampling set of light source directions to sample...
-  alg::HemiOfNorm hon(subdiv);
-  lc.Size(hon.Norms());
-  for (nat32 i=0;i<lc.Size();i++) lc[i].dir = hon.Norm(i);
-
 
  // Count how many segments there are...
   nat32 segCount = 1;
@@ -61,14 +55,28 @@ void LightDir::Run(time::Progress * prog)
    for (nat32 x=0;x<seg.Size(0);x++) segCount = math::Max(segCount,seg.Get(x,y)+1);
   }
 
+ // Prep for logging...
+  nat32 step = 0;
+  nat32 steps = 5 + segCount + 1;
+  
+   
+ // First generate the sampling set of light source directions to sample...
+  prog->Report(step++,steps);
+  alg::HemiOfNorm hon(subdiv);
+  lc.Size(hon.Norms());
+  for (nat32 i=0;i<lc.Size();i++) lc[i].dir = hon.Norm(i);
+
+
 
  // Now generate the data structure we actually pass around from the input - 
  // group data points by segment...
+  prog->Report(step++,steps);
   ds::Array<Pixel> pixel(seg.Size(0)*seg.Size(1)); // Array of all pixels, grouped by segment.
   ds::Array<nat32> size(segCount); // Number of pixels in each segment.
   ds::Array<nat32> offset(segCount+1); // Array of offsets for each segment, with size on end.
   
   // Count pixels in each segment, setup offset structure...
+   prog->Report(step++,steps);
    for (nat32 i=0;i<size.Size();i++) size[i] = 0;
    for (nat32 y=0;y<seg.Size(1);y++)
    {
@@ -79,6 +87,7 @@ void LightDir::Run(time::Progress * prog)
    for (nat32 i=0;i<size.Size();i++) offset[i+1] = offset[i] + size[i];
    
   // Copy pixel information into the pixel buffer...
+   prog->Report(step++,steps);
    nat32 maxSegSize = 1;
    for (nat32 i=0;i<size.Size();i++)
    {
@@ -101,6 +110,7 @@ void LightDir::Run(time::Progress * prog)
 
 
  // Now iterate the light sources and segments and sum up the costs...
+  prog->Report(step++,steps);
   ds::Array<real32> segCost(lc.Size());
   ds::Array<PixelAux> tAux(maxSegSize);
   ds::PriorityQueue<CostRange> tWork(recDepth*4);
@@ -109,6 +119,7 @@ void LightDir::Run(time::Progress * prog)
 
   for (nat32 s=0;s<segCount;s++)
   {
+   prog->Report(step++,steps);
    for (nat32 l=0;l<lc.Size();l++)
    {
     segCost[l] = SegLightCost(lc[l].dir,recDepth, pixel,offset[s],offset[s+1]-offset[s], 
@@ -124,6 +135,7 @@ void LightDir::Run(time::Progress * prog)
 
  
  // Find the lowest costed light source direction and store as the best...
+  prog->Report(step++,steps);
   nat32 best = 0;
   for (nat32 l=1;l<lc.Size();l++)
   {

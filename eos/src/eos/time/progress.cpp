@@ -112,7 +112,8 @@ void Progress::Time(real64 & done,real64 & remaining)
         else done = UltraTime()-time;	 
  
  real32 prog = Prog();
- remaining = done*(1.0-prog);	
+ if (math::IsZero(prog)) remaining = -1.0;
+                    else remaining = (done/prog)*(1.0-prog);
 }
 
 void Progress::Pause()
