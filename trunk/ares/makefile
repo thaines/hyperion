@@ -40,11 +40,11 @@ clean:
 	-rm out.txt
 
 
-EXES	= cyclops svt mscr geo_test
+EXES	= cyclops svt mscr exif
 
 EXES_S1	= sfgs colour sad_stereo ba_test mya sfs fitter sift spec_rem mser segs 
 EXES_S2	= bleyer04 eos_test fg_test orient sur_test sur_stereo ds_test voronoi
-EXES_S3 = bp_stereo sur_bp_stereo text_to_svt bessel sfs_bp bp_test
+EXES_S3 = bp_stereo sur_bp_stereo text_to_svt bessel sfs_bp bp_test geo_test
 EXES_S4 = smes 
 
 all: $(EXES) prep_final line_count
@@ -855,6 +855,25 @@ $(FINAL_GEO_TEST): $(OBJS_GEO_TEST)
 
 $(OBJ)/geo_test_main.o: $(DIRS) $(SRC)/geo_test/main.h $(SRC)/geo_test/main.cpp
 	$(C) -o $(OBJ)/geo_test_main.o $(SRC)/geo_test/main.cpp
+
+
+
+########
+# exif #
+########
+
+FINAL_EXIF	= $(OUT)/exif$(PEXT)
+OBJS_EXIF	= $(OBJ)/exif_main.o
+
+
+exif: $(FINAL_EXIF)
+
+$(FINAL_EXIF): $(OBJS_EXIF)
+	$(L_EXE) -o $(FINAL_EXIF) $(OBJS_EXIF) -L$(EOS_LIB) -leos
+
+
+$(OBJ)/exif_main.o: $(DIRS) $(SRC)/exif/main.h $(SRC)/exif/main.cpp
+	$(C) -o $(OBJ)/exif_main.o $(SRC)/exif/main.cpp
 
 
 

@@ -152,6 +152,7 @@ class EOS_CLASS BlockLogger
 #define LogLog(x) {eos::log::logger.BeginEntry() << x; eos::log::logger.EndEntry();}
 
 #define LogAlways(x) LogLog(x)
+#define LogError(x) LogLog(x)
 
 #ifdef EOS_DEBUG
  #define LogDebug(x) LogLog(x)
