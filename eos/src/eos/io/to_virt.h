@@ -102,7 +102,6 @@ class EOS_CLASS VirtInOut : public InOutVirt<typename T::encodeType>
   nat32 Read(void * out,nat32 bytes) {return ptr.Read(out,bytes);}
   byte Peek() const {return ptr.Peek();}
   nat32 Skip(nat32 bytes) {return ptr.Skip(bytes);}
-  cstrconst TypeString() const {return ptr.TypeString();}
 
   nat32 Write(const void * out,nat32 bytes) {return ptr.Write(out,bytes);}
   nat32 Pad(nat32 bytes) {return ptr.Pad(bytes);}

@@ -320,8 +320,9 @@ template <typename T>
 inline T & StreamWrite(T & lhs,real32 rhs,Text)
 {
  cstrchar str[32];
- gcvt(rhs,8,str);
- nat32 size = 0; while (str[size]!=0) size++;
+ cstrchar * targ = ::gcvt(rhs,8,str);
+ while (*targ!=0) targ++;
+ nat32 size = targ-str;
  lhs.SetError(lhs.Write(str,size)!=size);
  return lhs;
 }
@@ -330,8 +331,9 @@ template <typename T>
 inline T & StreamWrite(T & lhs,const real64 & rhs,Text)
 {
  cstrchar str[32];
- gcvt(rhs,24,str);
- nat32 size = 0; while (str[size]!=0) size++;
+ cstrchar * targ = ::gcvt(rhs,24,str);
+ while (*targ!=0) targ++;
+ nat32 size = targ-str;
  lhs.SetError(lhs.Write(str,size)!=size);	
  return lhs;
 }
