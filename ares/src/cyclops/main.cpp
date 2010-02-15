@@ -41,6 +41,7 @@
 #include "cyclops/ambient_est.h"
 #include "cyclops/sphere_fitter.h"
 #include "cyclops/sfs_stereo.h"
+#include "cyclops/albedo_est.h"
 
 //------------------------------------------------------------------------------
 // Code for cyclops class...
@@ -141,6 +142,7 @@ Cyclops::Cyclops()
   gui::Button * but47 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but48 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but49 = static_cast<gui::Button*>(guiFact.Make("Button"));
+  gui::Button * but50 = static_cast<gui::Button*>(guiFact.Make("Button"));
 
   gui::Label * lab1 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab2 = static_cast<gui::Label*>(guiFact.Make("Label"));
@@ -191,6 +193,7 @@ Cyclops::Cyclops()
   gui::Label * lab47 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab48 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab49 = static_cast<gui::Label*>(guiFact.Make("Label"));
+  gui::Label * lab50 = static_cast<gui::Label*>(guiFact.Make("Label"));
 
   but1->SetChild(lab1); lab1->Set("Intrinsic Calibration");
   but2->SetChild(lab2); lab2->Set("Protractor");
@@ -241,6 +244,7 @@ Cyclops::Cyclops()
   but47->SetChild(lab47); lab47->Set("Ambient Estimation");
   but48->SetChild(lab48); lab48->Set("Sphere Fitter");
   but49->SetChild(lab49); lab49->Set("Stereo & SfS Combiner");
+  but50->SetChild(lab50); lab50->Set("Albedo Estimation");
 
   vert0->AttachBottom(but19,false);
   vert0->AttachBottom(but21,false);
@@ -284,6 +288,7 @@ Cyclops::Cyclops()
   
   vert8->AttachBottom(but44,false);
   vert8->AttachBottom(but42,false);
+  vert8->AttachBottom(but50,false);
   vert8->AttachBottom(but47,false);
 
   vert9->AttachBottom(but25,false);
@@ -359,6 +364,7 @@ Cyclops::Cyclops()
   but47->OnClick(MakeCB(this,&Cyclops::StartAmbientEst));
   but48->OnClick(MakeCB(this,&Cyclops::StartSphereFitter));
   but49->OnClick(MakeCB(this,&Cyclops::StartStereoSfS));
+  but50->OnClick(MakeCB(this,&Cyclops::StartAlbedoEst));
 
  // Enter the message pump...
   app->Go();
@@ -849,6 +855,11 @@ void Cyclops::StartSphereFitter(gui::Base * obj,gui::Event * event)
 void Cyclops::StartStereoSfS(gui::Base * obj,gui::Event * event)
 {
  new StereoSfS(*this);
+}
+
+void Cyclops::StartAlbedoEst(gui::Base * obj,gui::Event * event)
+{
+ new AlbedoEst(*this);
 }
 
 //------------------------------------------------------------------------------
