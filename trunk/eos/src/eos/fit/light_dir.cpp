@@ -318,7 +318,7 @@ void LightDir::CostRange::CalcCost(ds::Array<LightDir::PixelAux> & tAux,nat32 le
   if (minBase<0.0) minCost += minBase;
            else othMinCost += minBase;
   if (maxBase<0.0) maxCost += minBase;
-           else othMaxCost += minBase;  
+           else othMaxCost += minBase;
  }
  
  minCost = minCost/minA + othMinCost/maxA;

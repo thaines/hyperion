@@ -153,10 +153,11 @@ class EOS_CLASS CameraPair
    void CropRight(real64 minX,real64 dimX,real64 minY,real64 dimY);
 
 
-  /// Calculates a transformation to apply to 3D points that will result in the
-  /// left camera being at the origin looking down the z axis in the negative
-  /// direction. It is then applied to both camera matrices and optionally
-  /// outputted - essentially used for when assumptions require it.
+  /// Calculates a transformation that takes a camera at the origin looking
+  /// down the negative z-axis to the position and rotation of the left camera.
+  /// Optionally outputs the transformation.
+  /// It then uses the transformation to correct this pair such that the left 
+  /// camera is at the origin looking down the negative z-axis.
    void LeftToDefault(math::Mat<4,4,real64> * out = 0);
 
   /// Returns true if, within numerical error, it is rectified.

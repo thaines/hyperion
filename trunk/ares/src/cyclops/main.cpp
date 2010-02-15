@@ -128,7 +128,8 @@ Cyclops::Cyclops()
   gui::Button * but39 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but40 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but41 = static_cast<gui::Button*>(guiFact.Make("Button"));
-  gui::Button * but42 = static_cast<gui::Button*>(guiFact.Make("Button"));  
+  gui::Button * but42 = static_cast<gui::Button*>(guiFact.Make("Button"));
+  gui::Button * but43 = static_cast<gui::Button*>(guiFact.Make("Button"));
 
   gui::Label * lab1 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab2 = static_cast<gui::Label*>(guiFact.Make("Label"));
@@ -171,7 +172,8 @@ Cyclops::Cyclops()
   gui::Label * lab39 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab40 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab41 = static_cast<gui::Label*>(guiFact.Make("Label"));
-  gui::Label * lab42 = static_cast<gui::Label*>(guiFact.Make("Label"));  
+  gui::Label * lab42 = static_cast<gui::Label*>(guiFact.Make("Label"));
+  gui::Label * lab43 = static_cast<gui::Label*>(guiFact.Make("Label"));
 
   but1->SetChild(lab1); lab1->Set("Intrinsic Calibration");
   but2->SetChild(lab2); lab2->Set("Protractor");
@@ -215,6 +217,7 @@ Cyclops::Cyclops()
   but40->SetChild(lab40); lab40->Set("Re-lighter");
   but41->SetChild(lab41); lab41->Set("Segmentation");
   but42->SetChild(lab42); lab42->Set("Light Estimation");
+  but43->SetChild(lab43); lab43->Set("Pair to Default");
 
   vert0->AttachBottom(but19,false);
   vert0->AttachBottom(but21,false);
@@ -246,6 +249,7 @@ Cyclops::Cyclops()
 
   vert6->AttachBottom(but16,false);
   vert6->AttachBottom(but31,false);
+  vert6->AttachBottom(but43,false);
   vert6->AttachBottom(but9,false);
   vert6->AttachBottom(but23,false);
 
@@ -262,9 +266,9 @@ Cyclops::Cyclops()
   vert9->AttachBottom(but41,false);
 
   vert10->AttachBottom(but35,false);
-  vert10->AttachBottom(but27,false);
-  vert10->AttachBottom(but42,false);
+  vert10->AttachBottom(but27,false);  
 
+  vert11->AttachBottom(but42,false);
   vert11->AttachBottom(but38,false);
   vert11->AttachBottom(but39,false);
   vert11->AttachBottom(but37,false);
@@ -319,6 +323,7 @@ Cyclops::Cyclops()
   but40->OnClick(MakeCB(this,&Cyclops::StartLighting));
   but41->OnClick(MakeCB(this,&Cyclops::StartSegmentation));
   but42->OnClick(MakeCB(this,&Cyclops::StartLightEst));
+  but43->OnClick(MakeCB(this,&Cyclops::PairToDefault));
 
  // Enter the message pump...
   app->Go();
@@ -710,6 +715,42 @@ void Cyclops::StartSegmentation(gui::Base * obj,gui::Event * event)
 void Cyclops::StartLightEst(gui::Base * obj,gui::Event * event)
 {
  new LightEst(*this);
+}
+
+void Cyclops::PairToDefault(gui::Base * obj,gui::Event * event)
+{
+ // Load the pair file...
+  cam::CameraPair pair;
+  {
+   str::String fn;
+   if (App().LoadFileDialog("Load the Pair File","*.pcc",fn)==false) return;
+   if (pair.Load(fn)==false)
+   {
+    App().MessageDialog(gui::App::MsgErr,"Failed to load pair file");
+    return;
+   }
+  }
+
+
+ // Adjust so that the left camera is at (0,0,0) looking down the z axis in the
+ // negative direction... 
+  pair.LeftToDefault();
+
+
+ // Save the pair file...
+ {
+  str::String fn(".pcc");
+  if (App().SaveFileDialog("Save the Pair File...",fn))
+  {
+   if (!fn.EndsWith(".pcc")) fn += ".pcc";
+   // Save the file...
+    if (!pair.Save(fn,true))
+    {
+     App().MessageDialog(gui::App::MsgErr,"Error saving the file.");
+     return;
+    }
+  }
+ }
 }
 
 //------------------------------------------------------------------------------
