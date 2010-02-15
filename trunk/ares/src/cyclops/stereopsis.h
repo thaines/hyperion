@@ -74,10 +74,11 @@ class Stereopsis
   gui::EditBox * gaussianMaxK;
   gui::EditBox * gaussianIters;
   
-  gui::EditBox * fisherRange;
+  //gui::EditBox * fisherRange;
+  gui::EditBox * fisherProb;
   gui::EditBox * fisherMin;
   gui::EditBox * fisherMax;
-  gui::EditBox * fisherBias;
+  //gui::EditBox * fisherBias;
   cam::CameraPair pair;
 
 

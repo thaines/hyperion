@@ -519,7 +519,7 @@ inline nat32 RobustPolyRoot(VA & in,VB & out,MA & temp,
 /// matrix. No complex numbers involved in this case.
 /// The relation q^T a q = d will hold.
 /// \param a The input symmetric matrix, will be trashed.
-/// \param q Output rotation matrix, the eigenvectors. nxn
+/// \param q Output rotation matrix, with the eigenvectors as the columns. nxn
 /// \param d Output diagonal matrix, as a vector - the eigenvalues. Length n.
 /// \returns true on success, false on failure.
 template <typename M,typename V>
