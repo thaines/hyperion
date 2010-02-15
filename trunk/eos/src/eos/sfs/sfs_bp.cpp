@@ -1106,7 +1106,7 @@ void FisherAngProb::Make(real32 prob,real32 minK,real32 maxK,nat32 tableSize,nat
   {
    prog->Report(i,lut.Size());
    
-   // Calculate the value of k for his entry...
+   // Calculate the value of k for this entry...
     real32 k = (maxK-minK)*(real32(i)/real32(lut.Size()-1)) + minK;
     
    // Iterate and fill in the samples table over the 0..pi range...
@@ -1155,6 +1155,8 @@ void FisherAngProb::Make(real32 prob,real32 minK,real32 maxK,nat32 tableSize,nat
 
 real32 FisherAngProb::Concentration(real32 ang) const
 {
+ LogTime("eos::sfs::FisherAngProb::Concentration");
+ 
  Sample dummy;
  dummy.ang = ang;
  nat32 index = lut.SearchLargestNorm(dummy);
@@ -1171,8 +1173,94 @@ cstrconst FisherAngProb::TypeString() const
 }
 
 //------------------------------------------------------------------------------
+SfS_BP_Nice3::SfS_BP_Nice3()
+:smoothChance(0.02),smoothBase(2.0),smoothMult(0.5),smoothMinK(0.1),smoothMaxK(8.0),
+cone0(24.0),cone45(32.0),cone90(24.0),iters(10),
+boundK(16.),boundLength(8),boundExp(6.0),
+gradK(2.0),gradLength(8),gradExp(6.0),
+angMult(1.0),momentum(0.01)
+{}
 
+SfS_BP_Nice3::~SfS_BP_Nice3()
+{}
 
+void SfS_BP_Nice3::SetImage(const svt::Field<real32> & i)
+{
+ image = i;
+}
+
+void SfS_BP_Nice3::SetAlbedo(const svt::Field<real32> & a)
+{
+ albedo = a;
+}
+
+void SfS_BP_Nice3::SetLight(bs::Normal & norm)
+{
+ toLight = norm;
+}
+
+void SfS_BP_Nice3::SetSmooth(real32 chance,real32 base,real32 mult,real32 minK,real32 maxK)
+{
+ smoothChance = chance;
+ smoothBase = base;
+ smoothMult = mult;
+ smoothMinK = minK;
+ smoothMaxK = maxK;
+}
+
+void SfS_BP_Nice3::SetCone(real32 k0,real32 k45,real32 k90)
+{
+ cone0 = k0;
+ cone45 = k45;
+ cone90 = k90;
+}
+
+void SfS_BP_Nice3::SetIters(nat32 i)
+{
+ iters = i;
+}
+
+void SfS_BP_Nice3::SetBound(real32 k,nat32 length,real32 exp)
+{
+ boundK = k;
+ boundLength = length;
+ boundExp = exp;
+}
+
+void SfS_BP_Nice3::SetGrad(real32 k,nat32 length,real32 exp)
+{
+ gradK = k;
+ gradLength = length;
+ gradExp = exp;
+}
+
+void SfS_BP_Nice3::SetExtract(real32 am,real32 m)
+{
+ angMult = am;
+ momentum = m;
+}
+
+void SfS_BP_Nice3::Run(time::Progress * prog)
+{
+ prog->Push();
+
+ 
+
+ prog->Pop();
+}
+
+void SfS_BP_Nice3::GetNeedle(svt::Field<bs::Normal> & out) const
+{
+ for (nat32 y=0;y<out.Size(1);y++)
+ {
+  for (nat32 x=0;x<out.Size(0);x++) out.Get(x,y) = result.Get(x,y);
+ }
+}
+
+cstrconst SfS_BP_Nice3::TypeString() const
+{
+ return "eos::sfs::SfS_BP_Nice3";
+}
 
 //------------------------------------------------------------------------------
  };
