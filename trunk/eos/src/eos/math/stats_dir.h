@@ -353,7 +353,15 @@ class EOS_CLASS FisherBingham
   /// caused by a cone distribution and return there average, i.e. the direction
   /// of the cone.
    void Maximum(Vect<3> & out,real32 err = 1e-3,nat32 limit = 1000) const;
-   
+  
+  /// This outputs all critical points of the distribution - uses the techneque 
+  /// of the Maximum method but solves for all roots, hence providing all
+  /// maxima, minima and standing points. Merges duplicates and returns how many
+  /// critical points exist - uses 0 to indicate infinity, i.e. the uniform
+  /// distribution. The points will be sorted, maxima to minima so the maxima
+  /// will be the first entrys and the minima the last entrys.
+   nat32 Critical(Vect<3> out[6],real32 err = 1e-3,nat32 limit = 1000) const;
+  
   /// Less sophisticated maximum finding method, that can find multiple maxima in
   /// the case of bimodal distributions making it potentially more useful.
   /// Uses Levenberg Marquardt on spherical coordinates, initialised from 

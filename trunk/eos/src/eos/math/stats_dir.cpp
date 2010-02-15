@@ -8,7 +8,6 @@
 #include "eos/alg/solvers.h"
 #include "eos/alg/nearest.h"
 
-//#include "eos/data/randoms.h" // Temp
 
 namespace eos
 {
@@ -463,6 +462,14 @@ void FisherBingham::Maximum(Vect<3> & out,real32 err,nat32 limit) const
    Vect<3,real32> temp = out;
    MultVect(rot,temp,out);
   }
+}
+
+nat32 FisherBingham::Critical(Vect<3> out[6],real32 err,nat32 limit) const
+{
+ LogTime("eos::math::FisherBingham::Critical");
+ 
+ 
+ 
 }
 
 nat32 FisherBingham::Maximums(Vect<3> out[2]) const
