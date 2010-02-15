@@ -140,6 +140,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    gui::Label * lab11 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab12 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab13 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab14 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    
    bfMinAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfMaxAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
@@ -147,6 +148,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    bfIrrErr = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfPruneThresh = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfSampleSubdiv = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   bfFurtherSubdiv = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfAlbRecursion = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
 
    lab7->Set("  Minimum Albedo");
@@ -154,16 +156,18 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    lab9->Set(" Maximum Segment Cost PP");
    lab10->Set("  Irradiance Error sd");
    lab11->Set(" Pruning Threshold");
-   lab12->Set(" Sampling Subdivisions");
-   lab13->Set(" Albedo Recursion Depth");
+   lab12->Set(" Base Subdivs");
+   lab13->Set(" Albedo Recursion");
+   lab14->Set(" Refine Subdivs");
    
    bfMinAlb->Set("0.001");
    bfMaxAlb->Set("1.5");
    bfMaxSegCost->Set("0.1");
    bfIrrErr->Set("0.0078");
    bfPruneThresh->Set("0.2");
-   bfSampleSubdiv->Set("4");
-   bfAlbRecursion->Set("8");
+   bfSampleSubdiv->Set("1");
+   bfFurtherSubdiv->Set("3");
+   bfAlbRecursion->Set("7");
    
    bfMinAlb->SetSize(48,24);
    bfMaxAlb->SetSize(48,24);
@@ -171,6 +175,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    bfIrrErr->SetSize(64,24);
    bfPruneThresh->SetSize(48,24);
    bfSampleSubdiv->SetSize(48,24);
+   bfFurtherSubdiv->SetSize(48,24);
    bfAlbRecursion->SetSize(48,24);
    
    horiz3->AttachRight(lab7,false);
@@ -179,15 +184,17 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    horiz3->AttachRight(bfMaxAlb,false);
    horiz3->AttachRight(lab9,false);
    horiz3->AttachRight(bfMaxSegCost,false);
-   
+   horiz3->AttachRight(lab13,false);
+   horiz3->AttachRight(bfAlbRecursion,false);
+ 
    horiz4->AttachRight(lab10,false);
    horiz4->AttachRight(bfIrrErr,false);
    horiz4->AttachRight(lab11,false);
    horiz4->AttachRight(bfPruneThresh,false);
    horiz4->AttachRight(lab12,false);
    horiz4->AttachRight(bfSampleSubdiv,false);
-   horiz4->AttachRight(lab13,false);
-   horiz4->AttachRight(bfAlbRecursion,false);
+   horiz4->AttachRight(lab14,false);
+   horiz4->AttachRight(bfFurtherSubdiv,false);
 
 
 
@@ -391,7 +398,8 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
   real32 maxCost = bfMaxSegCost->GetReal(1.0);
   real32 irrErr = bfIrrErr->GetReal(0.0078);
   real32 pruneThresh = bfPruneThresh->GetReal(0.2);
-  nat32 subdiv = bfSampleSubdiv->GetInt(4);
+  nat32 subdiv = bfSampleSubdiv->GetInt(2);
+  nat32 further = bfFurtherSubdiv->GetInt(3);
   nat32 recursion = bfAlbRecursion->GetInt(8);
 
 
@@ -418,7 +426,7 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
   ld.SetSegCapPP(maxCost);
   ld.SetIrrErr(irrErr);
   ld.SetPruneThresh(pruneThresh);
-  ld.SetSampleSubdiv(subdiv);
+  ld.SetSampleSubdiv(subdiv,further);
   ld.SetRecursion(recursion);
 
 

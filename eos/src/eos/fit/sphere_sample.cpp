@@ -100,6 +100,22 @@ SubDivSphere::SubDivSphere()
 SubDivSphere::~SubDivSphere()
 {}
 
+real32 SubDivSphere::Area(Tri tri) const
+{
+ bs::Normal dirA = verts[tris[tri].vertInd[1]]; dirA -= verts[tris[tri].vertInd[0]];
+ bs::Normal dirB = verts[tris[tri].vertInd[2]]; dirB -= verts[tris[tri].vertInd[0]];
+ 
+ bs::Normal cp;
+ math::CrossProduct(dirA,dirB,cp);
+ return cp.Length() * 0.5;
+}
+
+void SubDivSphere::DivideAll(nat32 levels)
+{
+ if (levels==0) return;
+ for (nat32 i=0;i<20;i++) RecSubDivide(i,levels);
+}
+
 SubDivSphere::Tri SubDivSphere::Collide(const bs::Normal & dir) const
 {
  // Helper arrays that tie in with the first 20 face - gives there x/y/z
@@ -297,6 +313,19 @@ void SubDivSphere::SubDivide(Tri tri)
      }
    }
   }
+}
+
+void SubDivSphere::RecSubDivide(Tri tri,nat32 levels)
+{
+ if (levels==0) return;
+ 
+ SubDivide(tri);
+ if (levels==1) return;
+
+ RecSubDivide(tris[tri].child,levels-1);
+ RecSubDivide(tris[tris[tri].child].adj[0],levels-1);
+ RecSubDivide(tris[tris[tri].child].adj[1],levels-1);
+ RecSubDivide(tris[tris[tri].child].adj[2],levels-1);
 }
 
 //------------------------------------------------------------------------------
