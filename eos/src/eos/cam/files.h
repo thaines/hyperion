@@ -217,6 +217,15 @@ class EOS_CLASS CameraPair
   /// Returns true on success, false on failure.
   /// Only for rectified pairs.
    bit Triangulate(real32 x,real32 y,real32 disp,math::Vect<4,real64> & out) const;
+  
+  /// Version of Triangulate for non-homogenous 32 bit vectors.
+    bit Triangulate(real32 x,real32 y,real32 disp,math::Vect<3,real32> & out) const
+    {
+     math::Vect<4,real64> o;
+     if (Triangulate(x,y,disp,o)==false) return false;
+     for (nat32 i=0;i<3;i++) out[i] = o[i]/o[3];
+     return true;
+    }
 
   /// Given a 3d homogenous point this projects back to calculate the 2d
   /// position for the left image and its disparity, in rectified space.
