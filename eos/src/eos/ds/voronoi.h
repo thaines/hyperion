@@ -4,7 +4,7 @@
 // Copyright 2006 Tom Haines
 
 /// \file voronoi.h
-/// Provides both Voronoi diagrams and Delaunay tessalations. Actual does
+/// Provides both Voronoi diagrams and Delaunay tessalations. Actually does
 /// Delaunay primarilly, just called Voronoi as he came up with the idea first.
 
 #include "eos/types.h"
@@ -125,7 +125,7 @@ class EOS_CLASS Delaunay2DCode
 /// a suitable interface to the data in addition to the Delaunay style interface.
 /// Whilst this method is not slower than other possible methods by complexity it
 /// does have a poor inner loop, so faster is possible if you just want to create
-/// the triangulation without the incrimentaol capability of this one.
+/// the triangulation without the incrimental capability of this one.
 template <typename T, typename DT = mem::KillNull<T> >
 class EOS_CLASS Delaunay2D : public Delaunay2DCode
 {
@@ -363,6 +363,31 @@ class EOS_CLASS Delaunay2D : public Delaunay2DCode
   /// Given a coordinate returns the nearest Pos. Do not call when PosCount()==0
    Pos Nearest(real64 x,real64 y)
    {return Pos(Delaunay2DCode::Nearest(x,y));}
+
+
+  /// Given a coordinate returns the Mid representing the triangle that it is 
+  /// in - you can then query the 3 Pos of the Mid to get the actual traingle,
+  /// being aware that any or all of the Pos could be at infinity.
+   Mid Triangle(const math::Vect<2,real32> & pos)
+   {return Mid(root.FindTri(pos[0],pos[1]));}
+
+  /// Given a coordinate returns the Mid representing the triangle that it is 
+  /// in - you can then query the 3 Pos of the Mid to get the actual traingle,
+  /// being aware that any or all of the Pos could be at infinity.
+   Mid Triangle(const math::Vect<2,real64> & pos)
+   {return Mid(root.FindTri(pos[0],pos[1]));}
+
+  /// Given a coordinate returns the Mid representing the triangle that it is 
+  /// in - you can then query the 3 Pos of the Mid to get the actual traingle,
+  /// being aware that any or all of the Pos could be at infinity.
+   Mid Triangle(real32 x,real32 y)
+   {return Mid(root.FindTri(x,y));}
+
+  /// Given a coordinate returns the Mid representing the triangle that it is 
+  /// in - you can then query the 3 Pos of the Mid to get the actual traingle,
+  /// being aware that any or all of the Pos could be at infinity.
+   Mid Triangle(real64 x,real64 y)
+   {return Mid(root.FindTri(x,y));}
 
 
   /// Obtains an array of all Pos in the data structure.

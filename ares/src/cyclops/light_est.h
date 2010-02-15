@@ -26,12 +26,20 @@ class LightEst
   gui::Expander * brutalFish;
   gui::EditBox * bfMinAlb;
   gui::EditBox * bfMaxAlb;
-  gui::EditBox * bfMaxSegCost;  
-  gui::EditBox * bfSampleSubdiv;  
-  gui::EditBox * bfAlbRecursion; 
-  
-  gui::Label * lightDir; 
+  gui::EditBox * bfMaxSegCost;
+  gui::EditBox * bfSampleSubdiv;
+  gui::EditBox * bfAlbRecursion;
+
+
+  gui::Label * lightDir;
   bs::Normal lightD;
+  
+  struct Sample
+  {
+   real32 cost;
+   bs::Normal dir;
+  };
+  ds::Array<Sample> samples;
 
 
   math::Func crf;

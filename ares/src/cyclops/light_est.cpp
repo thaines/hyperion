@@ -102,7 +102,8 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    viewSelect->Append("Segmentation");
    viewSelect->Append("Fisher Direction");
    viewSelect->Append("Fisher Concentration (log10)");
-   viewSelect->Append("Light Source Sphere");
+   viewSelect->Append("Sphere Rendered with Estimate");
+   viewSelect->Append("Cost of Direction Sphere (log10)");
    viewSelect->Append("Albedo");
    viewSelect->Set(0);
    
@@ -414,6 +415,12 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
 
  // Get the output...
   lightD = ld.BestLightDir();
+  samples.Size(ld.SampleSize());
+  for (nat32 i=0;i<samples.Size();i++)
+  {
+   samples[i].cost = ld.SampleCost(i);
+   samples[i].dir = ld.SampleDir(i);
+  }
   
   str::String s;
   s << lightD << " (" << ld.SampleSize() << " samples)";
@@ -457,6 +464,7 @@ void LightEst::Update()
   {
    case 0: // Irradiance
    case 1: // Corrected Irradiance
+   case 6: // Cost Sphere
    case 5: // Light Source Sphere
     width = irr.Size(0);
     height = irr.Size(1);
@@ -470,7 +478,7 @@ void LightEst::Update()
     width = fish.Size(0);
     height = fish.Size(1);
    break;
-   case 6: // Albedo
+   case 7: // Albedo
     width = albedo.Size(0);
     height = albedo.Size(1);
    break;
@@ -568,7 +576,7 @@ void LightEst::Update()
     {
      for (nat32 x=0;x<image.Size(0);x++)
      {
-      real32 k = math::Log10(fish.Get(x,y).Length());
+      real32 k = math::Log10(1.0 + fish.Get(x,y).Length());
       max = math::Max(max,k);
       
       image.Get(x,y).r = k;
@@ -615,7 +623,94 @@ void LightEst::Update()
     }
    }
    break;
-   case 6: // Albedo
+   case 6: // Cost Sphere
+   {
+    if (samples.Size()!=0)
+    {
+     // First generate a Delauney triangulation with all the samples in, with 
+     // costs as the stored data...
+      ds::Delaunay2D<real32> doc;
+      for (nat32 i=0;i<samples.Size();i++)
+      {
+       doc.Add(samples[i].dir[0],samples[i].dir[1],samples[i].cost);
+      }
+     
+     // Now iterate all the pixels, interpolating costs for those inside the 
+     // sphere and rendering the Log10 of the costs...
+      real32 max = 0.001;
+      real32 centX = irr.Size(0)/2.0;
+      real32 centY = irr.Size(1)/2.0;
+      real32 radius = math::Min(centX,centY)*0.9;   
+     
+      for (nat32 y=0;y<image.Size(1);y++)
+      {
+       for (nat32 x=0;x<image.Size(0);x++)
+       {
+        real32 dirX = (x-centX)/radius;
+        real32 dirY = (y-centY)/radius;
+       
+        real32 l;
+        if (math::Sqr(dirX)+math::Sqr(dirY)<1.0)
+        {
+         ds::Delaunay2D<real32>::Mid tri = doc.Triangle(dirX,dirY);
+         real32 cost[3];
+         real32 dist[3];
+         for (nat32 i=0;i<3;i++)
+         {
+          if (tri.Infinite(i))
+          {
+           cost[i] = 0.0;
+           dist[i] = 0.0;
+          }
+          else
+          {
+           ds::Delaunay2D<real32>::Pos pos = tri.GetPos(i);
+           cost[i] = *pos;
+           dist[i] = math::Sqrt(math::Sqr(pos.X()-dirX) + math::Sqr(pos.Y()-dirY));
+          }
+         }
+        
+         real32 distSum = dist[0] + dist[1] + dist[2];
+         if (math::IsZero(distSum)) l = -1.0;
+         else
+         {
+          real32 c = cost[0]*(distSum-dist[0]) +
+                     cost[1]*(distSum-dist[1]) +
+                     cost[2]*(distSum-dist[2]);
+          c /= distSum*2.0;
+          l = math::Log10(1.0+c);
+         }
+        }
+        else
+        {
+         l = -1.0;
+        }
+       
+        if (l<0.0)
+        {
+         image.Get(x,y).r = 0.0;
+         image.Get(x,y).g = 0.0;
+         image.Get(x,y).b = 0.5;
+        }
+        else
+        {
+         max = math::Max(max,l);
+         image.Get(x,y).r = l;
+         image.Get(x,y).g = l;
+         image.Get(x,y).b = l;
+        }
+       }
+      }
+    
+     // Normalise...
+      for (nat32 y=0;y<image.Size(1);y++)
+      {
+       for (nat32 x=0;x<image.Size(0);x++) image.Get(x,y) /= max;
+      }
+    }
+   }
+   break;
+   case 7: // Albedo
    {
     for (nat32 y=0;y<image.Size(1);y++)
     {
