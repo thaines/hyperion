@@ -90,6 +90,9 @@ class EOS_CLASS RangeDiffusionSlice
   /// Returns the width of the slice.
    nat32 Width() const;
    
+  /// Returns the y coordinate associated with the slice.
+   nat32 Y() const {return y;}
+   
   /// Returns the number of steps of the slice.
    nat32 Steps() const;
    
@@ -105,8 +108,96 @@ class EOS_CLASS RangeDiffusionSlice
  private:
   // Storage for state...
    nat32 steps;
+   nat32 y;
+   
    ds::Array2D<real32> data; // Stores the x coordinate in x and the y coordinate is a linearlisation of the diffusion values. Will not have anything for masked entries.
    ds::Array2D<nat32> offset; // Index from (u+steps,v+steps) to the above linearisation. Only valid when abs(u) + abs(v) <= steps.
+};
+
+//------------------------------------------------------------------------------
+/// This is given a pair of bs::LuvRangeImage's and RangeDiffusionSlice's,
+/// it then calculates the correlation between pixels in the two slices.
+/// It also makes use of a LuvRangeDist to calculate the difference between pixels.
+/// Simply takes the distances weighted by the diffusion weights, added for the
+/// two pixels in question. Due to the adding the result is divided by two when
+/// done, the output is then a distance metric.
+/// A distance cap is provided - distances are capped at this value, to
+/// handle outliers. This is also the value used if either pixel is outside the
+/// image or masked.
+class EOS_CLASS DiffuseCorrelation
+{
+ public:
+  /// &nbsp;
+   DiffuseCorrelation();
+
+  /// &nbsp;
+   ~DiffuseCorrelation();
+
+
+  /// Fills in the valid details - note that all passed in objects must survive
+  /// the lifetime of this object.
+   void Setup(const bs::LuvRangeDist & dist, real32 distCap, const bs::LuvRangeImage & img1, const RangeDiffusionSlice & dif1, const bs::LuvRangeImage & img2, const RangeDiffusionSlice & dif2);
+   
+  /// Returns the width of image 1.
+   nat32 Width1() const;
+
+  /// Returns the width of image 1.
+   nat32 Width2() const;
+   
+  /// Given two x coordinates this returns their matching cost - note that this
+  /// does the correlation and is a slow method call.
+   real32 Cost(nat32 x1,nat32 x2) const;
+   
+  /// Returns the distance cap used.
+   real32 DistanceCap() const;
+
+
+  /// &nbsp;
+   inline cstrconst TypeString() const {return "eos::stereo::DiffuseCorrelation";}
+
+
+ private:
+  const bs::LuvRangeDist * dist;
+  real32 distCap;
+  
+  const bs::LuvRangeImage * img1;
+  const RangeDiffusionSlice * dif1;
+  const bs::LuvRangeImage * img2;
+  const RangeDiffusionSlice * dif2;
+};
+
+//------------------------------------------------------------------------------
+/// A stereopsis algorithm, or at least a post-processor for one. This uses 
+/// correlation to find matches, but then only keeps matches it is really
+/// confident in. Uses a diffusion based correlation score, and colour ranges.
+/// Makes use of a hierachy to reduce computation by pruning the search space;
+/// output is multiple discrete disparity values for each pixel, with 
+/// correlation scores around this value stored for refinement and comparing of
+/// match choices.
+/// Only pixels that return a single disparity value can be considered mostly
+/// reliable.
+/// Algorithm is symetric, providing disparity for both images; no left-right
+/// checking is done at this stage.
+class EOS_CLASS DiffusionCorrelationMatching
+{
+ public:
+  /// &nbsp;
+   DiffusionCorrelationMatching();
+
+  /// &nbsp;
+   ~DiffusionCorrelationMatching();
+
+
+  /// 
+
+
+
+  /// &nbsp;
+   inline cstrconst TypeString() const {return "eos::stereo::DiffusionCorrelationMatching";}
+
+
+ private:
+
 };
 
 //------------------------------------------------------------------------------

@@ -81,13 +81,14 @@ RangeDiffusionSlice::RangeDiffusionSlice()
 RangeDiffusionSlice::~RangeDiffusionSlice()
 {}
 
-void RangeDiffusionSlice::Create(nat32 y, nat32 stps, const bs::LuvRangeImage & img, const DiffusionWeight & dw, time::Progress * prog)
+void RangeDiffusionSlice::Create(nat32 yy, nat32 stps, const bs::LuvRangeImage & img, const DiffusionWeight & dw, time::Progress * prog)
 {
  prog->Push();
  
  // First we need to calculate the offset array, and how large we need the
  // result storage to be...
   prog->Report(0,img.Width()+1);
+  y = yy;
   steps = stps;
   offset.Resize(steps*2+1,steps*2+1);
   nat32 valueCount = 0;
@@ -215,6 +216,76 @@ real32 RangeDiffusionSlice::Get(nat32 x,int32 u,int32 v) const
  nat32 os = offset.Get(u+int32(steps),v+int32(steps));
  return data.Get(x,os);
 }
+
+//------------------------------------------------------------------------------
+DiffuseCorrelation::DiffuseCorrelation()
+:dist(null<bs::LuvRangeDist*>()),img1(null<bs::LuvRangeImage*>()),dif1(null<RangeDiffusionSlice*>()),img2(null<bs::LuvRangeImage*>()),dif2(null<RangeDiffusionSlice*>())
+{}
+
+DiffuseCorrelation::~DiffuseCorrelation()
+{}
+
+void DiffuseCorrelation::Setup(const bs::LuvRangeDist & d, real32 dc, const bs::LuvRangeImage & i1, const RangeDiffusionSlice & f1, const bs::LuvRangeImage & i2, const RangeDiffusionSlice & f2)
+{
+ log::Assert(f1.Steps()==f2.Steps());
+
+ dist = &d;
+ distCap = dc;
+ 
+ img1 = &i1;
+ dif1 = &f1;
+ img2 = &i2;
+ dif2 = &f2;
+}
+
+nat32 DiffuseCorrelation::Width1() const
+{
+ return img1->Width();
+}
+
+nat32 DiffuseCorrelation::Width2() const
+{
+ return img2->Width();
+}
+
+real32 DiffuseCorrelation::Cost(nat32 xx1,nat32 xx2) const
+{
+ real32 ret = 0.0;
+ 
+ int32 steps = dif1->Steps();
+ for (int32 v=-steps;v<=steps;v++)
+ {
+  for (int32 u=-steps;u<=steps;u++)
+  {
+   int32 x1 = int32(xx1) + u;
+   int32 y1 = int32(dif1->Y()) + v;
+   int32 x2 = int32(xx2) + u;
+   int32 y2 = int32(dif2->Y()) + v;
+   
+   real32 weight = dif1->Get(xx1,u,v) + dif2->Get(xx2,u,v);
+   
+   if (img1->ValidExt(x1,y1)&&img2->ValidExt(x2,y2))
+   {
+    ret += weight * math::Min((*dist)(img1->Get(x1,y1),img2->Get(x2,y2)),distCap);
+   }
+   else
+   {
+    ret += weight * distCap;
+   }
+  }
+ }
+
+ return ret/2.0;
+}
+
+real32 DiffuseCorrelation::DistanceCap() const
+{
+ return distCap;
+}
+
+//------------------------------------------------------------------------------
+
+
 
 //------------------------------------------------------------------------------
 
