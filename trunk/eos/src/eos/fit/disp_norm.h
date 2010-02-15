@@ -43,9 +43,12 @@ class EOS_CLASS DispNorm
    
   /// Sets the disparity search range, algorithm is linear in this so setting high is not that bad.
   /// Defaults to 20. (20*2+1=41).
-   void SetRange(nat32 range);
+  /// Also sets the sdCount - this is the number of standard deviations from the
+  /// current variance estimate the bisquare k value is set to. Defaults to 2.
+   void SetRange(nat32 range,real32 sdCount);
 
-  /// Sets the clamping range for the standard deviation, defaults to 0 to 10.0.
+  /// Sets the clamping range for the standard deviation, defaults to 0.1 to 10.0.
+  /// (min should never reach 0)
    void SetClamp(real32 minSd,real32 maxSd);
    
   /// Sets the maximum number of iterations. Defaults to 1000.
@@ -74,6 +77,7 @@ class EOS_CLASS DispNorm
    const stereo::DSC * dsc;
    real32 dscMult;
    nat32 range;
+   real32 sdCount;
    real32 minSd;
    real32 maxSd;
    nat32 maxIters;

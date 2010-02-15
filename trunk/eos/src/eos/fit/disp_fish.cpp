@@ -100,20 +100,10 @@ void DispFish::Run(time::Progress * prog)
        int32 d = base + int32(s);
       
        pair.Triangulate(x,y,d,p.pos);      
-       p.weight = dsc->Cost(x,math::Clamp<int32>(int32(x)+d,0,disp.Size(0)-1),y) * dscMult;
-       if ((x==200)&&(y==200)) // *******************************************************
-       {
-        LogDebug("{s,d,pos,cost}" << LogDiv() << s << LogDiv() << d << LogDiv() 
-                 << p.pos << LogDiv() << p.weight);
-       }
-      
+       p.weight = dsc->Cost(x,math::Clamp<int32>(int32(x)+d,0,dsc->WidthRight()-1),y) * dscMult;
        minCost = math::Min(minCost,p.weight);
       }
-      
-      if ((x==200)&&(y==200)) // *******************************************************
-      {
-       LogDebug("{bd,base,minCost}" << LogDiv() << bd << LogDiv() << base << LogDiv() << minCost);
-      }
+
      
      // Convert costs to weights, apply a bias (If uncommented)...
       for (nat32 s=0;s<scope;s++)
@@ -121,10 +111,6 @@ void DispFish::Run(time::Progress * prog)
        Pixel & p = pix.Get(s,x,y);
        p.weight = math::Exp(-(p.weight-minCost));
        //p.weight *= 1.0 - diffWeight*math::Abs(real32(base + int32(s)) - disp.Get(x,y));
-       if ((x==200)&&(y==200)) // *******************************************************
-       {
-        LogDebug("{s,weight}" << LogDiv() << s << LogDiv() << p.weight);
-       }
       }
     }
     prog->Pop();
@@ -198,12 +184,6 @@ void DispFish::Run(time::Progress * prog)
       // Cross product and normalise...
        math::CrossProduct(dx,dy,dir);
        dir.Normalise();
-       
-      if ((x==200)&&(y==200)) // *******************************************************
-      {
-       LogDebug("{b,ix,iy,dx,dy,dir}" << LogDiv() << b << LogDiv() << ix << LogDiv() << iy << LogDiv()
-                << dx << LogDiv() << dy << LogDiv() << dir);
-      }
      }
 
     
@@ -252,12 +232,6 @@ void DispFish::Run(time::Progress * prog)
            rb[rbInd].r = r;
            rb[rbInd].weight = weight;
            ++rbInd;
-           
-           if ((x==200)&&(y==200)) // *******************************************************
-           {
-            LogDebug("{sb,sx,sy,dir,r,weight}" << LogDiv() << sb << LogDiv() << sx << LogDiv()
-                     << sy << LogDiv() << sDir << LogDiv() << r << LogDiv() << weight);
-           }
          }
         }
        }
@@ -307,19 +281,11 @@ void DispFish::Run(time::Progress * prog)
       
       // Clamp...
        k = math::Clamp<real32>(k,minCon,maxCon);
-       if ((x==200)&&(y==200)) // *******************************************************
-       {
-        LogDebug("{k,medR}" << LogDiv() << k << LogDiv() << (medR/1000.0));
-       }
      }
     
     // Store it in the output array...
      out.Get(x,y) = dir;
      out.Get(x,y) *= k;
-    if ((x==200)&&(y==200)) // *******************************************************     
-    {
-     LogDebug("{out}" << LogDiv() << out.Get(x,y));
-    }
    }
    prog->Pop();
   }
