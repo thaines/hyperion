@@ -33,6 +33,7 @@ class LightEst
   gui::EditBox * bfSampleSubdiv;
   gui::EditBox * bfFurtherSubdiv;
   gui::EditBox * bfAlbRecursion;
+  gui::EditBox * bfIrrThresh;
 
 
   gui::Label * lightDir;

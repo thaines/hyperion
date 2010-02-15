@@ -13,7 +13,8 @@ namespace eos
 //------------------------------------------------------------------------------
 LightDir::LightDir()
 :minAlbedo(0.001),maxAlbedo(1.5),ambient(0.0),maxSegCostPP(0.1),lowAlbErr(8192.0),
-segPruneThresh(0.1),subdiv(1),furtherSubdiv(3),recDepth(7),bestLightDir(0.0,0.0,1.0)
+segPruneThresh(0.1),subdiv(1),furtherSubdiv(3),recDepth(7),irrThresh(0.2),
+bestLightDir(0.0,0.0,1.0)
 {}
 
 LightDir::~LightDir()
@@ -61,6 +62,11 @@ void LightDir::SetSampleSubdiv(nat32 sd,nat32 fsd)
 void LightDir::SetRecursion(nat32 depth)
 {
  recDepth = depth;
+}
+
+void LightDir::SetIrrThreshold(real32 thresh)
+{
+ irrThresh = thresh;
 }
 
 void LightDir::Run(time::Progress * prog)
@@ -225,7 +231,7 @@ void LightDir::Run(time::Progress * prog)
    {
     for (nat32 x=0;x<seg.Size(0);x++)
     {
-     if ((!math::IsZero(irr.Get(x,y)))&&(!math::IsZero(dir.Get(x,y).Length())))
+     if ((!math::IsZero(irr.Get(x,y)))&&(irr.Get(x,y)>irrThresh)&&(!math::IsZero(dir.Get(x,y).Length())))
      {
       size[seg.Get(x,y)] += 1;
      }
@@ -249,7 +255,7 @@ void LightDir::Run(time::Progress * prog)
    {
     for (nat32 x=0;x<seg.Size(0);x++)
     {
-     if ((!math::IsZero(irr.Get(x,y)))&&(!math::IsZero(dir.Get(x,y).Length())))
+     if ((!math::IsZero(irr.Get(x,y)))&&(irr.Get(x,y)>irrThresh)&&(!math::IsZero(dir.Get(x,y).Length())))
      {
       nat32 s = seg.Get(x,y);
       Pixel & targ = pixel[offset[s]+size[s]];
