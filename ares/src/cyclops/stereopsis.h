@@ -70,6 +70,7 @@ class Stereopsis
   gui::EditBox * fisherRange;
   gui::EditBox * fisherMin;
   gui::EditBox * fisherMax;
+  gui::EditBox * fisherBias;
   cam::CameraPair pair;
 
 
