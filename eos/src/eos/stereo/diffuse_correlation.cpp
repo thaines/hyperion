@@ -2,6 +2,9 @@
 // Copyright 2009 Tom Haines
 #include "eos/stereo/diffuse_correlation.h"
 
+#include "eos/ds/sort_lists.h"
+
+
 namespace eos
 {
  namespace stereo
@@ -284,8 +287,242 @@ real32 DiffuseCorrelation::DistanceCap() const
 }
 
 //------------------------------------------------------------------------------
+DiffusionCorrelationImage::DiffusionCorrelationImage()
+:distMult(1.0),maximaLimit(8),baseDistCap(1.0),distCapMult(2.0),distCapThreshold(0.5),range(2),steps(5)
+{}
+
+DiffusionCorrelationImage::~DiffusionCorrelationImage()
+{}
+
+void DiffusionCorrelationImage::Set(const bs::LuvRangeDist & d, real32 dm, const bs::LuvRangePyramid & l, const bs::LuvRangePyramid & r)
+{
+ dist = &d;
+ distMult = dm;
+ left = &l;
+ right = &r;
+}
+
+void DiffusionCorrelationImage::Set(nat32 ml, real32 bdc, real32 dcm, real32 dct, nat32 r, nat32 s)
+{
+ maximaLimit = ml;
+ baseDistCap = bdc;
+ distCapMult = dcm;
+ distCapThreshold = dct;
+ range = r;
+ steps = s;
+}
+
+void DiffusionCorrelationImage::Run(time::Progress * prog)
+{
+ prog->Push();
+ 
+ // Find out how many levels we are going to do, construct the data structure to
+ // store our state. Also make the correlation object ready for use.
+  nat32 levels = math::Min(left->Levels(),right->Levels());
+  ds::ArrayDel< ds::SortList<Match> > matches(levels);
+  
+  DiffusionWeight leftDiff;
+  DiffusionWeight rightDiff;
+  RangeDiffusionSlice leftSliceLow;
+  RangeDiffusionSlice leftSliceHigh;
+  RangeDiffusionSlice rightSliceLow;
+  RangeDiffusionSlice rightSliceHigh;
+  DiffuseCorrelation dcLow;
+  DiffuseCorrelation dcHigh;
+  
+  ds::Array<real32> distCap(levels);
+  distCap[0] = baseDistCap;
+  for (nat32 l=1;l<levels;l++) distCap[l] = distCap[l-1] * distCapMult;
 
 
+ // Create result for highest level - its low enough resolution that we can brute force...
+  nat32 l = levels-1;
+  
+  leftDiff.Create(left->Level(l),*dist,distMult);
+  rightDiff.Create(right->Level(l),*dist,distMult);
+  
+  for (nat32 y=0;y<left->Level(l).Height();y++)
+  {
+   leftSliceLow.Create(y,steps,left->Level(l),leftDiff);
+   rightSliceLow.Create(y,steps,right->Level(l),rightDiff);
+   dcLow.Setup(*dist,distCap[l],left->Level(l),leftSliceLow,right->Level(l),rightSliceLow);
+   
+   for (nat32 xLeft=0;xLeft<left->Level(l).Width();xLeft++)
+   {
+    for (nat32 xRight=0;xRight<right->Level(l).Width();xRight++)
+    {
+     Match m;
+     m.y = y;
+     m.xLeft = xLeft;
+     m.xRight = xRight;
+     m.score = dcLow.Cost(xLeft,xRight);
+     
+     matches[l].Add(m);
+    }
+   }
+  }
+
+
+ // Now iterate down to the lower levels, only considering pairings the higher
+ // levels consider to be good enough...
+  while(true)
+  {
+   // Move to the level we need to proccess...
+    l -= 1;
+    
+   // Get the images, setup the diffusion weights...
+    const bs::LuvRangeImage & leftImg = left->Level(l);
+    const bs::LuvRangeImage & rightImg = right->Level(l);
+    
+    leftDiff.Create(leftImg,*dist,distMult);
+    rightDiff.Create(rightImg,*dist,distMult);
+    
+   // Iterate every match in the above layer...
+    int32 prevY = -1; // Dummy value, so we always reset for the first entry.
+    ds::SortList<Match>::Cursor targ = matches[l+1].FrontPtr();
+    while (!targ.Bad())
+    {
+     // Get the match...
+      Match & m = *targ;
+       
+     // Only consider this match if it good enough...
+      if (m.score<(distCap[l+1]*distCapThreshold))
+      {
+       // If the match has a different y coordinate we need to recalculate the
+       // slices and update the correlation calculation objects...
+        if (m.y!=prevY)
+        {
+         prevY = m.y;
+         
+         if (left->HalfHeight())
+         {
+          leftSliceLow.Create(m.y*2,steps,leftImg,leftDiff);
+          rightSliceLow.Create(m.y*2,steps,rightImg,rightDiff);
+          dcLow.Setup(*dist,distCap[l],leftImg,leftSliceLow,rightImg,rightSliceLow);
+
+          leftSliceHigh.Create(m.y*2+1,steps,leftImg,leftDiff);
+          rightSliceHigh.Create(m.y*2+1,steps,rightImg,rightDiff);
+          dcHigh.Setup(*dist,distCap[l],leftImg,leftSliceHigh,rightImg,rightSliceHigh);
+         }
+         else
+         {
+          leftSliceLow.Create(m.y,steps,leftImg,leftDiff);
+          rightSliceLow.Create(m.y,steps,rightImg,rightDiff);
+          dcLow.Setup(*dist,distCap[l],leftImg,leftSliceLow,rightImg,rightSliceLow);
+         }
+        }
+
+       // Iterate the region around the match in the current level, calculating
+       // correlation values where they currently don't exist...
+        int32 lowLeftX = math::Clamp<int32>(m.xLeft*2-1,0,leftImg.Width()-1);
+        int32 highLeftX = math::Clamp<int32>(m.xLeft*2+2,0,leftImg.Width()-1);
+        int32 lowRightX = math::Clamp<int32>(m.xRight*2-1,0,rightImg.Width()-1);
+        int32 highRightX = math::Clamp<int32>(m.xRight*2+2,0,rightImg.Width()-1);
+       
+        for (int32 xLeft=lowLeftX;xLeft<=highLeftX;xLeft++)
+        {
+         for (int32 xRight=lowRightX;xRight<=highRightX;xRight++)
+         {
+          if (left->HalfHeight())
+          {
+           Match mNew;
+           mNew.y = m.y*2;
+           mNew.xLeft = xLeft;
+           mNew.xRight = xRight;
+           mNew.score = dcLow.Cost(xLeft,xRight);
+     
+           matches[l].Add(mNew);
+           
+           mNew.y += 1;
+           mNew.score = dcHigh.Cost(xLeft,xRight);
+           
+           matches[l].Add(mNew);
+          }
+          else
+          {
+           Match mNew;
+           mNew.y = m.y;
+           mNew.xLeft = xLeft;
+           mNew.xRight = xRight;
+           mNew.score = dcLow.Cost(xLeft,xRight);
+     
+           matches[l].Add(mNew);
+          }
+         }
+        }
+      }
+ 
+     // To the next...   
+      ++targ;
+    }
+    
+   // Break if we have just done the full resolution level...
+    if (l==0) break;
+  }
+ 
+ 
+ // At this point we have the correlation scores at the final resolution - copy 
+ // them into our final data structure, noting that we might need to calculate 
+ // some more scores if the user has requested it via large output ranges....
+  // First pass to store the maximas we are interested in...
+  
+  
+  // Now prepare the output data structure...
+  
+  
+  // For each pixel sort its maxima list and output them, best to worst...
+  
+ 
+  // *************************************
+ 
+ 
+ prog->Pop();
+}
+
+int32 DiffusionCorrelationImage::Range() const
+{
+ return range;
+}
+
+nat32 DiffusionCorrelationImage::CountLeft(nat32 x,nat32 y) const
+{
+ nat32 index = y*left->Level(0).Width() + x;
+ return offsetLeft[index+1] - offsetLeft[index];
+}
+
+nat32 DiffusionCorrelationImage::DisparityLeft(nat32 x,nat32 y,nat32 i) const
+{
+ nat32 index = y*left->Level(0).Width() + x;
+ nat32 offset = offsetLeft[index];
+ return dispLeft[offset+i];
+}
+
+real32 DiffusionCorrelationImage::ScoreLeft(nat32 x,nat32 y,nat32 i,int32 offset) const
+{
+ nat32 index = y*left->Level(0).Width() + x;
+ int32 os = (offsetLeft[index] + i) * (range*2+1) + range;
+ return scoreLeft[os + offset];
+}
+
+nat32 DiffusionCorrelationImage::CountRight(nat32 x,nat32 y) const
+{
+ nat32 index = y*right->Level(0).Width() + x;
+ return offsetRight[index+1] - offsetRight[index];
+}
+
+nat32 DiffusionCorrelationImage::DisparityRight(nat32 x,nat32 y,nat32 i) const
+{
+ nat32 index = y*right->Level(0).Width() + x;
+ nat32 offset = offsetRight[index];
+ return dispRight[offset+i];
+}
+
+real32 DiffusionCorrelationImage::ScoreRight(nat32 x,nat32 y,nat32 i,int32 offset) const
+{
+ nat32 index = y*right->Level(0).Width() + x;
+ int32 os = (offsetRight[index] + i) * (range*2+1) + range;
+ return scoreRight[os + offset];
+}
 
 //------------------------------------------------------------------------------
 

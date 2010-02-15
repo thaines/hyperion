@@ -167,37 +167,117 @@ class EOS_CLASS DiffuseCorrelation
 };
 
 //------------------------------------------------------------------------------
-/// A stereopsis algorithm, or at least a post-processor for one. This uses 
-/// correlation to find matches, but then only keeps matches it is really
-/// confident in. Uses a diffusion based correlation score, and colour ranges.
-/// Makes use of a hierachy to reduce computation by pruning the search space;
-/// output is multiple discrete disparity values for each pixel, with 
-/// correlation scores around this value stored for refinement and comparing of
-/// match choices.
-/// Only pixels that return a single disparity value can be considered mostly
-/// reliable.
-/// Algorithm is symetric, providing disparity for both images; no left-right
-/// checking is done at this stage.
-class EOS_CLASS DiffusionCorrelationMatching
+/// This calculates correlation scores for an image pair, using DiffuseCorrelation,
+/// the ultimate result is a list of best matches, i.e. distance minimas for
+/// each pixel in both images; it is symmetric in its output.
+/// Each match will also include its score and the scores of adjacent pixels, so
+/// the positions can be refined beyond discrete coordinates.
+class EOS_CLASS DiffusionCorrelationImage
 {
  public:
   /// &nbsp;
-   DiffusionCorrelationMatching();
+   DiffusionCorrelationImage();
 
   /// &nbsp;
-   ~DiffusionCorrelationMatching();
+   ~DiffusionCorrelationImage();
 
 
-  /// 
+  /// Sets the distance measure and the left and right pyramids.
+  /// The pyramids must have the same height and be constructed with the same
+  /// settings. Halfing the width must always be on.
+  /// Also sets the distance multiplier - this is only used for the diffusion
+  /// when converting from distance to weight, and is not used for the 
+  /// correlation.
+   void Set(const bs::LuvRangeDist & dist, real32 distMult, const bs::LuvRangePyramid & left, const bs::LuvRangePyramid & right);
+   
+  /// Sets various parameters - the maximum number of maximas to store for each
+  /// pixel and the distance cap to use at the base level, the multiplier 
+  /// for it to adjust the distance cap for each higher level, and the multiplier
+  /// to get the threshold for prunning output at each hierachy level.
+  /// range is how many pixels either side of a maxima to store the correlation
+  /// scores for - don't set it too high, range is the diffusion range to use.
+   void Set(nat32 maximaLimit = 8, real32 baseDistCap = 1.0, real32 distCapMult = 2.0, real32 distCapThreshold = 0.5, nat32 range = 2, nat32 steps = 5);
 
+
+  /// Runs the algorithm.
+   void Run(time::Progress * prog = null<time::Progress*>());
+   
+  
+  /// Returns the range that te algorithm was run with.
+   int32 Range() const;
+
+
+  /// Extracts how many maxima exist for a given left pixel.
+  /// Can return 0 if it just doesn't know.
+   nat32 CountLeft(nat32 x,nat32 y) const;
+   
+  /// Extracts the right image x for a given maxima i, for the given pixel in the left image.
+  /// Noet that the maximas will be ordered from best scoring to worst scoring.
+   nat32 DisparityLeft(nat32 x,nat32 y,nat32 i) const;
+   
+  /// Extracts the correlation distance score for the given maxima of the given
+  /// pixel in the left image at the given offset.
+  /// The offset must be in [-range,range]
+   real32 ScoreLeft(nat32 x,nat32 y,nat32 i,int32 offset) const;
+  
+
+  /// Extracts how many maxima exist for a given right pixel.
+  /// Can return 0 if it just doesn't know.
+   nat32 CountRight(nat32 x,nat32 y) const;
+   
+  /// Extracts the right image x for a given maxima i, for the given pixel in the right image.
+  /// Noet that the maximas will be ordered from best scoring to worst scoring.
+   nat32 DisparityRight(nat32 x,nat32 y,nat32 i) const;
+   
+  /// Extracts the correlation distance score for the given maxima of the given
+  /// pixel in the right image at the given offset.
+  /// The offset must be in [-range,range]
+   real32 ScoreRight(nat32 x,nat32 y,nat32 i,int32 offset) const;
 
 
   /// &nbsp;
-   inline cstrconst TypeString() const {return "eos::stereo::DiffusionCorrelationMatching";}
+   inline cstrconst TypeString() const {return "eos::stereo::DiffusionCorrelationImage";}
 
 
  private:
+  // Inputs...
+   const bs::LuvRangeDist * dist;
+   const bs::LuvRangePyramid * left;
+   const bs::LuvRangePyramid * right;
+  
+  // Parameters...
+   real32 distMult;  
+   nat32 maximaLimit;
+   real32 baseDistCap;
+   real32 distCapMult;
+   real32 distCapThreshold;
+   nat32 range;
+   nat32 steps;
 
+  // Outputs...
+   ds::Array<nat32> offsetLeft; // Indexed by y*width + x - gives you the offset into dispLeft to ge thte data for a pixel, and if multiplier by (range*2+1) the offset into scoreLeft. Has on e xtra value so you can determine size by subtracting from the incrimented index.
+   ds::Array<nat32> dispLeft;
+   ds::Array<real32> scoreLeft;
+   
+   ds::Array<nat32> offsetRight;
+   ds::Array<nat32> dispRight;
+   ds::Array<real32> scoreRight;
+   
+  // Runtime...
+   struct Match
+   {
+    int32 y;
+    int32 xLeft;
+    int32 xRight;
+    real32 score;
+    
+    bit operator < (const Match & rhs) const
+    {
+     if (y!=rhs.y) return y<rhs.y;
+     if (xLeft!=rhs.xLeft) return xLeft<rhs.xLeft;
+     return xRight<rhs.xRight;
+    }
+   };
 };
 
 //------------------------------------------------------------------------------
