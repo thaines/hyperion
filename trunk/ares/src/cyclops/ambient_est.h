@@ -38,6 +38,7 @@ class AmbientEst
   gui::Label * results2;
 
   ds::Array<real32> albedo;
+  real32 ambient;
   
   
   math::Func crf;

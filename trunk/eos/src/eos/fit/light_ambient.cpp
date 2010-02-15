@@ -61,18 +61,18 @@ void LightAmb::SetSubdivs(nat32 ambient,nat32 albedo)
 void LightAmb::Run(time::Progress * prog)
 {
  prog->Push();
-  
+
+ // For the progress bar...
+  nat32 step = 0;
+  nat32 steps = 7 + DivSteps(ambientRecDepth);
+
  // Count the number of segments...
+  prog->Report(step++,steps);
   nat32 segCount = 1;
   for (nat32 y=0;y<seg.Size(1);y++)
   {
    for (nat32 x=0;x<seg.Size(0);x++) segCount = math::Max(segCount,seg.Get(x,y)+1);
   }
-
- // For the progress bar...
-  nat32 step = 0;
-  nat32 steps = 1 + seg.Size(1) + segCount + 2 + seg.Size(1) + DivSteps(ambientRecDepth);
-
 
  // Calculate the correlation for each segment...
   {
@@ -99,9 +99,9 @@ void LightAmb::Run(time::Progress * prog)
     }
     
    // Now do a pass over the image and sum up the above for each segment...
+    prog->Report(step++,steps);
     for (nat32 y=0;y<seg.Size(1);y++)
     {
-     prog->Report(step++,steps);
      for (nat32 x=0;x<seg.Size(0);x++)
      {
       real32 l = dir.Get(x,y).Length();
@@ -134,10 +134,10 @@ void LightAmb::Run(time::Progress * prog)
     }
 
    // Now calculate the 0..1 value for every segment, as calculated from correlation...
+    prog->Report(step++,steps);
     cor.Size(segCount);
     for (nat32 s=0;s<segCount;s++)
     {
-     prog->Report(step++,steps);
      if (!math::IsZero(segExp[s].div))
      {
       real32 sqrDivI = (segExp[s].expSqrI/segExp[s].div) - math::Sqr(segExp[s].expI/segExp[s].div);
@@ -212,9 +212,9 @@ void LightAmb::Run(time::Progress * prog)
     pixel.Size(pixelOffset[segCount]);
   
    // And finally fill in the pixel buffer...
+    prog->Report(step++,steps);
     for (nat32 y=0;y<seg.Size(1);y++)
     {
-     prog->Report(step++,steps);
      for (nat32 x=0;x<seg.Size(0);x++)
      {
       if ((!math::IsZero(irr.Get(x,y)))&&(!math::IsZero(dir.Get(x,y).Length())))
