@@ -49,8 +49,8 @@ class EOS_CLASS DispFish
   /// Default is 3
    void SetRange(nat32 range);
    
-  /// Sets the maximum allowed concentration. Defaults to 24.
-   void SetMax(real32 maxCon);
+  /// Sets the clamping range for the concentration, defaults to 1 to 24.
+   void SetClamp(real32 minCon,real32 maxCon);
 
 
   /// Runs the algorithm.
@@ -74,6 +74,7 @@ class EOS_CLASS DispFish
    const stereo::DSC * dsc;
    cam::CameraPair pair;
    nat32 range;
+   real32 minCon;
    real32 maxCon;
    
   // Output...

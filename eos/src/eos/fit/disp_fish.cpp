@@ -12,7 +12,7 @@ namespace eos
  {
 //------------------------------------------------------------------------------
 DispFish::DispFish()
-:range(3),maxCon(24.0)
+:range(3),minCon(1.0),maxCon(24.0)
 {}
 
 DispFish::~DispFish()
@@ -34,9 +34,10 @@ void DispFish::SetRange(nat32 r)
  range = r;
 }
 
-void DispFish::SetMax(real32 mc)
+void DispFish::SetClamp(real32 minC,real32 maxC)
 {
- maxCon = mc;
+ minCon = minC;
+ maxCon = maxC;
 }
 
 void DispFish::Run(time::Progress * prog)
@@ -190,7 +191,7 @@ void DispFish::Run(time::Progress * prog)
        }
        
       // Convert to concentration...
-       k = math::Min<real32>(1.0/invK,maxCon);
+       k = math::Clamp<real32>(1.0/invK,minCon,maxCon);
      }
     
     // Store it in the output array...
