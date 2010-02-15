@@ -4,6 +4,7 @@
 
 #include "eos/ds/sort_lists.h"
 #include "eos/ds/priority_queues.h"
+#include "eos/file/csv.h"
 
 namespace eos
 {
@@ -55,7 +56,7 @@ void DiffusionWeight::Create(const bs::LuvRangeImage & img, const bs::LuvRangeDi
      {
       if (math::IsFinite(weight.dir[d]))
       {
-       weight.dir[d] = -math::Exp(distMult * (weight.dir[d]-low));
+       weight.dir[d] = math::Exp(-distMult * (weight.dir[d]-low));
        weightSum += weight.dir[d];
       }
       else weight.dir[d] = 0.0;
@@ -400,7 +401,7 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
      // Get the match...
       Match & m = *targ;
        
-     // Only consider this match if it good enough...
+     // Only consider this match if it is good enough...
       if (m.score<(distCap[l+1]*distCapThreshold))
       {
        // If the match has a different y coordinate we need to recalculate the
@@ -444,14 +445,18 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
            mNew.y = m.y*2;
            mNew.xLeft = xLeft;
            mNew.xRight = xRight;
-           mNew.score = dcLow.Cost(xLeft,xRight);
-     
-           matches[l].Add(mNew);
+           if (matches[l].Get(mNew)==null<Match*>())
+           {
+            mNew.score = dcLow.Cost(xLeft,xRight);
+            matches[l].Add(mNew);
+           }
            
            mNew.y += 1;
-           mNew.score = dcHigh.Cost(xLeft,xRight);
-           
-           matches[l].Add(mNew);
+           if ((mNew.y<int32(leftImg.Height()))&&(matches[l].Get(mNew)==null<Match*>()))
+           {
+            mNew.score = dcHigh.Cost(xLeft,xRight);
+            matches[l].Add(mNew);
+           }
           }
           else
           {
@@ -459,9 +464,12 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
            mNew.y = m.y;
            mNew.xLeft = xLeft;
            mNew.xRight = xRight;
-           mNew.score = dcLow.Cost(xLeft,xRight);
-     
-           matches[l].Add(mNew);
+           
+           if (matches[l].Get(mNew)==null<Match*>())
+           {
+            mNew.score = dcLow.Cost(xLeft,xRight);
+            matches[l].Add(mNew);
+           }
           }
          }
         }
@@ -487,6 +495,13 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
    ds::ArrayDel<ds::PriorityQueue<Disp> > minimaLeft(left->Level(0).Width() * left->Level(0).Height());
    ds::ArrayDel<ds::PriorityQueue<Disp> > minimaRight(right->Level(0).Width() * right->Level(0).Height());
 
+   nat32 finalNotLow = 0;
+   nat32 finalNegLeft = 0;
+   nat32 finalPosLeft = 0;
+   nat32 finalNegRight = 0;
+   nat32 finalPosRight = 0;
+   nat32 finalPassed = 0;
+
    prog->Push();
    if (matches[0].Size()!=0)
    {
@@ -496,23 +511,28 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
     {
      prog->Report(step2++,steps2);
      // Get the match...
-      Match & m = *targ;
+      Match m = *targ;
+      
+      //LogDebug("{y,xLeft,xRight,score}" << LogDiv() << m.y << LogDiv() << m.xLeft << LogDiv() << m.xRight << LogDiv() << m.score);
      
      // Determine if its a minima...
       real32 minScore = m.score;
-      bit ok = m.score < (baseDistCap*distCapThreshold);
+      bit ok = minScore < (baseDistCap*distCapThreshold);
+      if (!ok) finalNotLow++;
       
       // Check negative for left image...
-       if (ok) 
+       if (ok)
        {
         for (nat32 i=0;i<range;i++)
         {
          m.xLeft -= 1;
          Match * p = matches[0].Get(m);
-         if (p==null<Match*>()) ok = false;
-                           else ok = ok && (p->score > minScore);
+         //if (p==null<Match*>()) ok = false;
+         //                  else ok = ok && (p->score > minScore);
+         if (p!=null<Match*>()) ok = ok && (p->score > minScore);
         }
         m.xLeft += range;
+        if (!ok) finalNegLeft++;
        }
  
       // Check positive for left image...
@@ -526,6 +546,7 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
                            else ok = ok && (p->score > minScore);
         }
         m.xLeft -= range;
+        if (!ok) finalPosLeft++;
        }
        
       // Check negative for right image...
@@ -539,6 +560,7 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
                            else ok = ok && (p->score > minScore);
         }
         m.xRight += range;
+        if (!ok) finalNegRight++;
        }
  
       // Check positive for right image...
@@ -552,11 +574,14 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
                            else ok = ok && (p->score > minScore);
         }
         m.xRight -= range;
+        if (!ok) finalPosRight++;
        }
        
       // If all tests have been passed store it...
        if (ok)
        {
+        finalPassed++;
+
         Disp l;
         l.d = m.xRight - m.xLeft;
         l.score = m.score;
@@ -573,6 +598,9 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
       ++targ;
     }
    }
+   else {LogDebug("No matches in final layer");}
+   
+   LogDebug("Final layer pruning {not low enough,neg left lower,pos left lower,neg right lower,pos right lower,passed}" << LogDiv() << finalNotLow << LogDiv() << finalNegLeft << LogDiv() << finalPosLeft << LogDiv() << finalNegRight << LogDiv() << finalPosRight << LogDiv() << finalPassed);
    prog->Pop();
 
 
@@ -592,6 +620,8 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
    {
     offsetRight[i] = math::Min(minimaRight[i-1].Size(),minimaLimit) + offsetRight[i-1];
    }
+   LogDebug("match counts {left,right}" << LogDiv()
+            << offsetLeft[offsetLeft.Size()-1] << LogDiv() << offsetRight[offsetRight.Size()-1]);
 
 
    dispLeft.Size(offsetLeft[offsetLeft.Size()-1]);
@@ -803,6 +833,13 @@ void DiffCorrStereo::Run(time::Progress * prog)
  // enough...
   prog->Report(2,3);
   
+  // Stats...
+   nat32 noMatches = 0;
+   nat32 otherUnmatched = 0;
+   nat32 notBetter = 0;
+   nat32 failsLR = 0;
+   nat32 passes = 0;
+  
   prog->Push();
   disp.Resize(left.Size(0),left.Size(1));
   sd.Resize(left.Size(0),left.Size(1));
@@ -819,15 +856,15 @@ void DiffCorrStereo::Run(time::Progress * prog)
       sd.Get(x,y) = -1.0;
       
      // Check it actually has a minima to consider...
-      if (dci.CountLeft(x,y)==0) continue;
+      if (dci.CountLeft(x,y)==0) {noMatches++; continue;}
       nat32 rx = int32(x) + dci.DisparityLeft(x,y,0);
       nat32 ry = y;
      
      // Left-right consistancy check...
       if (doLR)
       {
-       if (dci.CountRight(rx,ry)==0) continue;
-       if (int32(rx)+dci.DisparityRight(rx,ry,0)!=int32(x)) continue;
+       if (dci.CountRight(rx,ry)==0) {otherUnmatched++;continue;}
+       if (int32(rx)+dci.DisparityRight(rx,ry,0)!=int32(x)) {failsLR++;continue;}
       }
      
      // Sufficiently better than alternative matches in *both* images...
@@ -835,12 +872,12 @@ void DiffCorrStereo::Run(time::Progress * prog)
       
       if (dci.CountLeft(x,y)>1)
       {
-       if (dci.ScoreLeft(x,y,0,0)-dci.ScoreLeft(x,y,1,0) < thresh) continue;
+       if (dci.ScoreLeft(x,y,0,0)-dci.ScoreLeft(x,y,1,0) < thresh) {notBetter++;continue;}
       }
      
       if (dci.CountRight(rx,ry)>1)
       {
-       if (dci.ScoreRight(rx,ry,0,0)-dci.ScoreRight(rx,ry,1,0) < thresh) continue;
+       if (dci.ScoreRight(rx,ry,0,0)-dci.ScoreRight(rx,ry,1,0) < thresh) {notBetter++;continue;}
       }
 
      
@@ -848,6 +885,8 @@ void DiffCorrStereo::Run(time::Progress * prog)
      // polynomial fitting, we take an average of the offset values from both
      // images to maintain symmetry. The fitting itself is done by matching area
      // under the curve, as our correlations are for regions...
+      passes++;
+
       real32 p = 0.5*(dci.ScoreLeft(x,y,0,-1) + dci.ScoreRight(rx,ry,0,-1));
       real32 q = 0.5*(dci.ScoreLeft(x,y,0, 0) + dci.ScoreRight(rx,ry,0, 0));
       real32 r = 0.5*(dci.ScoreLeft(x,y,0, 1) + dci.ScoreRight(rx,ry,0, 1));
@@ -859,6 +898,11 @@ void DiffCorrStereo::Run(time::Progress * prog)
       sd.Get(x,y) = 1.0; // Code me! ********************************************
    }
   }
+  
+  LogDebug("final stats {no matches,right unmatched,not better,fails l-r,ok}" << LogDiv() 
+           << noMatches << LogDiv() << otherUnmatched << LogDiv() << notBetter << LogDiv()
+           << failsLR << LogDiv() << passes);
+
   prog->Pop();
  
  prog->Pop();
