@@ -27,6 +27,9 @@ lin_debug:
 lin_docs:
 	@make PLATFORM=lin docs
 
+lin_line_count:
+	@make -j 2 PLATFORM=lin line_count
+
 win_release:
 	@mingw32-make -j 2 PLATFORM=win TYPE=release all
 
@@ -39,6 +42,9 @@ win_debug:
 win_docs:
 	@mingw32-make PLATFORM=win docs
 
+win_line_count:
+	@mingw32-make -j 2 PLATFORM=win line_count
+
 
 clean:
 	-$(RMDIR) obj
@@ -46,7 +52,7 @@ clean:
 	-rm out.txt
 
 
-all: eos prep_final line_count
+all: eos prep_final
 	@echo Done
 
 
@@ -982,6 +988,10 @@ ifeq ($(PLATFORM),win)
 prep_final: $(DIRS)
 	-cp $(DEVIL)/devil.dll $(OUT)
 	#-cp $(ZLIB)/zlib1.dll $(OUT)
+
+line_count:
+	@echo Line Count:
+	@find src -exec cat {} \; -name "*.h" -or -name "*.cpp" 2> /dev/null | grep -c ""
 endif
 
 ifeq ($(PLATFORM),lin)
@@ -989,12 +999,11 @@ prep_final: eos
 	-cp $(DEVIL)/libIL.so $(OUT)
 	ln -sf libeos.so.1.0 $(OUT)/libeos.so.1
 	ln -sf libeos.so.1 $(OUT)/libeos.so
-endif
 
-
-line_count: eos prep_final
+line_count:
 	@echo Line Count:
-	@find src -exec cat {} \; -name "*.h" -or -name "*.cpp" 2> /dev/null | grep -c ""
+	@find src -type f -and \( -name "*.h" -or -name "*.cpp" \) -print 2> /dev/null | xargs cat | wc -l
+endif
 
 
 
