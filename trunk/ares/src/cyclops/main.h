@@ -84,6 +84,7 @@ class Cyclops
   void StartAmbientEst(gui::Base * obj,gui::Event * event);
   void StartSphereFitter(gui::Base * obj,gui::Event * event);
   void StartStereoSfS(gui::Base * obj,gui::Event * event);
+  void StartAlbedoEst(gui::Base * obj,gui::Event * event);
 };
 
 //------------------------------------------------------------------------------
