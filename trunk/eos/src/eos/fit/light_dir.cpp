@@ -296,18 +296,20 @@ void LightDir::Run(time::Progress * prog)
   
   
  // Do the refinement passes...
+  ds::ArrayResize<fit::SubDivSphere::Tri> tris;
   for (nat32 r=0;r<furtherSubdiv;r++)
   {
    // Find the index of the lowest costed direction...
     nat32 best = 0;
     for (nat32 l=1;l<lc.Size();l++)
     {
-     if (lc[l].cost<lc[best].cost) best = l;
+     if ((lc[l].dir[2]>=0.0)&&(lc[l].cost<lc[best].cost)) best = l;
     }
+    best = lc[best].index;
     
    // Find all triangles that use the lowest costed direction but don't have
    // children...
-    ds::ArrayResize<fit::SubDivSphere::Tri> tris;
+    tris.Size(0);
     for (nat32 t=0;t<sds.TriCount();t++)
     {
      if ((sds.HasChildren(t)==false)&&((sds.IndA(t)==best)||(sds.IndB(t)==best)||(sds.IndC(t)==best)))
@@ -323,29 +325,39 @@ void LightDir::Run(time::Progress * prog)
    // Iterate the triangles, subdivide, and make the new samples...
     for (nat32 t=0;t<tris.Size();t++)
     {
+     nat32 alreadyDone = sds.VertCount();
+    
      sds.SubDivide(tris[t]);
      fit::SubDivSphere::Tri targ = sds.GetM(tris[t]);
      
      for (nat32 v=0;v<3;v++)
      {
-      // Basic setup of storage for the new light cost...
-       nat32 ind = lc.Size();
-       lc.Size(ind+1);
-       lc[ind].dir = sds.Vert(targ,v);
-       lc[ind].cost = 0.0;
-       lc[ind].index = sds.Ind(targ,v);
+      if (sds.Ind(targ,v)>=alreadyDone)
+      {
+       // Basic setup of storage for the new light cost...
+        nat32 ind = lc.Size();
+        lc.Size(ind+1);
+        lc[ind].dir = sds.Vert(targ,v);
+        lc[ind].cost = 0.0;
+        lc[ind].index = sds.Ind(targ,v);
        
-      // Iterate the segments - cost 'em all and sum it in...
-       for (nat32 s=0;s<segCount;s++)
-       {
-        prog->Report(step++,steps);
-        nat32 segSize = offset[s+1] - offset[s];
-        if ((segSize!=0)&&(cor[s]>segPruneThresh))
+       // Iterate the segments - cost 'em all and sum it in...
+        for (nat32 s=0;s<segCount;s++)
         {
-         real32 cost = SegLightCost(lc[ind].dir,recDepth,pixel,offset[s],segSize,tAux,tWork);
-         lc[ind].cost += math::Min(cost-minSegCost[s],maxSegCostPP*segSize);
+         prog->Report(step++,steps);
+         nat32 segSize = offset[s+1] - offset[s];
+         if ((segSize!=0)&&(cor[s]>segPruneThresh))
+         {
+          real32 cost = SegLightCost(lc[ind].dir,recDepth,pixel,offset[s],segSize,tAux,tWork);
+          lc[ind].cost += math::Min(cost-minSegCost[s],maxSegCostPP*segSize);
+         }
         }
-       }
+      }
+      else
+      {
+       prog->Report(step,steps);
+       step += segCount;
+      }
      }
     }
   }

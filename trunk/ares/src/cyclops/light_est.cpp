@@ -726,7 +726,7 @@ void LightEst::Update()
         real32 dirX = (x-centX)/radius;
         real32 dirY = (y-centY)/radius;
 
-        real32 l;
+        real32 l = -1.0;
         if (math::Sqr(dirX)+math::Sqr(dirY)<1.0)
         {
          ds::Delaunay2D<real32>::Mid tri = doc.Triangle(dirX,dirY);
@@ -805,6 +805,19 @@ void LightEst::Update()
          image.Get(x,y).b = 0.5;
         }
         else image.Get(x,y) /= max;
+       }
+      }
+      
+     // Mark sampling locations...
+      for (nat32 i=0;i<samples.Size();i++)
+      {
+       if ((samples[i].dir[2]>0.0)||(math::IsZero(samples[i].dir[2])))
+       {
+        nat32 x = nat32(samples[i].dir[0]*radius + centX);
+        nat32 y = nat32(samples[i].dir[1]*radius + centY);
+
+        image.Get(x,y).r = 1.0;        
+        image.Get(x,y).g = 0.0;
        }
       }
     }
