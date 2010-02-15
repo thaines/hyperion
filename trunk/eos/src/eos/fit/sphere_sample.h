@@ -68,7 +68,21 @@ class EOS_CLASS SubDivSphere
   /// Returns true if the triangle at the same subdivision level connected to 
   /// edge c exists.
    bit HasAdjC(Tri tri) const {return tris[tri].adj[2]!=nat32(-1);}
+   
+   
+  /// Returns the area of the given triangle. (As a triangle, not on the sphere surface.)
+   real32 Area(Tri tri) const;
+   
+  /// This calls subdivide starting from the top triangle level a given number
+  /// of times - 0 means to do nothing, 1 will subdivide each triangle at the top level,
+  /// 2 will do the top level and then each of its children, etc.
+  /// Don't set to high - this is obviously an exponential process.
+   void DivideAll(nat32 levels);
 
+
+  /// Returns a unique increasing integer for the vertex at the given index,
+  /// as shared by all triangles.
+   nat32 Ind(Tri tri,nat32 ind) const {return tris[tri].vertInd[ind];}
 
   /// Returns a unique increasing integer for the vertex at node A, shared by
   /// all triangles.
@@ -85,6 +99,9 @@ class EOS_CLASS SubDivSphere
   /// Gets the vertex associated with the given index returned by an Ind method.
   /// Note that these are contiguous - you can go from 0..VertCount() to get 'em all.
    const bs::Normal & Vert(nat32 ind) const {return verts[ind];}
+   
+  /// Returns the vertex at the vertex indexed by 0..2
+   const bs::Normal & Vert(Tri tri,nat32 ind) const {return verts[tris[tri].vertInd[ind]];}
    
   /// Returns the vertex at node A.
    const bs::Normal & A(Tri tri) const {return verts[tris[tri].vertInd[0]];}
@@ -171,6 +188,7 @@ class EOS_CLASS SubDivSphere
   /// normalise if need be.
   /// In use with collide allows for linear interpolation of any value to any
   /// given direction.
+  /// (The coordinates do not factor in the sphere.)
    void Trilinear(Tri tri,const bs::Normal & dir,real32 & a,real32 & b,real32 & c) const;
   
   
@@ -183,6 +201,12 @@ class EOS_CLASS SubDivSphere
   /// Given a triangle this subdivides that triangle into 4 smaller triangles,
   /// does nothing if the triangle has already been subdivided.
    void SubDivide(Tri tri);
+   
+  /// Subdivides the given triangle recursivly, taking it down to a fine 
+  /// resolution if need be. For levels=0 nothing happens, for 1 its the same as
+  /// SubDivide, for 2 its subdivide then subdivide on each of the children, etc.
+  /// This is addative to any subdivisions so far.
+   void RecSubDivide(Tri tri,nat32 levels);
 
 
   /// &nbsp;

@@ -30,6 +30,7 @@ class LightEst
   gui::EditBox * bfPruneThresh;
   gui::EditBox * bfIrrErr;
   gui::EditBox * bfSampleSubdiv;
+  gui::EditBox * bfFurtherSubdiv;
   gui::EditBox * bfAlbRecursion;
 
 

@@ -3,6 +3,7 @@
 #include "eos/fit/light_dir.h"
 
 #include "eos/alg/shapes.h"
+#include "eos/fit/sphere_sample.h"
 #include "eos/file/csv.h"
 
 namespace eos
@@ -11,8 +12,8 @@ namespace eos
  {
 //------------------------------------------------------------------------------
 LightDir::LightDir()
-:minAlbedo(0.001),maxAlbedo(3.0),maxSegCostPP(0.1),lowAlbErr(8192.0),segPruneThresh(0.3),
-subdiv(4),recDepth(8),bestLightDir(0.0,0.0,1.0)
+:minAlbedo(0.001),maxAlbedo(3.0),maxSegCostPP(0.1),lowAlbErr(8192.0),segPruneThresh(0.1),
+subdiv(1),furtherSubdiv(3),recDepth(8),bestLightDir(0.0,0.0,1.0)
 {}
 
 LightDir::~LightDir()
@@ -45,9 +46,10 @@ void LightDir::SetPruneThresh(real32 cor)
  segPruneThresh = cor;
 }
 
-void LightDir::SetSampleSubdiv(nat32 sd)
+void LightDir::SetSampleSubdiv(nat32 sd,nat32 fsd)
 {
  subdiv = sd;
+ furtherSubdiv = fsd;
 }
 
 void LightDir::SetRecursion(nat32 depth)
@@ -67,11 +69,37 @@ void LightDir::Run(time::Progress * prog)
    for (nat32 x=0;x<seg.Size(0);x++) segCount = math::Max(segCount,seg.Get(x,y)+1);
   }
 
+
+ // Generate the sampling set of light source directions to sample, for the 
+ // initial pass...
+  fit::SubDivSphere sds;
+  sds.DivideAll(subdiv);
+  
+  nat32 lightCount = 0;
+  for (nat32 i=0;i<sds.VertCount();i++)
+  {
+   if (!(sds.Vert(i)[2]<0.0)) lightCount += 1;
+  }
+  lc.Size(lightCount);
+  
+  lightCount = 0;
+  for (nat32 i=0;i<sds.VertCount();i++)
+  {
+   if (!(sds.Vert(i)[2]<0.0))
+   {
+    lc[lightCount].dir = sds.Vert(i);
+    lc[lightCount].cost = 0.0;
+    lc[lightCount].index = i;
+    lightCount += 1;
+   }
+  }
+
+
  // Prep for logging...
   nat32 step = 0;
-  nat32 steps = 5 + segCount + 3;
-  
- 
+  nat32 steps = 5 + segCount*lightCount + furtherSubdiv*6*3*segCount + 1 + segCount;
+
+
  // Calculate the correlation for each segment...
   prog->Report(step++,steps);
   prog->Push();
@@ -175,14 +203,6 @@ void LightDir::Run(time::Progress * prog)
     }
   }
   prog->Pop();
- 
- 
- 
- // Generate the sampling set of light source directions to sample...
-  prog->Report(step++,steps);
-  alg::HemiOfNorm hon(subdiv);
-  lc.Size(hon.Norms());
-  for (nat32 i=0;i<lc.Size();i++) lc[i].dir = hon.Norm(i);
 
 
 
@@ -236,37 +256,96 @@ void LightDir::Run(time::Progress * prog)
    }
 
 
- // Now iterate the light sources and segments and sum up the costs...
+
+ // Now iterate the light sources and segments and sum up the costs, for the 
+ // initial segmentation...
   prog->Report(step++,steps);
   ds::Array<real32> segCost(lc.Size());
+  ds::Array<real32> minSegCost(segCount);
   ds::Array<PixelAux> tAux(maxSegSize);
   ds::PriorityQueue<CostRange> tWork(recDepth*4);
  
-  for (nat32 l=0;l<lc.Size();l++) lc[l].cost = 0.0;
-
   for (nat32 s=0;s<segCount;s++)
   {
-   prog->Report(step++,steps);
    nat32 segSize = offset[s+1] - offset[s];
    if ((segSize!=0)&&(cor[s]>segPruneThresh))
    {
-    prog->Push();
     for (nat32 l=0;l<lc.Size();l++)
     {
-     prog->Report(l,lc.Size());
+     prog->Report(step++,steps);
      segCost[l] = SegLightCost(lc[l].dir,recDepth,pixel,offset[s],segSize, 
                               tAux,tWork);
     }
-    prog->Pop();
    
-    real32 minLightCost = math::Infinity<real32>();
-    for (nat32 l=0;l<lc.Size();l++) minLightCost = math::Min(minLightCost,segCost[l]);
+    minSegCost[s] = math::Infinity<real32>();
+    for (nat32 l=0;l<lc.Size();l++) minSegCost[s] = math::Min(minSegCost[s],segCost[l]);
 
-    for (nat32 l=0;l<lc.Size();l++) lc[l].cost += math::Min(segCost[l]-minLightCost,maxSegCostPP*segSize);
+    for (nat32 l=0;l<lc.Size();l++) lc[l].cost += math::Min(segCost[l]-minSegCost[s],maxSegCostPP*segSize);
+   }
+   else
+   {
+    step += lc.Size();
    }
   }
+  
+  
+ // Do the refinement passes...
+  for (nat32 r=0;r<furtherSubdiv;r++)
+  {
+   // Find the index of the lowest costed direction...
+    nat32 best = 0;
+    for (nat32 l=1;l<lc.Size();l++)
+    {
+     if (lc[l].cost<lc[best].cost) best = l;
+    }
+    
+   // Find all triangles that use the lowest costed direction but don't have
+   // children...
+    ds::ArrayResize<fit::SubDivSphere::Tri> tris;
+    for (nat32 t=0;t<sds.TriCount();t++)
+    {
+     if ((sds.HasChildren(t)==false)&&((sds.IndA(t)==best)||(sds.IndB(t)==best)||(sds.IndC(t)==best)))
+     {
+      nat32 ind = tris.Size();
+      tris.Size(ind+1);
+      tris[ind] = t;
+     }
+    }
+   
+    steps = int32(steps) + (int32(tris.Size())-6)*3*int32(segCount);
+   
+   // Iterate the triangles, subdivide, and make the new samples...
+    for (nat32 t=0;t<tris.Size();t++)
+    {
+     sds.SubDivide(tris[t]);
+     fit::SubDivSphere::Tri targ = sds.GetM(tris[t]);
+     
+     for (nat32 v=0;v<3;v++)
+     {
+      // Basic setup of storage for the new light cost...
+       nat32 ind = lc.Size();
+       lc.Size(ind+1);
+       lc[ind].dir = sds.Vert(targ,v);
+       lc[ind].cost = 0.0;
+       lc[ind].index = sds.Ind(targ,v);
+       
+      // Iterate the segments - cost 'em all and sum it in...
+       for (nat32 s=0;s<segCount;s++)
+       {
+        prog->Report(step++,steps);
+        nat32 segSize = offset[s+1] - offset[s];
+        if ((segSize!=0)&&(cor[s]>segPruneThresh))
+        {
+         real32 cost = SegLightCost(lc[ind].dir,recDepth,pixel,offset[s],segSize,tAux,tWork);
+         lc[ind].cost += math::Min(cost-minSegCost[s],maxSegCostPP*segSize);
+        }
+       }
+     }
+    }
+  }
 
- 
+
+
  // Find the lowest costed light source direction and store as the best...
   prog->Report(step++,steps);
   nat32 best = 0;
@@ -278,12 +357,10 @@ void LightDir::Run(time::Progress * prog)
 
 
  // Calculate an albedo map using the choosen light source direction...
-  prog->Report(step++,steps);
   albedo.Size(segCount);
-  prog->Push();
   for (nat32 s=0;s<segCount;s++)
   {
-   prog->Report(s,segCount);
+   prog->Report(step++,steps);
    if (offset[s+1]!=offset[s])
    {
     SegLightCost(bestLightDir,recDepth, pixel,offset[s],offset[s+1]-offset[s], 
@@ -291,7 +368,6 @@ void LightDir::Run(time::Progress * prog)
    }
    else albedo[s] = 0.0;
   }
-  prog->Pop();
 
 
  prog->Pop();
@@ -328,6 +404,7 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
   if (bestAlbedo) *bestAlbedo = 0.0;
   return math::Infinity<real32>();
  }
+ 
  LogTime("eos::fit::LightDir::SegLightCost");
 
  // First fill in tAux from the data and lightDir...

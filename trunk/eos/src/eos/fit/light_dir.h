@@ -12,6 +12,8 @@
 #include "eos/time/progress.h"
 #include "eos/bs/geo3d.h"
 #include "eos/ds/priority_queues.h"
+#include "eos/ds/arrays.h"
+#include "eos/ds/arrays_resize.h"
 #include "eos/svt/field.h"
 
 
@@ -54,13 +56,17 @@ class EOS_CLASS LightDir
   /// Sets the thresholding for pruning segments - if the information in a
   /// segment gets a correlation less than this it is ignored. Segments with 
   /// constant colour are ignored anyway for not having a standard deviation.
-  /// Defauolts to 0.3
+  /// Defaults to 0.1
    void SetPruneThresh(real32 cor);
    
-  /// Sets the number of subdivision of the alg::HemiOfNorm class used to 
-  /// generate light source directions to sample.
-  /// Defaults to 4.
-   void SetSampleSubdiv(nat32 subdiv);
+  /// Sets the number of subdivision of the fit::SubDivSphere class used to 
+  /// generate light source directions to sample in the first place and then
+  /// the number of further subdivisions it does around the best value to refine
+  /// the direction.
+  /// Defaults to 1 for initial, 3 for further.
+  /// (Further equates to around 18 samples per level, so 3 is 54 extra samples,
+  /// whilst 1 initial is 25 samples to start with. (0 initial is 8, 2 is 625.)
+   void SetSampleSubdiv(nat32 subdiv,nat32 furtherSubdiv);
   
   /// Sets the recursionn depth when finding the optimal albedo value via a 
   /// recursive search. Defaults to 8.
@@ -107,6 +113,7 @@ class EOS_CLASS LightDir
    real32 lowAlbErr;
    real32 segPruneThresh;
    nat32 subdiv;
+   nat32 furtherSubdiv;
    nat32 recDepth;
    
   // Input...
@@ -121,8 +128,9 @@ class EOS_CLASS LightDir
    {
     bs::Normal dir; // Actually a fisher distribution.
     real32 cost;
+    nat32 index;
    };
-   ds::Array<LightCost> lc; // Cost for each light source direction - for diagnostics really.
+   ds::ArrayResize<LightCost> lc; // Cost for each light source direction - for diagnostics really.
    
    ds::Array<real32> albedo; // Albedo for each segment number.
    ds::Array<real32> cor; // Correlation for each segment.
