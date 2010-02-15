@@ -81,7 +81,7 @@ ifeq ($(PLATFORM),win)
 endif
 
 ifeq ($(PLATFORM),lin)
- EXTRA_OPT	= -msse2 -mfpmath=sse
+ EXTRA_OPT	= #-msse2 -mfpmath=sse
 endif
 
 COMMON_C	= -mmmx -m3dnow $(EXTRA_OPT) -ffast-math -c -Wall -Wfloat-equal $(INCLUDE) -DEOS_DLL -DEOS_X86
