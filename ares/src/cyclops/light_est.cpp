@@ -425,7 +425,7 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
   {
    samples[i].cost = ld.SampleCost(i);
    samples[i].dir = ld.SampleDir(i);
-   LogDebug("sample {dir,cost}" << LogDiv() << samples[i].dir << LogDiv() << samples[i].cost);
+   //LogDebug("sample {dir,cost}" << LogDiv() << samples[i].dir << LogDiv() << samples[i].cost);
   }
   
   albedo.Size(ld.SegmentCount());
