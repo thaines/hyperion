@@ -32,36 +32,36 @@ class EOS_CLASS LightDir
    
   /// &nbsp;
    ~LightDir();
-   
-   
+
+
   /// Sets the 3 non-optional inputs - the segmentation, the irradiance and the
   /// surface orientation Fisher distributions.
    void SetData(svt::Field<nat32> seg,svt::Field<real32> irr,svt::Field<math::Fisher> dir);
-   
+
   /// Sets the albedo range to consider, noting that we presume a light source
   /// of strength 1 with no falloff. Defaults to 0.001 to 1.5
    void SetAlbRange(real32 min,real32 max);
-  
+
   /// Sets the presumed ambient term, defaults to 0.
    void SetAmbient(real32 ambient);
-   
+
   /// Sets the maximum cost per segment per pixel, relative to the minimum cost
   /// of that segment - used to cap influence so no one segment biases things 
   /// too strongly. Defaults to 0.1
    void SetSegCapPP(real32 maxCost);
-   
+
   /// Sets the irradiance errors standard deviation, this only matters for
   /// calculating error when albedo is less than irradiance, as too small to
   /// consider in other situations.
   /// Default is 1/128, i.e. 2 values for a 2^8 colour image.
    void SetIrrErr(real32 sd);
-   
+
   /// Sets the thresholding for pruning segments - if the information in a
   /// segment gets a correlation less than this it is ignored. Segments with 
   /// constant colour are ignored anyway for not having a standard deviation.
   /// Defaults to 0.1
    void SetPruneThresh(real32 cor);
-   
+
   /// Sets the number of subdivision of the fit::SubDivSphere class used to 
   /// generate light source directions to sample in the first place and then
   /// the number of further subdivisions it does around the best value to refine
@@ -70,10 +70,14 @@ class EOS_CLASS LightDir
   /// (Further equates to around 18 samples per level, so 3 is 54 extra samples,
   /// whilst 1 initial is 25 samples to start with. (0 initial is 8, 2 is 625.)
    void SetSampleSubdiv(nat32 subdiv,nat32 furtherSubdiv);
-  
+
   /// Sets the recursion depth when finding the optimal albedo value via
   /// branch and bound. Defaults to 7.
    void SetRecursion(nat32 depth);
+
+  /// Sets the irradiance threshold - anything lower than this is ignored for
+  /// being too low/background/shadowed. Defaults to 0.2
+   void SetIrrThreshold(real32 thresh);
   
   
   /// &nbsp;
@@ -119,6 +123,7 @@ class EOS_CLASS LightDir
    nat32 subdiv;
    nat32 furtherSubdiv;
    nat32 recDepth;
+   real32 irrThresh;
    
   // Input...
    svt::Field<nat32> seg;

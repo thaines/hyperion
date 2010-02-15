@@ -91,10 +91,10 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    but6->SetChild(lab6); lab6->Set("Save View...");   
    
    ambient = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   gui::Label * lab15 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab16 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    
    ambient->Set("0.0");
-   lab15->Set(" Ambient:");
+   lab16->Set(" Ambient:");
 
 
    viewSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
@@ -119,7 +119,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    horiz1->AttachRight(but2,false);
    horiz1->AttachRight(but3,false);
    horiz1->AttachRight(but4,false);
-   horiz1->AttachRight(lab15,false);
+   horiz1->AttachRight(lab16,false);
    horiz1->AttachRight(ambient,false);
    horiz2->AttachRight(viewSelect,false);
    horiz2->AttachRight(algSelect,false);
@@ -149,6 +149,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    gui::Label * lab12 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab13 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab14 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab15 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
 
    bfMinAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfMaxAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
@@ -158,6 +159,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    bfSampleSubdiv = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfFurtherSubdiv = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfAlbRecursion = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   bfIrrThresh = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
 
    lab7->Set("  Minimum Albedo");
    lab8->Set(" Maximum Albedo");
@@ -167,6 +169,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    lab12->Set(" Base Subdivs");
    lab13->Set(" Albedo Recursion");
    lab14->Set(" Refine Subdivs");
+   lab15->Set(" Irradiance Threshold");
 
    bfMinAlb->Set("0.001");
    bfMaxAlb->Set("1.5");
@@ -176,6 +179,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    bfSampleSubdiv->Set("1");
    bfFurtherSubdiv->Set("3");
    bfAlbRecursion->Set("7");
+   bfIrrThresh->Set("0.2");
 
    bfMinAlb->SetSize(48,24);
    bfMaxAlb->SetSize(48,24);
@@ -185,6 +189,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    bfSampleSubdiv->SetSize(48,24);
    bfFurtherSubdiv->SetSize(48,24);
    bfAlbRecursion->SetSize(48,24);
+   bfIrrThresh->SetSize(48,24);
 
    horiz3->AttachRight(lab7,false);
    horiz3->AttachRight(bfMinAlb,false);
@@ -203,7 +208,8 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    horiz4->AttachRight(bfSampleSubdiv,false);
    horiz4->AttachRight(lab14,false);
    horiz4->AttachRight(bfFurtherSubdiv,false);
-
+   horiz4->AttachRight(lab15,false);
+   horiz4->AttachRight(bfIrrThresh,false);
 
 
    gui::Panel * panel = static_cast<gui::Panel*>(cyclops.Fact().Make("Panel"));
@@ -411,6 +417,7 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
   nat32 subdiv = bfSampleSubdiv->GetInt(2);
   nat32 further = bfFurtherSubdiv->GetInt(3);
   nat32 recursion = bfAlbRecursion->GetInt(8);
+  real32 irrThresh = bfIrrThresh->GetReal(0.2);
 
 
  // Calculate the corrected irradiance...
@@ -439,6 +446,7 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
   ld.SetPruneThresh(pruneThresh);
   ld.SetSampleSubdiv(subdiv,further);
   ld.SetRecursion(recursion);
+  ld.SetIrrThreshold(irrThresh);
 
 
  // Run the algorithm...
