@@ -13,6 +13,7 @@
 #include "eos/types.h"
 #include "eos/time/progress.h"
 #include "eos/bs/geo3d.h"
+#include "eos/cam/files.h"
 #include "eos/ds/arrays2d.h"
 #include "eos/svt/field.h"
 #include "eos/stereo/dsi.h"
@@ -39,10 +40,8 @@ class EOS_CLASS DispFish
   /// Sets the disparity map and DSC to be used. Must be called before run.
    void Set(const svt::Field<real32> & disp,const stereo::DSC & dsc);
 
-  /// Sets the parameters to convert to depth - the input is necesarily
-  /// rectified, hence the nature of the parameters.
-  /// Equation is depth = a/(disparity+b) - same as cam::CameraPair
-   void SetDtD(const real64 & a,const real64 & b);
+  /// Sets the parameters to convert to depth - a cam::CameraPair
+   void SetPair(const cam::CameraPair & pair);
 
   /// Sets the search range for calculating concentration - this is the slow bit.
   /// Note that the scaling is nuts here, requiring the handling of (range*2+1)^3 values,
@@ -70,11 +69,32 @@ class EOS_CLASS DispFish
   // Input...
    svt::Field<real32> disp;
    const stereo::DSC * dsc;
-   real64 convA,convB;
+   cam::CameraPair pair;
    nat32 range;
    
   // Output...
    ds::Array2D<bs::Vert> out;
+   
+  // Runtime...
+   // Structure for storing information for each disparity considered for each pixel...
+    struct Pixel
+    {
+     bs::Vert pos;
+     real32 cost;
+     real32 weight;
+     
+     static inline cstrconst TypeString() {return "eos::fit::DispFish::Pixel";}
+    };
+    
+   // Structure for storing a r-contribution and weight, used during L-estimate
+   // of concentration...
+    struct Rcont
+    {
+     real32 r;
+     real32 weight;
+     
+     bit operator < (const Rcont & rhs) const {return this->r<rhs.r;}
+    };
 };
 
 //------------------------------------------------------------------------------
