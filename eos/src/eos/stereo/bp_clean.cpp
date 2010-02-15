@@ -164,9 +164,9 @@ real32 CleanDSI::Get(nat32 x,nat32 y) const
 
 void CleanDSI::GetMap(svt::Field<real32> & o)
 {
- for (nat32 y=0;y<math::Min(o.Size(1),out.Height());y++)
+ for (nat32 y=0;y<out.Height();y++)
  {
-  for (nat32 x=0;x<math::Min(o.Size(0),out.Width());x++) o.Get(x,y) = out.Get(x,y);
+  for (nat32 x=0;x<out.Width();x++) o.Get(x,y) = out.Get(x,y);
  }
 }
 
