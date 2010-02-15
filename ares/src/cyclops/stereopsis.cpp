@@ -144,11 +144,11 @@ result(null<svt::Var*>())
    horiz1c->AttachRight(lab8,false);
    horiz1c->AttachRight(vertMult,false);
 
-   occCost->Set("5.0");
-   vertCost->Set("0.25");
-   vertMult->Set("0.75");
-   errLim->Set("1");
-   matchLim->Set("10.0");
+   occCost->Set("5.0"); occCost->SetSize(48,24);
+   vertCost->Set("0.25"); vertCost->SetSize(48,24);
+   vertMult->Set("0.75"); vertMult->SetSize(48,24);
+   errLim->Set("1"); errLim->SetSize(48,24);
+   matchLim->Set("10.0"); matchLim->SetSize(48,24);
 
 
 
@@ -204,13 +204,13 @@ result(null<svt::Var*>())
    horiz5b->AttachRight(lab27b,false);
    horiz5b->AttachRight(bpOutput,false);
 
-   bpOccCostHigh->Set("16.0");
-   bpOccCostLow->Set("8.0");
-   bpOccLimMult->Set("2.0");
-   bpMatchLim->Set("36.0");
-   bpOccLim->Set("6.0");
-   bpIters->Set("6");
-   bpOutput->Set("1");
+   bpOccCostHigh->Set("16.0"); bpOccCostHigh->SetSize(48,24);
+   bpOccCostLow->Set("8.0"); bpOccCostLow->SetSize(48,24);
+   bpOccLimMult->Set("2.0"); bpOccLimMult->SetSize(48,24);
+   bpMatchLim->Set("36.0"); bpMatchLim->SetSize(48,24);
+   bpOccLim->Set("6.0"); bpOccLim->SetSize(48,24);
+   bpIters->Set("6"); bpIters->SetSize(48,24);
+   bpOutput->Set("1"); bpOutput->SetSize(48,24);
 
 
 
@@ -222,9 +222,7 @@ result(null<svt::Var*>())
    post2->Expand(false);
 
    gui::Horizontal * horiz1d = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
-   gui::Horizontal * horiz1e = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
    vert3->AttachBottom(horiz1d,false);
-   vert3->AttachBottom(horiz1e,false);
 
    gui::Label * lab10 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab11 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
@@ -232,9 +230,9 @@ result(null<svt::Var*>())
    gui::Label * lab13 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
 
    lab10->Set("    Strength:");
-   lab11->Set("    Cutoff:");
-   lab12->Set("Half-life:");
-   lab13->Set("Iterations:");
+   lab11->Set(" Cutoff:");
+   lab12->Set(" Half-life:");
+   lab13->Set(" Iterations:");
 
    smoothStrength = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    smoothCutoff = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
@@ -243,17 +241,17 @@ result(null<svt::Var*>())
 
    horiz1d->AttachRight(lab10,false);
    horiz1d->AttachRight(smoothStrength,false);
+   horiz1d->AttachRight(lab12,false);
+   horiz1d->AttachRight(smoothWidth,false);
+   horiz1d->AttachRight(lab11,false);
+   horiz1d->AttachRight(smoothCutoff,false);
    horiz1d->AttachRight(lab13,false);
    horiz1d->AttachRight(smoothIters,false);
-   horiz1e->AttachRight(lab11,false);
-   horiz1e->AttachRight(smoothCutoff,false);
-   horiz1e->AttachRight(lab12,false);
-   horiz1e->AttachRight(smoothWidth,false);
 
-   smoothStrength->Set("16.0");
-   smoothCutoff->Set("16.0");
-   smoothWidth->Set("2.0");
-   smoothIters->Set("100");
+   smoothStrength->Set("16.0"); smoothStrength->SetSize(48,24);
+   smoothCutoff->Set("16.0"); smoothCutoff->SetSize(48,24);
+   smoothWidth->Set("2.0"); smoothWidth->SetSize(48,24);
+   smoothIters->Set("100"); smoothIters->SetSize(48,24);
 
 
 
@@ -294,10 +292,10 @@ result(null<svt::Var*>())
    horiz3b->AttachRight(lab17,false);
    horiz3b->AttachRight(planeDisc,false);
 
-   planeRadius->Set("0.6");
-   planeBailOut->Set("12");
-   planeOcc->Set("0.078");
-   planeDisc->Set("0.01");
+   planeRadius->Set("0.6"); planeRadius->SetSize(48,24);
+   planeBailOut->Set("12"); planeBailOut->SetSize(48,24);
+   planeOcc->Set("0.078"); planeOcc->SetSize(48,24);
+   planeDisc->Set("0.01"); planeDisc->SetSize(48,24);
 
 
 
@@ -348,31 +346,79 @@ result(null<svt::Var*>())
    horiz4b->AttachRight(lab23,false);
    horiz4b->AttachRight(segEdge,false);
 
-   segSpatial->Set("7.0");
-   segRange->Set("4.5");
-   segMin->Set("20");
-   segRad->Set("2");
-   segMix->Set("0.3");
-   segEdge->Set("0.9");
+   segSpatial->Set("7.0"); segSpatial->SetSize(48,24);
+   segRange->Set("4.5"); segRange->SetSize(48,24);
+   segMin->Set("20"); segMin->SetSize(48,24);
+   segRad->Set("2"); segRad->SetSize(48,24);
+   segMix->Set("0.3"); segMix->SetSize(48,24);
+   segEdge->Set("0.9"); segEdge->SetSize(48,24);
 
 
 
    augG = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
    vert1->AttachBottom(augG,false);
-   augG->Visible(false);
+   augG->Visible(true);
    gui::Horizontal * horiz7 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
    augG->SetChild(horiz7);
-   augG->Set("Gaussian Augmentation Parameters");
+   augG->Set("Gaussian Fitting Parameters");
    augG->Expand(false);
    
    gui::Label * lab28 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab28->Set(" Range:");
    gaussianRange = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   gaussianRange->Set("5");
+   gaussianRange->Set("50");
+   gaussianRange->SetSize(48,24);
+
+   gui::Label * lab34 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab34->Set(" Sd Mult:");
+   gaussianSdMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   gaussianSdMult->Set("2.0");
+   gaussianSdMult->SetSize(48,24);
+
+   gui::Label * lab35 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab35->Set(" Min Sd:");
+   gaussianMin = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   gaussianMin->Set("0.1");
+   gaussianMin->SetSize(48,24);
    
+   gui::Label * lab36 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab36->Set(" Max Sd:");
+   gaussianMax = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   gaussianMax->Set("10.0");
+   gaussianMax->SetSize(48,24);      
+   
+   gui::Label * lab38 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab38->Set(" Min K:");
+   gaussianMinK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   gaussianMinK->Set("2.0");
+   gaussianMinK->SetSize(48,24);
+   
+   gui::Label * lab39 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab39->Set(" Max K:");
+   gaussianMaxK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   gaussianMaxK->Set("24.0");
+   gaussianMaxK->SetSize(48,24);  
+   
+   gui::Label * lab37 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab37->Set(" Max Iters:");
+   gaussianIters = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   gaussianIters->Set("1000");
+   gaussianIters->SetSize(48,24);
+      
    horiz7->AttachRight(lab28,false);
    horiz7->AttachRight(gaussianRange,false);
-   
+   horiz7->AttachRight(lab34,false);
+   horiz7->AttachRight(gaussianSdMult,false);
+   horiz7->AttachRight(lab35,false);
+   horiz7->AttachRight(gaussianMin,false);
+   horiz7->AttachRight(lab36,false);
+   horiz7->AttachRight(gaussianMax,false);
+   horiz7->AttachRight(lab38,false);
+   horiz7->AttachRight(gaussianMinK,false);
+   horiz7->AttachRight(lab39,false);
+   horiz7->AttachRight(gaussianMaxK,false);
+   horiz7->AttachRight(lab37,false);
+   horiz7->AttachRight(gaussianIters,false);            
    
 
    augF = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
@@ -672,11 +718,13 @@ void Stereopsis::ChangePost(gui::Base * obj,gui::Event * event)
    post3b->Visible(true);
   break;
  }
+ 
+ augG->Visible(augGaussian->Ticked()||(whichPost->Get()==1));
 }
 
 void Stereopsis::SwitchGaussian(gui::Base * obj,gui::Event * event)
 {
- augG->Visible(augGaussian->Ticked());
+ augG->Visible(augGaussian->Ticked()||(whichPost->Get()==1));
 }
 
 void Stereopsis::SwitchFisher(gui::Base * obj,gui::Event * event)
@@ -743,7 +791,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    }
    switch (whichPost->Get())
    {
-    case 1: steps += 1; break; // Smoothing.
+    case 1: steps += 2; break; // Smoothing. (Has sd fitting step.)
     case 2: steps += 2; break; // Plane fit + Seg
    }
    
@@ -834,9 +882,35 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     case 1: // Smoothing...
     {
      prog->Report(step++,steps);
+     svt::Var sdTemp(leftLuv);
+     {
+      real32 realIni = 0.0;
+      sdTemp.Add("sd",realIni);
+      sdTemp.Commit();
+     }
+     svt::Field<real32> sdOR(&sdTemp,"sd");
+     
+     stereo::LuvDSC luvDSC(leftLuv,rightLuv);
+    
+     fit::DispNorm dispNorm;
+     dispNorm.Set(disp,luvDSC);
+     dispNorm.SetMask(leftMask);
+     dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
+     dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
+     dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
+     dispNorm.SetMaxIters(gaussianIters->GetInt(1000));
+    
+     dispNorm.Run(prog);
+    
+     dispNorm.Get(sdOR);
+
+
+     prog->Report(step++,steps);
      stereo::CleanDSI cdsi;
      cdsi.Set(leftLuv);
      cdsi.Set(*dsi);
+     cdsi.SetMask(leftMask);
+     cdsi.SetSD(sdOR);
      cdsi.Set(smoothStrength->GetReal(16.0),smoothCutoff->GetReal(16.0),
               smoothWidth->GetReal(2.0),smoothIters->GetInt(100));
 
@@ -912,7 +986,20 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    if (aGaussian)
    {
     prog->Report(step++,steps);
-    // ***************************************************************************
+    
+    stereo::LuvDSC luvDSC(leftLuv,rightLuv);
+    
+    fit::DispNorm dispNorm;
+    dispNorm.Set(disp,luvDSC);
+    dispNorm.SetMask(leftMask);
+    dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
+    dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
+    dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
+    dispNorm.SetMaxIters(gaussianIters->GetInt(1000));
+    
+    dispNorm.Run(prog);
+    
+    dispNorm.Get(sd);
    }
   
 
@@ -924,7 +1011,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     stereo::LuvDSC luvDSC(leftLuv,rightLuv);
     
     fit::DispFish dispFish;
-    dispFish.Set(disp,luvDSC,1.0);
+    dispFish.Set(disp,luvDSC);
     dispFish.SetMask(leftMask);
     dispFish.SetPair(pair);
     dispFish.SetRange(fisherRange->GetInt(4));

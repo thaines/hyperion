@@ -27,6 +27,16 @@ void CleanDSI::Set(const DSI & d)
  dsi = &d;
 }
 
+void CleanDSI::SetMask(const svt::Field<bit> & m)
+{
+ mask = m;
+}
+
+void CleanDSI::SetSD(const svt::Field<real32> & s)
+{
+ sdOverride = s;
+}
+
 void CleanDSI::Set(real32 s,real32 c,real32 w,nat32 i)
 {
  strength = s;
@@ -51,7 +61,7 @@ void CleanDSI::Run(time::Progress * prog)
   {
    for (nat32 x=0;x<ibp.Width();x++)
    {
-    if (dsi->Size(x,y)!=0)
+    if ((dsi->Size(x,y)!=0)&&((mask.Valid()==false)||mask.Get(x,y)))
     {
      // Calculate mean...
       real32 mean = 0.0;
@@ -59,14 +69,21 @@ void CleanDSI::Run(time::Progress * prog)
       mean /= real32(dsi->Size(x,y));
 
      // Calculate sd, have to consider that the disparities represent ranges,
-     // which kinda causes a mild headache...
+     // which kinda causes a mild headache, unless an override has been provided...
       real32 sd = 0.0;
-      for (nat32 i=0;i<dsi->Size(x,y);i++)
+      if (sdOverride.Valid())
       {
-       sd += 0.5*(math::Abs(dsi->Disp(x,y,i)+dsi->DispWidth(x,y,i) - mean) +
-                  math::Abs(dsi->Disp(x,y,i)-dsi->DispWidth(x,y,i) - mean));
+       sd = sdOverride.Get(x,y);
       }
-      sd /= real32(dsi->Size(x,y));
+      else
+      {
+       for (nat32 i=0;i<dsi->Size(x,y);i++)
+       {
+        sd += 0.5*(math::Abs(dsi->Disp(x,y,i)+dsi->DispWidth(x,y,i) - mean) +
+                   math::Abs(dsi->Disp(x,y,i)-dsi->DispWidth(x,y,i) - mean));
+       }
+       sd /= real32(dsi->Size(x,y));
+      }
 
      // Store the relevant output...
       ibp.SetVal(x,y,mean,1.0/sd);
@@ -80,27 +97,30 @@ void CleanDSI::Run(time::Progress * prog)
   {
    for (nat32 x=0;x<ibp.Width();x++)
    {
-    // Horizontal...
-     if (x+1<ibp.Width())
-     {
-      real32 diff = math::Abs(image.Get(x,y).l-image.Get(x+1,y).l) +
-                    math::Abs(image.Get(x,y).u-image.Get(x+1,y).u) +
-                    math::Abs(image.Get(x,y).v-image.Get(x+1,y).v);
-      real32 invSd = strength*math::SigmoidCutoff(diff,cutoff,width);
-      ibp.SetRel(x,y,0,1.0,0.0,invSd);
-      ibp.SetRel(x+1,y,2,1.0,0.0,invSd);
-     }
+    if ((mask.Valid()==false)||mask.Get(x,y))
+    {
+     // Horizontal...
+      if ((x+1<ibp.Width())&&((mask.Valid()==false)||mask.Get(x+1,y)))
+      {
+       real32 diff = math::Abs(image.Get(x,y).l-image.Get(x+1,y).l) +
+                     math::Abs(image.Get(x,y).u-image.Get(x+1,y).u) +
+                     math::Abs(image.Get(x,y).v-image.Get(x+1,y).v);
+       real32 invSd = strength*math::SigmoidCutoff(diff,cutoff,width);
+       ibp.SetRel(x,y,0,1.0,0.0,invSd);
+       ibp.SetRel(x+1,y,2,1.0,0.0,invSd);
+      }
 
-    // Vertical...
-     if (y+1<ibp.Height())
-     {
-      real32 diff = math::Abs(image.Get(x,y).l-image.Get(x,y+1).l) +
-                    math::Abs(image.Get(x,y).u-image.Get(x,y+1).u) +
-                    math::Abs(image.Get(x,y).v-image.Get(x,y+1).v);
-      real32 invSd = strength*math::SigmoidCutoff(diff,cutoff,width);
-      ibp.SetRel(x,y,1,1.0,0.0,invSd);
-      ibp.SetRel(x,y+1,3,1.0,0.0,invSd);
-     }
+     // Vertical...
+      if ((y+1<ibp.Height())&&((mask.Valid()==false)||mask.Get(x,y+1)))
+      {
+       real32 diff = math::Abs(image.Get(x,y).l-image.Get(x,y+1).l) +
+                     math::Abs(image.Get(x,y).u-image.Get(x,y+1).u) +
+                     math::Abs(image.Get(x,y).v-image.Get(x,y+1).v);
+       real32 invSd = strength*math::SigmoidCutoff(diff,cutoff,width);
+       ibp.SetRel(x,y,1,1.0,0.0,invSd);
+       ibp.SetRel(x,y+1,3,1.0,0.0,invSd);
+      }
+    }
    }
   }
 
@@ -113,8 +133,14 @@ void CleanDSI::Run(time::Progress * prog)
   {
    for (nat32 x=0;x<out.Width();x++)
    {
-    if (ibp.Defined(x,y)) out.Get(x,y) = ibp.Expectation(x,y);
-                     else out.Get(x,y) = math::Infinity<real32>();
+    if (ibp.Defined(x,y)&&((mask.Valid()==false)||mask.Get(x,y)))
+    {
+     out.Get(x,y) = ibp.Expectation(x,y);
+    }
+    else
+    {
+     out.Get(x,y) = math::Infinity<real32>();
+    }
    }
   }
 

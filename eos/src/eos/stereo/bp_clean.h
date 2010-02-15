@@ -25,7 +25,7 @@ namespace eos
 /// output by a stereo process look good it works fine.
 /// (Takes a DSI as input but produces a disparity map as output, so it also
 /// handles that problem. Note however that it can not handle large numbers of
-/// disparity assignments to a single pixel, as it models them internal as a
+/// disparity assignments to a single pixel, as it models them internally as a
 /// single Gaussian.)
 class EOS_CLASS CleanDSI
 {
@@ -42,6 +42,14 @@ class EOS_CLASS CleanDSI
 
   /// Sets the input DSI.
    void Set(const DSI & dsi);
+   
+  /// Optionally sets a mask on the disparity map - only areas where its true
+  /// have calculations done.
+   void SetMask(const svt::Field<bit> & mask);
+   
+  /// Optionally sets an input field of standard deviations, which then override
+  /// its internal calculation system.
+   void SetSD(const svt::Field<real32> & sd);
 
   /// Sets the parameters.
   /// \param strength How strong the smoothing is, an inverse standard deviation
@@ -51,7 +59,7 @@ class EOS_CLASS CleanDSI
   ///               Defaults to 16.
   /// \param width Cutoff is done with a sigmoid, this is its 'half-life'.
   ///              Defaults to 2.
-  /// \param iters Number of iterstions of bp to do. Defaults to 100.
+  /// \param iters Number of iterations of bp to do. Defaults to 100.
    void Set(real32 strength,real32 cutoff,real32 width,nat32 iters = 100);
 
 
@@ -81,6 +89,10 @@ class EOS_CLASS CleanDSI
   // Input...
    svt::Field<bs::ColourLuv> image;
    const DSI * dsi;
+   
+   svt::Field<bit> mask;
+   svt::Field<real32> sdOverride;
+   
 
    real32 strength;
    real32 cutoff;

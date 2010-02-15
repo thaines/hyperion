@@ -46,6 +46,10 @@ class EOS_CLASS DispNorm
   /// Also sets the sdCount - this is the number of standard deviations from the
   /// current variance estimate the bisquare k value is set to. Defaults to 2.
    void SetRange(nat32 range,real32 sdCount);
+   
+  /// Sets the acceptable k range for the bisquare function.
+  /// Defaults to 2.5 to 10.0
+   void SetClampK(real32 minK,real32 maxK);
 
   /// Sets the clamping range for the standard deviation, defaults to 0.1 to 10.0.
   /// (min should never reach 0)
@@ -78,6 +82,8 @@ class EOS_CLASS DispNorm
    real32 dscMult;
    nat32 range;
    real32 sdCount;
+   real32 minK;
+   real32 maxK;
    real32 minSd;
    real32 maxSd;
    nat32 maxIters;
@@ -89,31 +95,6 @@ class EOS_CLASS DispNorm
    
 };
 
-//------------------------------------------------------------------------------
-// robust m-estimator with Tukey bisquare
-/*
-for(i=0;i<3;i++) // Iterations
-{
- isigma = min(0.99f/DepthScale,1.0f/sqrt(var)); // Inverse standard deviation. min - cap on variance.
- var = 0.0f;
- sw = 0.0f;
-
- for(z=0;z<probs.depth;z++)
- {
-  diff = (z-MAXDISP)*DepthScale - m; // Difference from mean.
-
-  if( fabs(diff*isigma)<2.0 )
-  {
-   w=(1-isigma*diff*isigma*diff*0.25f);
-   w=w*w;
-   var += w*probs.GetValue(x,y,z)*diff*diff;
-   sw += w*probs.GetValue(x,y,z);
-  }
- }
- 
- if( var>0.0f ) var /= sw; // mean to get var - sw = sum of weights.
-} 
-*/
 //------------------------------------------------------------------------------
  };
 };
