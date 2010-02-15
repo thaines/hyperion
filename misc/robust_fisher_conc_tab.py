@@ -27,7 +27,7 @@ ran = map(lambda x: invC3(x),dom)
 
 # Format and output it as a c style array, for lookup table purposes...
 out = 'real32 medDotToK[' + str(res) + '] = {'
-out += reduce(lambda x,y: str(x)+','+str(y),ran)
-out = out[:-1] + '];'
+out += reduce(lambda x,y: str(x)+', '+str(y),ran)
+out = out[:-1] + '};'
 
 print out

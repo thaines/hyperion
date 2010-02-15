@@ -397,13 +397,13 @@ result(null<svt::Var*>())
    gui::Label * lab32 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab32->Set(" Min K:");
    fisherMin = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   fisherMin->Set("1.0");
+   fisherMin->Set("0.0");
    fisherMin->SetSize(48,24);
    
    gui::Label * lab31 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab31->Set(" Max K:");
    fisherMax = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   fisherMax->Set("24.0");
+   fisherMax->Set("16.0");
    fisherMax->SetSize(48,24);
    
    horiz8->AttachRight(lab29,false);
@@ -915,9 +915,10 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     
     fit::DispFish dispFish;
     dispFish.Set(disp,*dsc);
+    dispFish.SetMask(leftMask);
     dispFish.SetPair(pair);
     dispFish.SetRange(fisherRange->GetInt(4));
-    dispFish.SetClamp(fisherMin->GetReal(1.0),fisherMax->GetReal(24.0));
+    dispFish.SetClamp(fisherMin->GetReal(0.0),fisherMax->GetReal(16.0));
    
     dispFish.Run(prog);
     

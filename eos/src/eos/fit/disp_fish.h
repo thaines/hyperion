@@ -39,6 +39,9 @@ class EOS_CLASS DispFish
 
   /// Sets the disparity map and DSC to be used. Must be called before run.
    void Set(const svt::Field<real32> & disp,const stereo::DSC & dsc);
+   
+  /// Sets the mask, optional - will set masked areas to a ceoncentration of 0.
+   void SetMask(const svt::Field<bit> & mask);
 
   /// Sets the parameters to convert to depth - a cam::CameraPair
    void SetPair(const cam::CameraPair & pair);
@@ -71,6 +74,7 @@ class EOS_CLASS DispFish
  private:
   // Input...
    svt::Field<real32> disp;
+   svt::Field<bit> mask;
    const stereo::DSC * dsc;
    cam::CameraPair pair;
    nat32 range;
@@ -90,14 +94,14 @@ class EOS_CLASS DispFish
      static inline cstrconst TypeString() {return "eos::fit::DispFish::Pixel";}
     };
     
-   // Structure for storing a r-contribution and weight, used during L-estimate
+   // Structure for storing a r-contribution and weight, used during estimate
    // of concentration...
     struct Rcont
     {
      real32 r;
      real32 weight;
      
-     bit operator < (const Rcont & rhs) const {return this->r>rhs.r;} // Reversed.
+     bit operator < (const Rcont & rhs) const {return this->r<rhs.r;}
     };
 };
 
