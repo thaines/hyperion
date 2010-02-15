@@ -109,9 +109,9 @@ void DispNorm::Run(time::Progress * prog)
      
       if (!math::IsZero(newVarW)) newVar /= newVarW;
       newVar = math::Clamp(newVar,math::Sqr(minSd),math::Sqr(maxSd));
-      real32 delta = math::Abs(newVar-var);
+      bit done = math::Abs(newVar-var) < (var*1e-3);
       var = newVar;
-      if (delta<1e-3) break;
+      if (done) break;
      }
    
     // Store...
