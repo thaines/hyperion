@@ -682,7 +682,8 @@ void StereoSfS::Update()
        if ((!mask.Valid())||(mask.Get(x,y)))
        {
         real32 v = dispSd.Get(x,y)/maxSd;
-        image.Get(x,y) = bs::ColourRGB(v,v,v);
+        if (v>0.0) image.Get(x,y) = bs::ColourRGB(v,v,v);
+              else image.Get(x,y) = bs::ColourRGB(-v,0.5,0.0);
        }
        else
        {

@@ -363,7 +363,7 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    smoothStrength->Set("16.0"); smoothStrength->SetSize(48,24);
    smoothCutoff->Set("16.0"); smoothCutoff->SetSize(48,24);
    smoothWidth->Set("2.0"); smoothWidth->SetSize(48,24);
-   smoothIters->Set("100"); smoothIters->SetSize(48,24);
+   smoothIters->Set("256"); smoothIters->SetSize(48,24);
 
 
 
@@ -545,8 +545,14 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    gui::Label * lab28 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab28->Set(" Range:");
    gaussianRange = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   gaussianRange->Set("50");
+   gaussianRange->Set("64");
    gaussianRange->SetSize(48,24);
+
+   gui::Label * lab53 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab53->Set(" Mult:");
+   gaussianMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   gaussianMult->Set("0.4");
+   gaussianMult->SetSize(48,24);
 
    gui::Label * lab34 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab34->Set(" Sd Mult:");
@@ -563,7 +569,7 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    gui::Label * lab36 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab36->Set(" Max Sd:");
    gaussianMax = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   gaussianMax->Set("10.0");
+   gaussianMax->Set("16.0");
    gaussianMax->SetSize(48,24);      
    
    gui::Label * lab38 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
@@ -575,7 +581,7 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    gui::Label * lab39 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab39->Set(" Max K:");
    gaussianMaxK = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   gaussianMaxK->Set("24.0");
+   gaussianMaxK->Set("32.0");
    gaussianMaxK->SetSize(48,24);  
    
    gui::Label * lab37 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
@@ -586,6 +592,8 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
       
    horiz7->AttachRight(lab28,false);
    horiz7->AttachRight(gaussianRange,false);
+   horiz7->AttachRight(lab53,false);
+   horiz7->AttachRight(gaussianMult,false);
    horiz7->AttachRight(lab34,false);
    horiz7->AttachRight(gaussianSdMult,false);
    horiz7->AttachRight(lab35,false);
@@ -1232,11 +1240,12 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
       sdTemp.Commit();
      }
      svt::Field<real32> sdOR(&sdTemp,"sd");
-     
+
+
      stereo::LuvDSC luvDSC(leftLuv,rightLuv);
-    
+
      fit::DispNorm dispNorm;
-     dispNorm.Set(disp,luvDSC);
+     dispNorm.Set(disp,luvDSC,gaussianMult->GetReal(1.0));
      dispNorm.SetMask(leftMask);
      dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
      dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
@@ -1247,7 +1256,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     
      dispNorm.Get(sdOR);
 
-
+     
      prog->Report(step++,steps);
      stereo::CleanDSI cdsi;
      cdsi.Set(leftLuv);
@@ -1255,11 +1264,12 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
      cdsi.SetMask(leftMask);
      cdsi.SetSD(sdOR);
      cdsi.Set(smoothStrength->GetReal(16.0),smoothCutoff->GetReal(16.0),
-              smoothWidth->GetReal(2.0),smoothIters->GetInt(100));
+              smoothWidth->GetReal(2.0),smoothIters->GetInt(256));
 
      cdsi.Run(prog);
 
      cdsi.GetMap(disp);
+     
      for (nat32 y=0;y<disp.Size(1);y++)
      {
       for (nat32 x=0;x<disp.Size(0);x++)
@@ -1396,7 +1406,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     stereo::LuvDSC luvDSC(leftLuv,rightLuv);
     
     fit::DispNorm dispNorm;
-    dispNorm.Set(disp,luvDSC);
+    dispNorm.Set(disp,luvDSC,gaussianMult->GetReal(1.0));
     dispNorm.SetMask(leftMask);
     dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
     dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
