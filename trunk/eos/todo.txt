@@ -2,7 +2,8 @@ Work Bag:
 ---------
 
 - Gaussian augmentation changes the Fisher distribution output somehow in stereopsis - want the version when its on all the time.
-- Negative light source directions - wtf? (Running off edge, appears to have reverse of expected cost function.)
+- Impliment, and make interface for ambient and albedo estimation.
+- Add calibrated/uncalibrated albedo output options.
 - Make sphere calibration system, with reflection direction calculation.
 
 

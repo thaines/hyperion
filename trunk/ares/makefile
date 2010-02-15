@@ -46,12 +46,12 @@ clean:
 	-rm out.txt
 
 
-EXES	= cyclops svt mscr exif
+EXES	= cyclops svt
 
 EXES_S1	= sfgs colour sad_stereo ba_test mya sfs fitter sift spec_rem mser segs 
 EXES_S2	= bleyer04 eos_test fg_test orient sur_test sur_stereo ds_test voronoi
 EXES_S3 = bp_stereo sur_bp_stereo text_to_svt bessel sfs_bp bp_test geo_test
-EXES_S4 = smes 
+EXES_S4 = smes mscr exif
 
 all: $(EXES) prep_final
 	@echo Done
