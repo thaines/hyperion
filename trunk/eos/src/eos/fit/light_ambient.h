@@ -120,6 +120,12 @@ class EOS_CLASS LightAmb
 
 
   // Runtime...
+   // Simple function for calcualting the number of computational expensive 
+   // steps involved in processing a branch and bound albedo range of depth n...
+    inline nat32 DivSteps(nat32 n)
+    {
+     return (3<<n) - 2; // Don't ask. f(0) = 1, f(n) = 2 + 2*f(n-1) = 2^n + 2^(n+1) - 2
+    }
    
    // This is used to calculate the correlation for each segment...
     struct SegValue
@@ -141,6 +147,7 @@ class EOS_CLASS LightAmb
      real32 expIrrZ;
     }; 
 
+
    // This struct contains the parameters for the function being optimised
    // - i.e. the constants for each pixel...
     struct PixelAux
@@ -153,7 +160,20 @@ class EOS_CLASS LightAmb
     }; // C = s*r + t*sqrt(1-r^2), where r = I/a + A (I = irr, a = albedo, A = ambient.)
    
    
-   // Structure used by below two methods to find the optimum albedos.
+   // Structure used to find the optimum ambient value...
+    struct AmbRange
+    {
+     real32 minAmbient;
+     real32 maxAmbient;
+     nat32 depth;
+
+     real32 lowMinCost;
+     real32 highMinCost;
+
+     bit operator < (const AmbRange & rhs) const {return lowMinCost < rhs.lowMinCost;}
+    };
+   
+   // Structure used to find the optimum albedo...
     struct AlbRange
     {
      real32 minAlbedo;
@@ -165,13 +185,26 @@ class EOS_CLASS LightAmb
      
      bit operator < (const AlbRange & rhs) const {return lowMinCost < rhs.lowMinCost;}
     };
+
+
+   // Given various details this fills in an AmbRange's lowMinCost and 
+   // highMinCost values - simply loops the relevant segments and sums it all 
+   // up...
+    void AmbRangeCost(AmbRange & amb,const ds::Array<PixelAux> & pixel,
+                      const ds::Array<nat32> & pixelOffset,ds::PriorityQueue<AlbRange> & work);
    
+   // Given an ambient value this returns its cost. It also outputs albedo values
+   // into a segment sized array of reals...
+    real32 AmbCost(real32 amb,ds::Array<real32> & albedo,const ds::Array<PixelAux> & pixel,
+                   const ds::Array<nat32> & pixelOffset,ds::PriorityQueue<AlbRange> & work);
+
+
    // Given a segments details and an ambient range this uses branch and bound
    // to find the range of possible optimal costs...
    // (outHigh is tight, outLow can be lower than it could be tightened to, but
    //  as used for simply choosing the order of analysis at the higher level 
-   //  this doesn't matter so much, well, some computation is wasted but a tight
-   //  bound would probably cost more.)
+   //  this doesn't matter so much, well, some computation is wasted but a tighter
+   //  bound would probably cost more overall.)
     void SegCostRange(real32 lowAmb,real32 highAmb,
                       real32 & outLow,real32 & outHigh,
                       const ds::Array<PixelAux> & pixel,nat32 start,nat32 size,
