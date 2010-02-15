@@ -92,7 +92,7 @@ nat32 ArrayResizeCode::Resize(nat32 elementSize,nat32 newSize,void (*Make)(void 
  return size;
 }
 
-byte * ArrayResizeCode::Item(nat32 elementSize,nat32 i)
+byte * ArrayResizeCode::Item(nat32 elementSize,nat32 i) const
 {
  nat32 ind = i/elementBlocking;
  nat32 off = i%elementBlocking;
