@@ -705,8 +705,11 @@ void LightEst::Update()
       real32 minCost = math::Infinity<real32>();
       for (nat32 i=0;i<samples.Size();i++)
       {
-       doc.Add(samples[i].dir[0],samples[i].dir[1],samples[i].cost);
-       minCost = math::Min(minCost,samples[i].cost);
+       if ((samples[i].dir[2]>0.0)||(math::IsZero(samples[i].dir[2])))
+       {
+        doc.Add(samples[i].dir[0],samples[i].dir[1],samples[i].cost);
+        minCost = math::Min(minCost,samples[i].cost);
+       }
       }
 
      // Now iterate all the pixels, interpolating costs for those inside the
