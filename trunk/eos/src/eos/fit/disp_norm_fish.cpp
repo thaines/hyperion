@@ -27,7 +27,7 @@ namespace eos
  {
 //------------------------------------------------------------------------------
 DispNormFish::DispNormFish()
-:prob(0.1),minK(0.1),maxK(10.0)
+:prob(0.1),mult(1.0),minK(0.1),maxK(10.0)
 {}
 
 DispNormFish::~DispNormFish()
@@ -49,9 +49,10 @@ void DispNormFish::SetPair(const cam::CameraPair & p)
  pair = p;
 }
 
-void DispNormFish::SetRegion(real32 p)
+void DispNormFish::SetRegion(real32 p,real32 m)
 {
  prob = p;
+ mult = m;
 }
 
 void DispNormFish::SetRange(real32 nK,real32 xK)
@@ -69,7 +70,7 @@ void DispNormFish::Run(time::Progress * prog)
  // (Also resize the output array.)
   prog->Report(0,2+disp.Size(1));
   real32 mahDist = math::ChiSquareCulmInv(prob,2);
-  LogDebug("test chi square " << math::ChiSquareCulmInv(0.95,10)); // Should output approx 18.3
+  //LogDebug("test chi square " << math::ChiSquareCulmInv(0.95,10)); // Should output approx 18.3
   
   out.Resize(disp.Size(0),disp.Size(1));
 
@@ -89,6 +90,8 @@ void DispNormFish::Run(time::Progress * prog)
    prog->Report(2+y,2+disp.Size(1));
    for (nat32 x=0;x<disp.Size(0);x++)
    {
+    //LogDebug("Starting {x,y}" << LogDiv() << x << LogDiv() << y);
+    
     // Set the concentration to zero where we don't have enough information...
      if (mask.Valid()&&(mask.Get(x,y)==false))
      {
@@ -118,6 +121,13 @@ void DispNormFish::Run(time::Progress * prog)
     
      real32 muC = safeYP?disp.Get(x,y+1):(2.0*muA - disp.Get(x,y-1));
      real32 sigmaC = safeYP?sd.Get(x,y+1):sd.Get(x,y-1);
+     
+     sigmaA *= mult;
+     sigmaB *= mult;
+     sigmaC *= mult;
+     
+     //LogDebug("mu {a,b,c}" << LogDiv() << muA << LogDiv() << muB << LogDiv() << muC);
+     //LogDebug("sigma {a,b,c}" << LogDiv() << sigmaA << LogDiv() << sigmaB << LogDiv() << sigmaC);
 
 
      real32 rhoA = 1.0/(2.0*sigmaA*sigmaA);
@@ -145,6 +155,8 @@ void DispNormFish::Run(time::Progress * prog)
       out.Get(x,y) = bs::Vert(0.0,0.0,0.0);
       continue;
      }
+     
+     //LogDebug("{mean,prec,covar}" << LogDiv() << mean << LogDiv() << prec << LogDiv() << covar);
 
 
     // Get the 5 disparity difference values - the mean value and 4 more,
@@ -161,6 +173,8 @@ void DispNormFish::Run(time::Progress * prog)
       out.Get(x,y) = bs::Vert(0.0,0.0,0.0);
       continue;
      }
+     
+     //LogDebug("eigen {val,vec}" << LogDiv() << eigenVal << LogDiv() << eigenVec);
      
      for (nat32 r=0;r<2;r++)
      {
@@ -181,7 +195,7 @@ void DispNormFish::Run(time::Progress * prog)
       pair.Triangulate(x,y,muA,base);
       
       for (nat32 i=0;i<5;i++)
-      {	
+      {
        math::Vect<3> incX, incY;
        pair.Triangulate(x+1,y,muA+ddp[i][0],incX);
        pair.Triangulate(x,y+1,muA+ddp[i][1],incY);
@@ -191,6 +205,8 @@ void DispNormFish::Run(time::Progress * prog)
        
        math::CrossProduct(incX,incY,dir[i]);
        dir[i].Normalise();
+       
+       //LogDebug("dir {i,ddp,dir}" << LogDiv() << i << LogDiv() << ddp[i][0] << "," << ddp[i][1] << LogDiv() << dir[i]);
       }
      }
 
@@ -203,11 +219,13 @@ void DispNormFish::Run(time::Progress * prog)
      real32 maxAng = 0.0;
      for (nat32 i=1;i<5;i++)
      {
-      maxAng = math::Max(maxAng,math::InvCos(dir[0] * dir[1]));
+      maxAng = math::Max(maxAng,math::InvCos(dir[0] * dir[i]));
      }
      
      out.Get(x,y) = dir[0];
      out.Get(x,y) *= fap.Concentration(maxAng);
+     
+     //LogDebug("{maxAng,final}" << LogDiv() << (180.0*maxAng/math::pi) << LogDiv() << out.Get(x,y));
    }
   }
 

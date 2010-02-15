@@ -2201,7 +2201,8 @@ cstrconst RangeLuvDSC::TypeString() const
 RegionDSC::RegionDSC(const DSC * dsc,nat32 r,real32 cornerWeight)
 :radius(r),dim(r*2+1)
 {
- SetFalloff(-math::Ln(cornerWeight)/math::Sqrt(2.0*real32(radius)*real32(radius)));
+ if (radius!=0) SetFalloff(-math::Ln(cornerWeight)/math::Sqrt(2.0*real32(radius)*real32(radius)));
+           else SetFalloff(1.0);
  child = dsc->Clone();
 }
 
@@ -2224,18 +2225,20 @@ void RegionDSC::SetFalloff(real32 fo)
  // Recalculate the weight array...
   real32 sum = 0.0;
   weight.Size(dim*dim);
+  nat32 i = 0;
   for (int32 v=-int32(radius);v<=int32(radius);v++)
   {
    for (int32 u=-int32(radius);u<=int32(radius);u++)
    {
-    nat32 i = (v+int32(radius))*dim + (u+int32(radius));
     weight[i] = math::Exp(-falloff*math::Sqrt(real32(v*v + u*u)));
     sum += weight[i];
+    i += 1;
    }
   }
   
   for (nat32 i=0;i<weight.Size();i++) weight[i] /= sum;
 }
+
 
 nat32 RegionDSC::Bytes() const
 {
@@ -2365,7 +2368,8 @@ cstrconst RegionDSC::TypeString() const
 LuvRegionDSC::LuvRegionDSC(const svt::Field<bs::ColourLuv> & le,const svt::Field<bs::ColourLuv> & ri,const DSC * dsc,nat32 r,real32 m,real32 cornerWeight)
 :radius(r),dim(r*2+1),mult(m),left(le),right(ri)
 {
- SetFalloff(-math::Ln(cornerWeight)/math::Sqrt(2.0*real32(radius)*real32(radius)));
+ if (radius!=0) SetFalloff(-math::Ln(cornerWeight)/math::Sqrt(2.0*real32(radius)*real32(radius)));
+           else SetFalloff(1.0);
  child = dsc->Clone();
 }
 
@@ -2388,13 +2392,14 @@ void LuvRegionDSC::SetFalloff(real32 fo)
  // Recalculate the weight array...
   real32 sum = 0.0;
   weight.Size(dim*dim);
+  nat32 i = 0;
   for (int32 v=-int32(radius);v<=int32(radius);v++)
   {
    for (int32 u=-int32(radius);u<=int32(radius);u++)
    {
-    nat32 i = (v+int32(radius))*dim + (u+int32(radius));
     weight[i] = math::Exp(-falloff*math::Sqrt(real32(v*v + u*u)));
     sum += weight[i];
+    i += 1;
    }
   }
   

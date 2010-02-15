@@ -565,7 +565,7 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    gui::Label * lab70 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab70->Set(" Radius:");
    gaussianRadius = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   gaussianRadius->Set("3");
+   gaussianRadius->Set("1");
    gaussianRadius->SetSize(48,24);
 
    gui::Label * lab71 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
@@ -660,7 +660,7 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    gui::Label * lab29 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab29->Set(" Prob:");
    fisherProb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   fisherProb->Set("0.75");
+   fisherProb->Set("0.1");
    fisherProb->SetSize(48,24);
 
    //gui::Label * lab29 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
@@ -686,11 +686,19 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    //fisherBias = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    //fisherBias->Set("4.0");
    //fisherBias->SetSize(48,24);
+
+   gui::Label * lab33 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab33->Set(" Mult:");
+   fisherMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   fisherMult->Set("0.1");
+   fisherMult->SetSize(48,24);
       
    //horiz8->AttachRight(lab29,false);
    //horiz8->AttachRight(fisherRange,false);
    horiz8->AttachRight(lab29,false);
    horiz8->AttachRight(fisherProb,false);
+   horiz8->AttachRight(lab33,false);
+   horiz8->AttachRight(fisherMult,false);   
    horiz8->AttachRight(lab32,false);
    horiz8->AttachRight(fisherMin,false);
    horiz8->AttachRight(lab31,false);
@@ -1477,7 +1485,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     
     fit::DispNorm dispNorm;
     dispNorm.Set(disp,regionDSC,gaussianMult->GetReal(1.0));
-    dispNorm.SetMask(leftMask);
+    dispNorm.SetMask(mask);
     dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
     dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
     dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
@@ -1498,7 +1506,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     
     fit::DispFish dispFish;
     dispFish.Set(disp,luvDSC);
-    dispFish.SetMask(leftMask);
+    dispFish.SetMask(mask);
     dispFish.SetPair(pair);
     dispFish.SetRange(fisherRange->GetInt(4));
     dispFish.SetBias(fisherBias->GetReal(0.0));
@@ -1510,9 +1518,9 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     
     fit::DispNormFish dnf;
     dnf.Set(disp,sd);
-    dnf.SetMask(leftMask);
+    dnf.SetMask(mask);
     dnf.SetPair(pair);
-    dnf.SetRegion(fisherProb->GetReal(0.1));
+    dnf.SetRegion(fisherProb->GetReal(0.1),fisherMult->GetReal(1.0));
     dnf.SetRange(fisherMin->GetReal(0.0),fisherMax->GetReal(16.0));
     
     dnf.Run(prog);
