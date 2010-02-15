@@ -1473,6 +1473,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     
     stereo::LuvDSC luvDSC(leftLuv,rightLuv);
     stereo::RegionDSC regionDSC(&luvDSC,gaussianRadius->GetInt(4),gaussianFalloff->GetReal(0.5));
+    //stereo::LuvRegionDSC regionDSC(leftLuv,rightLuv,&luvDSC,gaussianRadius->GetInt(4),0.1,gaussianFalloff->GetReal(0.5));
     
     fit::DispNorm dispNorm;
     dispNorm.Set(disp,regionDSC,gaussianMult->GetReal(1.0));
