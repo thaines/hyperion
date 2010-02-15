@@ -278,6 +278,7 @@ void Lee::PrepMultigrid(ds::ArrayDel< ds::Array2D<Site> > & data,ds::Array2D<rea
   prog->Report(0,data.Size());
   // Level 0...
    prog->Push();
+   mg.ZeroMean();
    for (nat32 y=0;y<data[0].Height();y++)
    {
     prog->Report(y,data[0].Height());
@@ -581,7 +582,7 @@ void Lee::PrepMultigrid(ds::ArrayDel< ds::Array2D<Site> > & data,ds::Array2D<rea
 
  // Fix the centre pixel to a depth of 0, to stop drift...
   //mg.Fix(0,data[0].Width()/2,data[0].Height()/2,0.0);
-  mg.Fix(0,0,0,0.0);
+  //mg.Fix(0,0,0,0.0);
 
 
 
