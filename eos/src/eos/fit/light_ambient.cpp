@@ -66,7 +66,7 @@ void LightAmb::SetSubdivs(nat32 ambient,nat32 albedo)
 void LightAmb::Run(time::Progress * prog)
 {
  prog->Push();
- 
+  
  // Count the number of segments...
   nat32 segCount = 1;
   for (nat32 y=0;y<seg.Size(1);y++)
@@ -74,10 +74,15 @@ void LightAmb::Run(time::Progress * prog)
    for (nat32 x=0;x<seg.Size(0);x++) segCount = math::Max(segCount,seg.Get(x,y)+1);
   }
 
+ // For the progress bar...
+  nat32 step = 0;
+  nat32 steps = 1 + seg.Size(1) + segCount + 2 + seg.Size(1) + DivSteps(ambientRecDepth);
+
 
  // Calculate the correlation for each segment...
   {
    // Create array to hold expectation values for every segment...
+    prog->Report(step++,steps);
     ds::Array<SegValue> segExp(segCount);
     for (nat32 s=0;s<segCount;s++)
     {
@@ -101,6 +106,7 @@ void LightAmb::Run(time::Progress * prog)
    // Now do a pass over the image and sum up the above for each segment...
     for (nat32 y=0;y<seg.Size(1);y++)
     {
+     prog->Report(step++,steps);
      for (nat32 x=0;x<seg.Size(0);x++)
      {
       real32 l = dir.Get(x,y).Length();
@@ -136,6 +142,7 @@ void LightAmb::Run(time::Progress * prog)
     cor.Size(segCount);
     for (nat32 s=0;s<segCount;s++)
     {
+     prog->Report(step++,steps);
      if (!math::IsZero(segExp[s].div))
      {
       real32 sqrDivI = (segExp[s].expSqrI/segExp[s].div) - math::Sqr(segExp[s].expI/segExp[s].div);
@@ -174,13 +181,16 @@ void LightAmb::Run(time::Progress * prog)
   }
 
 
+
  // The first real task is to build an array of parameters for the function
  // being optimised, one set of parameters for each pixel. The pixels are
  // arranged by segment, with a supporting structure to get all pixels for a 
  // given segment...
   ds::Array<nat32> pixelOffset(segCount+1);
+  ds::Array<PixelAux> pixel;
   {
    // First work out the size of each segment...
+    prog->Report(step++,steps);
     ds::Array<nat32> segSize(segCount);
     for (nat32 i=0;i<segCount;i++) segSize[i] = 0;
     for (nat32 y=0;y<seg.Size(1);y++)
@@ -195,6 +205,7 @@ void LightAmb::Run(time::Progress * prog)
     }
     
    // Now fill in the offset buffer and re-zero the segSize buffer for re-use...
+    prog->Report(step++,steps);
     pixelOffset[0] = 0;
     for (nat32 i=0;i<segCount;i++)
     {
@@ -202,12 +213,13 @@ void LightAmb::Run(time::Progress * prog)
                            else pixelOffset[i+1] = pixelOffset[i];
      segSize[i] = 0;
     }
-    ds::Array<PixelAux> pixel(pixelOffset[segCount]);
-
-
+ 
+    pixel.Size(pixelOffset[segCount]);
+  
    // And finally fill in the pixel buffer...
     for (nat32 y=0;y<seg.Size(1);y++)
     {
+     prog->Report(step++,steps);
      for (nat32 x=0;x<seg.Size(0);x++)
      {
       if ((!math::IsZero(irr.Get(x,y)))&&(!math::IsZero(dir.Get(x,y).Length())))
@@ -230,13 +242,136 @@ void LightAmb::Run(time::Progress * prog)
   }
 
 
- // 
+
+ // Now use branch and bound to find the optimum ambient term, keeping note of
+ // albedo assignments each time we find a better albedo...
+  // Setup output data structures and tempory storage...
+   albedo.Size(segCount);
+   ds::Array<real32> tempAlbedo(segCount);
+   real32 maxMinCost = math::Infinity<real32>();
+   
+   ds::PriorityQueue<AlbRange> albWork;
+   ds::PriorityQueue<AmbRange> ambWork;
+
+
+  // Create the initial search range...
+   AmbRange ini;
+   ini.minAmbient = minAmbient;
+   ini.maxAmbient = maxAmbient;
+   ini.depth = ambientRecDepth;
+   ini.lowMinCost = 0.0;
+   ini.highMinCost = math::Infinity<real32>();
+   
+   ambWork.Add(ini);
+
+
+  // Do the work by eatting the work queue - take a greedy approach to try and 
+  // accelerate tying down the possible values...
+   while ((ambWork.Size()!=0)&&(ambWork.Peek().lowMinCost<maxMinCost))
+   {
+    AmbRange targ = ambWork.Peek();
+    ambWork.Rem();
+    
+    // Greedy on down whilst depth isn't 0...
+     while (targ.depth!=0)
+     {
+      // Divide to make a low and high...
+       real32 half = (targ.minAmbient + targ.maxAmbient) * 0.5;
+       
+       AmbRange low;
+       low.minAmbient = targ.minAmbient;
+       low.maxAmbient = half;
+       low.depth = targ.depth-1;
+       prog->Report(step++,steps);
+       AmbRangeCost(low,pixel,pixelOffset,albWork);
+      
+       AmbRange high;
+       high.minAmbient = half;
+       high.maxAmbient = targ.maxAmbient;
+       high.depth = targ.depth-1;
+       prog->Report(step++,steps);
+       AmbRangeCost(high,pixel,pixelOffset,albWork);
+       
+       maxMinCost = math::Min(maxMinCost,low.highMinCost,high.highMinCost);
+
+
+      // Set the best as targ, store the other in the work queue if needed...
+       if (low.lowMinCost<high.lowMinCost)
+       {
+        targ = low;
+        if (high.lowMinCost<maxMinCost) ambWork.Add(high);
+                                   else steps -= DivSteps(high.depth);
+       }
+       else
+       {
+        targ = high;
+        if (low.lowMinCost<maxMinCost) ambWork.Add(low);
+                                  else steps -= DivSteps(low.depth);
+       }
+     }
+     
+    // At the bottom take an actual sample at the half way position of the range...
+     real32 half = (targ.minAmbient + targ.maxAmbient) * 0.5;
+     prog->Report(step++,steps);
+     real32 c = AmbCost(half,tempAlbedo,pixel,pixelOffset,albWork);
+     
+     if (c<maxMinCost)
+     {
+      maxMinCost = c;
+      bestAmbient = half;
+      for (nat32 i=0;i<segCount;i++) albedo[i] = tempAlbedo[i];
+     }
+   }
 
  
  prog->Pop();
 }
 
 //------------------------------------------------------------------------------
+void LightAmb::AmbRangeCost(AmbRange & amb,const ds::Array<PixelAux> & pixel,
+                            const ds::Array<nat32> & pixelOffset,ds::PriorityQueue<AlbRange> & work)
+{
+ LogTime("eos::fit::LightAmb::AmbRangeCost");
+ 
+ amb.lowMinCost = 0.0;
+ amb.highMinCost = 0.0;
+ 
+ for (nat32 i=0;i<pixelOffset.Size()-1;i++)
+ {
+  nat32 size = pixelOffset[i+1] - pixelOffset[i];
+  if (size!=0)
+  {
+   real32 outLow,outHigh;
+   SegCostRange(amb.minAmbient,amb.maxAmbient,outLow,outHigh,pixel,pixelOffset[i],size,work);
+   amb.lowMinCost += outLow;
+   amb.highMinCost += outHigh;
+  }
+ }
+}
+
+real32 LightAmb::AmbCost(real32 amb,ds::Array<real32> & albedo,const ds::Array<PixelAux> & pixel,
+                 const ds::Array<nat32> & pixelOffset,ds::PriorityQueue<AlbRange> & work)
+{
+ LogTime("eos::fit::LightAmb::AmbCost");
+
+ real32 cost = 0.0;
+
+ for (nat32 i=0;i<pixelOffset.Size()-1;i++)
+ {
+  nat32 size = pixelOffset[i+1] - pixelOffset[i];
+  if (size!=0)
+  {
+   cost += SegCost(amb,pixel,pixelOffset[i],size,work,&albedo[i]);
+  }
+  else
+  {
+   albedo[i] = 0.0;
+  }
+ }
+
+ return cost;
+}
+
 void LightAmb::SegCostRange(real32 lowAmb,real32 highAmb,
                             real32 & outLow,real32 & outHigh,
                             const ds::Array<PixelAux> & pixel,nat32 start,nat32 size,
@@ -254,8 +389,11 @@ void LightAmb::SegCostRange(real32 lowAmb,real32 highAmb,
   ini.depth = albedoRecDepth;
     
   ini.lowMinCost = 0.0; // Doesn't matter for this first entry.
-  ini.highMinCost = math::Infinity<real32>(); // "
+  ini.highMinCost = math::Infinity<real32>(); // Provides no constraint - let the divisions do so.
   
+  work.Add(ini);
+
+
  // Initialise output variables...
   outHigh = math::Infinity<real32>();
   outLow = math::Infinity<real32>();
@@ -340,6 +478,9 @@ real32 LightAmb::SegCost(real32 amb,const ds::Array<PixelAux> & pixel,nat32 star
   ini.lowMinCost = 0.0; // Doesn't matter for this first entry.
   ini.highMinCost = math::Infinity<real32>(); // "
   
+  work.Add(ini);
+
+
  // Initialise pruning variable and associated albedo...
   real32 maxMinCost = math::Infinity<real32>();
   real32 bestAlbedo = 0.0;
