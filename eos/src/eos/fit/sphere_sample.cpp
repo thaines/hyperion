@@ -1,5 +1,20 @@
 //------------------------------------------------------------------------------
 // Copyright 2008 Tom Haines
+
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
 #include "eos/fit/sphere_sample.h"
 
 namespace eos
@@ -150,9 +165,9 @@ SubDivSphere::Tri SubDivSphere::Collide(const bs::Normal & dir) const
     // Its a possible match - do a full check, but produce a distance that 
     // should be zero on a match and select the smallest - this makes cracks a 
     // non-issue (With early break out if all are positive)...
-     real32 distA = UnnormDist(dir,verts[tris[i].vertInd[1]],verts[tris[i].vertInd[2]]);
-     real32 distB = UnnormDist(dir,verts[tris[i].vertInd[2]],verts[tris[i].vertInd[0]]);
-     real32 distC = UnnormDist(dir,verts[tris[i].vertInd[3]],verts[tris[i].vertInd[1]]);
+     real32 distA = UnnormDist(dir,verts[tris[i].vertInd[0]],verts[tris[i].vertInd[2]]);
+     real32 distB = UnnormDist(dir,verts[tris[i].vertInd[1]],verts[tris[i].vertInd[0]]);
+     real32 distC = UnnormDist(dir,verts[tris[i].vertInd[2]],verts[tris[i].vertInd[1]]);
      
      if ((distA>0.0)&&(distB>0.0)&&(distC>0.0))
      {
@@ -177,9 +192,9 @@ SubDivSphere::Tri SubDivSphere::Collide(const bs::Normal & dir) const
   while (tris[ret].child!=nat32(-1))
   {
    Tri c = tris[ret].child;
-   real32 distA = UnnormDist(dir,verts[tris[c].vertInd[1]],verts[tris[c].vertInd[2]]);
-   real32 distB = UnnormDist(dir,verts[tris[c].vertInd[2]],verts[tris[c].vertInd[0]]);
-   real32 distC = UnnormDist(dir,verts[tris[c].vertInd[3]],verts[tris[c].vertInd[1]]);
+   real32 distA = UnnormDist(dir,verts[tris[c].vertInd[0]],verts[tris[c].vertInd[2]]);
+   real32 distB = UnnormDist(dir,verts[tris[c].vertInd[1]],verts[tris[c].vertInd[0]]);
+   real32 distC = UnnormDist(dir,verts[tris[c].vertInd[2]],verts[tris[c].vertInd[1]]);
    
    if (distA<0.0) ret = tris[c].adj[0];
    else
@@ -199,9 +214,9 @@ SubDivSphere::Tri SubDivSphere::Collide(const bs::Normal & dir) const
 
 void SubDivSphere::Trilinear(Tri tri,const bs::Normal & dir,real32 & a,real32 & b,real32 & c) const
 {
- a = NormDist(dir,verts[tris[tri].vertInd[1]],verts[tris[tri].vertInd[2]]);
- b = NormDist(dir,verts[tris[tri].vertInd[2]],verts[tris[tri].vertInd[0]]);
- c = NormDist(dir,verts[tris[tri].vertInd[3]],verts[tris[tri].vertInd[1]]);
+ a = NormDist(dir,verts[tris[tri].vertInd[0]],verts[tris[tri].vertInd[2]]);
+ b = NormDist(dir,verts[tris[tri].vertInd[1]],verts[tris[tri].vertInd[0]]);
+ c = NormDist(dir,verts[tris[tri].vertInd[2]],verts[tris[tri].vertInd[1]]);
 }
 
 void SubDivSphere::MakeExist(Tri tri,nat32 a)
