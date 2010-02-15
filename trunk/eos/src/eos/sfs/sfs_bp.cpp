@@ -1329,10 +1329,16 @@ void SfS_BP_Nice3::Run(time::Progress * prog)
        real32 dx,dy;
        gws.Query(x,y,dx,dy);
        
+       math::Vect<3,real32> rawDir;
+       rawDir[0] = -dx;
+       rawDir[1] = -dy;
+       rawDir[2] = 0.0;
+       
+       math::Vect<3,real32> perpDir;
+       math::CrossProduct(rawDir,toLight,perpDir);
+       
        math::Fisher fish;
-       fish[0] = -dx;
-       fish[1] = -dy;
-       fish[2] = 0.0;
+       math::CrossProduct(toLight,perpDir,fish);
        
        real32 len = fish.Length();
        if (!math::IsZero(len))
@@ -1346,10 +1352,14 @@ void SfS_BP_Nice3::Run(time::Progress * prog)
     // Gradient term...
      if (!math::IsZero(gradK))
      {
+      math::Vect<3,real32> gradDir;
+      gradDir[0] = dx.Get(x,y);
+      gradDir[1] = dy.Get(x,y);
+      gradDir[2] = 0.0;
+
       math::Vect<3,real32> dir;
-      dir[0] = dy.Get(x,y);
-      dir[1] = -dx.Get(x,y);
-      dir[2] = 0.0;
+      math::CrossProduct(gradDir,toLight,dir);      
+      
       real32 len = dir.Length();
       if (!math::IsZero(len))
       {
