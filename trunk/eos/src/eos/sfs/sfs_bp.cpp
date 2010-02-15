@@ -328,22 +328,10 @@ void SfS_BP::Run(time::Progress * prog)
          // Calculate the message...
           math::FisherBingham msg = ms.data;
           for (nat32 i=0;i<d;i++) msg *= ms.in[i];
-          for (nat32 i=d+1;i<4;i++) msg *= ms.in[i];
-          
-          if (msg.Bad())
-          {
-           LogDebug("pre conv nan" << LogDiv() << l << LogDiv() << it << LogDiv() << x << LogDiv() 
-                    << y << LogDiv() << d << LogDiv() << msg.fisher << ";" << msg.bingham);
-          }          
+          for (nat32 i=d+1;i<4;i++) msg *= ms.in[i];       
           
           //LogDebug("Pre-convolution" << LogDiv() << msg);
           msg.Convolve(ms.send[d]);
-          
-          if (msg.Bad())
-          {
-           LogDebug("post conv nan" << LogDiv() << l << LogDiv() << it << LogDiv() << x << LogDiv() 
-                    << y << LogDiv() << d << LogDiv() << msg.fisher << ";" << msg.bingham);
-          }
                    
          // Send...
           level[l].Get(ox,oy).in[(d+2)%4] = msg;
