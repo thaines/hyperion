@@ -1096,6 +1096,16 @@ void CameraPair::Project(const math::Vect<4,real64> & pos,real32 & outX,real32 &
   //LogDebug("Project {left,right}" << LogDiv() << lRect << LogDiv() << rRect); // *************************************
 }
 
+void CameraPair::Project(const math::Vect<4,real32> & pos,real32 & outX,real32 & outY,real32 & outDisp,
+                         const math::Mat<3,3,real64> * rectLeft,
+                         const math::Mat<3,3,real64> * rectRight) const
+{
+ math::Vect<4,real64> posEx;
+ for (nat32 i=0;i<4;i++) posEx[i] = pos[i];
+
+ Project(posEx,outX,outY,outDisp,rectLeft,rectRight);
+}
+
 void CameraPair::Project(const math::Vect<4,real64> & pos,
                          math::Vect<2,real64> & outLeft,math::Vect<2,real64> & outRight,
                          const math::Mat<3,3,real64> * rectLeft,const math::Mat<3,3,real64> * rectRight) const

@@ -458,6 +458,31 @@ class EOS_CLASS Plane
     math::MultVect(plucker,pl,out);
    }
    
+  /// Non-homogenous version of LineIntercept - internally homogenous and has obvious robustness issues.
+   template <typename T>
+   void LineIntercept(const math::Vect<3,T> & a,const math::Vect<3,T> & b,math::Vect<3,T> & out) const
+   {
+    math::Vect<4,T> ha; ha[0] = a[0]; ha[1] = a[1]; ha[2] = a[2]; ha[3] = 1.0;
+    math::Vect<4,T> hb; hb[0] = b[0]; hb[1] = b[1]; hb[2] = b[2]; hb[3] = 1.0;
+    
+    math::Vect<4,T> hOut;
+    LineIntercept(ha,hb,hOut);
+    hOut /= hOut[3];
+    
+    out[0] = hOut[0]; out[1] = hOut[1]; out[2] = hOut[2];
+   }
+
+  /// Non-homogenous input version of LineIntercept, but with a homogenous output.
+   template <typename T>
+   void LineIntercept(const math::Vect<3,T> & a,const math::Vect<3,T> & b,math::Vect<4,T> & out) const
+   {
+    math::Vect<4,T> ha; ha[0] = a[0]; ha[1] = a[1]; ha[2] = a[2]; ha[3] = 1.0;
+    math::Vect<4,T> hb; hb[0] = b[0]; hb[1] = b[1]; hb[2] = b[2]; hb[3] = 1.0;
+    
+    math::Vect<4,T> hOut;
+    LineIntercept(ha,hb,out);
+   }
+   
   /// Normalises the normal, adjusting the distance as needed.
   /// Makes the distance positive.
    void Normalise()
