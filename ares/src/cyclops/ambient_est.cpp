@@ -5,7 +5,7 @@
 
 //------------------------------------------------------------------------------
 AmbientEst::AmbientEst(Cyclops & cyc)
-:cyclops(cyc),win(null<gui::Window*>()),
+:cyclops(cyc),win(null<gui::Window*>()),ambient(0.0),
 irrVar(null<svt::Var*>()),segVar(null<svt::Var*>()),dispVar(null<svt::Var*>()),
 imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 {
@@ -105,7 +105,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    viewSelect->Append("Fisher Concentration (log10)");
    viewSelect->Append("Linear Albedo");
    viewSelect->Append("Corrected Image");
-   viewSelect->Append("Fully Corrected Image");
+   viewSelect->Append("Linear Corrected Image");
    viewSelect->Set(0);
 
    algSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
@@ -453,7 +453,7 @@ void AmbientEst::Run(gui::Base * obj,gui::Event * event)
 
 
  // Get the output...
-  real32 bestAmb = la.BestAmb();
+  ambient = la.BestAmb();
 
 
   albedo.Size(la.SegmentCount());
@@ -467,7 +467,7 @@ void AmbientEst::Run(gui::Base * obj,gui::Event * event)
 
  // Display the output strings...
   str::String s;
-  s << "Best ambient = " << bestAmb;
+  s << "Best ambient = " << ambient << " (Uncorrected = " << crf.Inverse(ambient) << ")";
   results->Set(s);
   
   str::String s2;
@@ -507,7 +507,7 @@ void AmbientEst::SaveView(gui::Base * obj,gui::Event * event)
 
 void AmbientEst::Update()
 {
- /*
+
  // Find what size we need to be operating at...
   nat32 width=320, height=240;
   nat32 mode = viewSelect->Get();
@@ -515,18 +515,13 @@ void AmbientEst::Update()
   {
    case 0: // Irradiance
    case 1: // Corrected Irradiance
+   case 6: // Corrected Image
+   case 7: // Fully corrected image
     width = irr.Size(0);
     height = irr.Size(1);
    break;
-   case 5: // Light Source Sphere
-   case 6: // Cost Sphere
-    width = math::Max<nat32>(math::Min(irr.Size(0),irr.Size(1)),450);
-    height = width;
-   break;
    case 2: // Segmentation
-   case 7: // Albedo
-   case 8: // Per Pixel Solution Cost.
-   case 9: // Segment cost.
+   case 5: // Albedo
     width = seg.Size(0);
     height = seg.Size(1);
    break;
@@ -644,154 +639,7 @@ void AmbientEst::Update()
     }
    }
    break;
-   case 5: // Light Source Sphere
-   {
-    real32 centX = image.Size(0)/2.0;
-    real32 centY = image.Size(1)/2.0;
-    real32 radius = centX*0.9;
-
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++)
-     {
-      real32 dirX = (x-centX)/radius;
-      real32 dirY = (y-centY)/radius;
-
-      real32 l;
-      if (math::Sqr(dirX)+math::Sqr(dirY)<1.0)
-      {
-       real32 dirZ = math::Sqrt(1.0 - math::Sqr(dirX) - math::Sqr(dirY));
-       l = dirX*lightD[0] + dirY*lightD[1] + dirZ*lightD[2];
-       l = math::Max<real32>(l,0.0);
-      }
-      else
-      {
-       l = 0.0;
-      }
-
-      image.Get(x,y).r = l;
-      image.Get(x,y).g = l;
-      image.Get(x,y).b = l;
-     }
-    }
-   }
-   break;
-   case 6: // Cost Sphere
-   {
-    if (samples.Size()!=0)
-    {
-     // First generate a Delauney triangulation with all the samples in, with
-     // costs as the stored data...
-      ds::Delaunay2D<real32> doc;
-      real32 minCost = math::Infinity<real32>();
-      for (nat32 i=0;i<samples.Size();i++)
-      {
-       if ((samples[i].dir[2]>0.0)||(math::IsZero(samples[i].dir[2])))
-       {
-        doc.Add(samples[i].dir[0],samples[i].dir[1],samples[i].cost);
-        minCost = math::Min(minCost,samples[i].cost);
-       }
-      }
-
-     // Now iterate all the pixels, interpolating costs for those inside the
-     // sphere and rendering the Log10 of the costs...
-      real32 max = 0.001;
-      real32 centX = image.Size(0)/2.0;
-      real32 centY = image.Size(1)/2.0;
-      real32 radius = centX*0.9;
-
-      for (nat32 y=0;y<image.Size(1);y++)
-      {
-       for (nat32 x=0;x<image.Size(0);x++)
-       {
-        real32 dirX = (x-centX)/radius;
-        real32 dirY = (y-centY)/radius;
-
-        real32 l;
-        if (math::Sqr(dirX)+math::Sqr(dirY)<1.0)
-        {
-         ds::Delaunay2D<real32>::Mid tri = doc.Triangle(dirX,dirY);
-         nat32 pc = 0;
-         real32 cost[3];
-         real32 xp[3];
-         real32 yp[3];
-         for (nat32 i=0;i<3;i++)
-         {
-          if (!tri.Infinite(i))
-          {
-           ds::Delaunay2D<real32>::Pos pos = tri.GetPos(i);
-           cost[pc] = *pos - minCost;
-           xp[pc] = pos.X();
-           yp[pc] = pos.Y();
-           ++pc;
-          }
-         }
-
-         switch(pc)
-         {
-          case 0:
-           l = -1.0;
-          break;
-          case 1:
-           l = cost[0];
-          break;
-          case 2:
-          {
-           real32 length = math::Sqrt(math::Sqr(xp[1]-xp[0]) + math::Sqr(yp[1]-yp[0]));
-           real32 t = ((dirX-xp[0])*(xp[1]-xp[0]) + (dirY-yp[0])*(yp[1]-yp[0]))/math::Sqr(length);
-           l = (1.0-t)*cost[0] + t*cost[1];
-          }
-          break;
-          case 3:
-          {
-           // Below is using Barycentric Coordinates...
-            real32 xC =  dirX-xp[2];
-            real32 yC =  dirY-yp[2];
-            real32 x1 = xp[0]-xp[2];
-            real32 x2 = xp[1]-xp[2];
-            real32 y1 = yp[0]-yp[2];
-            real32 y2 = yp[1]-yp[2];
-
-            real32 mult = 1.0/(x1*y2 - x2*y1);
-
-            real32 lam1 = (y2*xC - x2*yC) * mult;
-            real32 lam2 = (x1*yC - y1*xC) * mult;
-
-            l = lam1*cost[0] + lam2*cost[1] + (1.0-lam1-lam2)*cost[2];
-          }
-          break;
-         }
-        }
-        else
-        {
-         l = -1.0;
-        }
-
-        max = math::Max(max,l);
-        image.Get(x,y).r = l;
-        image.Get(x,y).g = l;
-        image.Get(x,y).b = l;
-       }
-      }
-
-     // Normalise...
-      for (nat32 y=0;y<image.Size(1);y++)
-      {
-       for (nat32 x=0;x<image.Size(0);x++)
-       {
-        if (image.Get(x,y).r<0.0)
-        {
-         image.Get(x,y).r = 0.0;
-         image.Get(x,y).g = 0.0;
-         image.Get(x,y).b = 0.5;
-        }
-        else image.Get(x,y) /= max;
-       }
-      }
-    }
-   }
-   break;
-   case 7: // Albedo
+   case 5: // Linear Albedo
    {
     real32 maxL = 0.001;
     for (nat32 y=0;y<image.Size(1);y++)
@@ -827,176 +675,56 @@ void AmbientEst::Update()
     }
    }
    break;
-   case 8: // Per Pixel Solution Cost
+   case 6: // Corrected Image
    {
-    if (albedo.Size()!=0)
+    for (nat32 y=0;y<image.Size(1);y++)
     {
-     real32 maxL = 0.001;
-     for (nat32 y=0;y<image.Size(1);y++)
+     for (nat32 x=0;x<image.Size(0);x++)
      {
-      for (nat32 x=0;x<image.Size(0);x++)
+      real32 l = (irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0;
+      real32 cl = crf(l);
+      cl -= albedo[seg.Get(x,y)]*ambient;
+      cl = math::Max<real32>(0.0,cl);
+      real32 ul = crf.Inverse(cl);
+      ul /= l;
+      if (math::IsFinite(ul))
       {
-       real32 i = crf((irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0);
-       real32 a = albedo[seg.Get(x,y)];
-
-       real32 angI = math::InvCos(math::IsZero(a)?1.0:math::Min<real32>(i/a,1.0));
-       real32 k = fish.Get(x,y).Length();
-       real32 angS = math::IsZero(k)?angI:(math::InvCos(math::Min<real32>((lightD * fish.Get(x,y))/k,1.0)));
-
-       real32 l = math::Log10(1.0 + -k*math::Cos(angI-angS) + k);
-
-       image.Get(x,y).r = l;
-       maxL = math::Max(maxL,l);
+       image.Get(x,y).r *= ul;
+       image.Get(x,y).g *= ul;
+       image.Get(x,y).b *= ul;
       }
-     }
-
-     for (nat32 y=0;y<image.Size(1);y++)
-     {
-      for (nat32 x=0;x<image.Size(0);x++)
+      else
       {
-       real32 l = image.Get(x,y).r/maxL;
-
-       image.Get(x,y).r = l;
-       image.Get(x,y).g = l;
-       image.Get(x,y).b = l;
+       image.Get(x,y).r = 0.0;
+       image.Get(x,y).g = 0.0;
+       image.Get(x,y).b = 0.0;
       }
      }
     }
    }
    break;
-   case 9: // Segment value
+   case 7: // Fully corrected Image
    {
-    if ((seg.Size(0)==irr.Size(0))&&
-        (seg.Size(1)==irr.Size(1))&&
-        (seg.Size(0)==fish.Size(0))&&
-        (seg.Size(1)==fish.Size(1)))
+    real32 max = 0.001;
+    for (nat32 y=0;y<image.Size(1);y++)
     {
-     // First count the segments...
-      nat32 segCount = 1;
-      for (nat32 y=0;y<seg.Size(1);y++)
-      {
-       for (nat32 x=0;x<seg.Size(0);x++) segCount = math::Max(segCount,seg.Get(x,y)+1);
-      }
-
-
-     // Create array to hold expectation values for every segment...
-      ds::Array<SegValue> segExp(segCount);
-      for (nat32 s=0;s<segCount;s++)
-      {
-       segExp[s].div = 0.0;
-
-       segExp[s].expI = 0.0;
-       segExp[s].expX = 0.0;
-       segExp[s].expY = 0.0;
-       segExp[s].expZ = 0.0;
-
-       segExp[s].expSqrI = 0.0;
-       segExp[s].expSqrX = 0.0;
-       segExp[s].expSqrY = 0.0;
-       segExp[s].expSqrZ = 0.0;
-
-       segExp[s].expIrrX = 0.0;
-       segExp[s].expIrrY = 0.0;
-       segExp[s].expIrrZ = 0.0;
-      }
-
-
-     // Now do a pass over the image and sum up the above for each segment...
-      for (nat32 y=0;y<seg.Size(1);y++)
-      {
-       for (nat32 x=0;x<seg.Size(0);x++)
-       {
-        real32 l = fish.Get(x,y).Length();
-        if (!math::IsZero(l))
-        {
-         real32 w = l;
-         bs::Normal pos;
-         for (nat32 i=0;i<3;i++) pos[i] = math::InvCos(fish.Get(x,y)[i]/l); // Makes 'em 0..pi
-         nat32 s = seg.Get(x,y);
-         real32 ir = crf((irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0);
-
-
-         segExp[s].div += w;
-
-         segExp[s].expI += w*ir;
-         segExp[s].expX += w*pos[0];
-         segExp[s].expY += w*pos[1];
-         segExp[s].expZ += w*pos[2];
-
-         segExp[s].expSqrI += w*math::Sqr(ir);
-         segExp[s].expSqrX += w*math::Sqr(pos[0]);
-         segExp[s].expSqrY += w*math::Sqr(pos[1]);
-         segExp[s].expSqrZ += w*math::Sqr(pos[2]);
-
-         segExp[s].expIrrX += w*ir*pos[0];
-         segExp[s].expIrrY += w*ir*pos[1];
-         segExp[s].expIrrZ += w*ir*pos[2];
-        }
-       }
-      }
-
-
-     // Now calculate the 0..1 value for every segment...
-      ds::Array<real32> segCost(segCount);
-      for (nat32 s=0;s<segCount;s++)
-      {
-       if (!math::IsZero(segExp[s].div))
-       {
-        real32 sqrDivI = (segExp[s].expSqrI/segExp[s].div) - math::Sqr(segExp[s].expI/segExp[s].div);
-        real32 sqrDivX = (segExp[s].expSqrX/segExp[s].div) - math::Sqr(segExp[s].expX/segExp[s].div);
-        real32 sqrDivY = (segExp[s].expSqrY/segExp[s].div) - math::Sqr(segExp[s].expY/segExp[s].div);
-        real32 sqrDivZ = (segExp[s].expSqrZ/segExp[s].div) - math::Sqr(segExp[s].expZ/segExp[s].div);
-
-        if ((sqrDivI>0.0)&&(!math::IsZero(sqrDivI)))
-        {
-         real32 costX = 0.0,costY = 0.0,costZ = 0.0;
-
-         if ((sqrDivX>0.0)&&(!math::IsZero(sqrDivX)))
-         {
-          costX = (segExp[s].expIrrX/segExp[s].div) - (segExp[s].expX*segExp[s].expI/math::Sqr(segExp[s].div));
-          costX /= math::Sqrt(sqrDivX) * math::Sqrt(sqrDivI);
-         }
-
-         if ((sqrDivY>0.0)&&(!math::IsZero(sqrDivY)))
-         {
-          costY = (segExp[s].expIrrY/segExp[s].div) - (segExp[s].expY*segExp[s].expI/math::Sqr(segExp[s].div));
-          costY /= math::Sqrt(sqrDivY) * math::Sqrt(sqrDivI);
-         }
-
-         if ((sqrDivZ>0.0)&&(!math::IsZero(sqrDivZ)))
-         {
-          costZ = (segExp[s].expIrrZ/segExp[s].div) - (segExp[s].expZ*segExp[s].expI/math::Sqr(segExp[s].div));
-          costZ /= math::Sqrt(sqrDivZ) * math::Sqrt(sqrDivI);
-         }
-
-         segCost[s] = math::Sqrt(math::Sqr(costX) + math::Sqr(costY) + math::Sqr(costZ));
-        }
-        else segCost[s] = -1.0;
-       }
-       else segCost[s] = -1.0;
-      }
-
-
-     // And finally fill in the image with the values...
-      real32 pruneThresh = bfPruneThresh->GetReal(0.2);
-      for (nat32 y=0;y<image.Size(1);y++)
-      {
-       for (nat32 x=0;x<image.Size(0);x++)
-       {
-        image.Get(x,y).r = segCost[seg.Get(x,y)];
-        if (image.Get(x,y).r<pruneThresh)
-        {
-         image.Get(x,y).r = 0.0;
-         image.Get(x,y).g = 0.0;
-         image.Get(x,y).b = 0.5;
-        }
-        else
-        {
-         image.Get(x,y).g = image.Get(x,y).r;
-         image.Get(x,y).b = image.Get(x,y).r;
-        }
-       }
-      }
+     for (nat32 x=0;x<image.Size(0);x++)
+     {
+      real32 l = (irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0;
+      real32 cl = crf(l);
+      cl -= albedo[seg.Get(x,y)]*ambient;
+      cl = math::Max<real32>(0.0,cl);
+      max = math::Max(max,cl);
+      
+      image.Get(x,y).r = cl;
+      image.Get(x,y).g = cl;
+      image.Get(x,y).b = cl;
+     }
+    }
+    
+    for (nat32 y=0;y<image.Size(1);y++)
+    {
+     for (nat32 x=0;x<image.Size(0);x++) image.Get(x,y) /= max;
     }
    }
    break;
@@ -1008,7 +736,7 @@ void AmbientEst::Update()
   {
    for (nat32 x=0;x<img.Size(0);x++) img.Get(x,y) = image.Get(x,y);
   }
-*/
+
 
  // Redraw...
   canvas->SetSize(img.Size(0),img.Size(1));
