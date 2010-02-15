@@ -1,10 +1,10 @@
 //------------------------------------------------------------------------------
 // Copyright 2008 Tom Haines
 
-#include "cyclops/lighting.h"
+#include "cyclops/segmentation.h"
 
 //------------------------------------------------------------------------------
-Lighting::Lighting(Cyclops & cyc)
+Segmentation::Segmentation(Cyclops & cyc)
 :cyclops(cyc),win(null<gui::Window*>()),
 needleVar(null<svt::Var*>()),origVar(null<svt::Var*>()),imageVar(null<svt::Var*>())
 {
@@ -118,17 +118,17 @@ needleVar(null<svt::Var*>()),origVar(null<svt::Var*>()),imageVar(null<svt::Var*>
 
 
  // Event handlers...
-  win->OnDeath(MakeCB(this,&Lighting::Quit));
-  canvas->OnResize(MakeCB(this,&Lighting::Resize));
-  but1->OnClick(MakeCB(this,&Lighting::LoadNeedle));
-  but2->OnClick(MakeCB(this,&Lighting::LoadOrig));
-  but3->OnClick(MakeCB(this,&Lighting::Render));
-  viewSelect->OnChange(MakeCB(this,&Lighting::Render));
-  but4->OnClick(MakeCB(this,&Lighting::SaveRender));
-  but5->OnClick(MakeCB(this,&Lighting::LoadCRF));
+  win->OnDeath(MakeCB(this,&Segmentation::Quit));
+  canvas->OnResize(MakeCB(this,&Segmentation::Resize));
+  but1->OnClick(MakeCB(this,&Segmentation::LoadNeedle));
+  but2->OnClick(MakeCB(this,&Segmentation::LoadOrig));
+  but3->OnClick(MakeCB(this,&Segmentation::Render));
+  viewSelect->OnChange(MakeCB(this,&Segmentation::Render));
+  but4->OnClick(MakeCB(this,&Segmentation::SaveRender));
+  but5->OnClick(MakeCB(this,&Segmentation::LoadCRF));
 }
 
-Lighting::~Lighting()
+Segmentation::~Segmentation()
 {
  delete win;
  delete needleVar;
@@ -137,14 +137,14 @@ Lighting::~Lighting()
  delete imgVar;
 }
 
-void Lighting::Quit(gui::Base * obj,gui::Event * event)
+void Segmentation::Quit(gui::Base * obj,gui::Event * event)
 {
  gui::DeathEvent * e = static_cast<gui::DeathEvent*>(event);
  e->doDeath = false;
  delete this;
 }
 
-void Lighting::Resize(gui::Base * obj,gui::Event * event)
+void Segmentation::Resize(gui::Base * obj,gui::Event * event)
 {
  // Clear the canvas to a nice shade of grey...
   canvas->P().Rectangle(bs::Rect(bs::Pos(0,0),bs::Pos(canvas->P().Width(),canvas->P().Height())),bs::ColourRGB(0.5,0.5,0.5));
@@ -158,7 +158,7 @@ void Lighting::Resize(gui::Base * obj,gui::Event * event)
   canvas->Update();
 }
 
-void Lighting::LoadNeedle(gui::Base * obj,gui::Event * event)
+void Segmentation::LoadNeedle(gui::Base * obj,gui::Event * event)
 {
  str::String fn;
  if (cyclops.App().LoadFileDialog("Select Needle Map","*.bmp,*.jpg,*.png,*.tif",fn))
@@ -183,7 +183,7 @@ void Lighting::LoadNeedle(gui::Base * obj,gui::Event * event)
  }
 }
 
-void Lighting::LoadOrig(gui::Base * obj,gui::Event * event)
+void Segmentation::LoadOrig(gui::Base * obj,gui::Event * event)
 {
  str::String fn;
  if (cyclops.App().LoadFileDialog("Select Original Image","*.bmp,*.jpg,*.png,*.tif",fn))
@@ -208,7 +208,7 @@ void Lighting::LoadOrig(gui::Base * obj,gui::Event * event)
  }
 }
 
-void Lighting::LoadCRF(gui::Base * obj,gui::Event * event)
+void Segmentation::LoadCRF(gui::Base * obj,gui::Event * event)
 {
  str::String fn;
  if (cyclops.App().LoadFileDialog("Select Camera Response Function","*.crf",fn))
@@ -221,12 +221,12 @@ void Lighting::LoadCRF(gui::Base * obj,gui::Event * event)
  }
 }
 
-void Lighting::Render(gui::Base * obj,gui::Event * event)
+void Segmentation::Render(gui::Base * obj,gui::Event * event)
 {
  Update();
 }
 
-void Lighting::SaveRender(gui::Base * obj,gui::Event * event)
+void Segmentation::SaveRender(gui::Base * obj,gui::Event * event)
 {
  str::String fn("");
  if (cyclops.App().SaveFileDialog("Save Image",fn))
@@ -241,7 +241,7 @@ void Lighting::SaveRender(gui::Base * obj,gui::Event * event)
  }
 }
 
-void Lighting::Update()
+void Segmentation::Update()
 {
  // Check sizes match, adjust/fail as scenario dictates...
   if ((needleImage.Size(0)!=origImage.Size(0))||(needleImage.Size(1)!=origImage.Size(1))) return;
