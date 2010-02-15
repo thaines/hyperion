@@ -98,7 +98,7 @@ void Func::Load(const bs::Element & root)
   Poly p;
   p.power = targ->GetInt("power",0);
   p.mult = targ->GetReal("mult",0.0);
-  LogDebug("[Func::load] Found poly term" << LogDiv() << p.mult << " * x^" << p.power);
+  //LogDebug("[Func::load] Found poly term" << LogDiv() << p.mult << " * x^" << p.power);
   
   terms.AddBack(p);
   max_power = math::Max(max_power,p.power);
@@ -137,7 +137,7 @@ void Func::Save(bs::Element & root) const
  while (!targ.Bad())
  {
   bs::Element * np = root.NewChild("poly");
-  np->SetAttribute("power",targ->power);
+  np->SetAttribute("power",int32(targ->power));
   np->SetAttribute("mult",targ->mult);
   
   ++targ;
@@ -164,6 +164,36 @@ bit Func::Save(const str::String & fn,bit overwrite) const
 
  // Save the dom to the user selected filename...
   return file::SaveXML(&root,fn,overwrite);
+}
+
+void Func::SetPoly(const Vector<real32> & poly)
+{
+ terms.Reset();
+ for (nat32 i=0;i<poly.Size();i++)
+ {
+  Poly p;
+  p.power = i;
+  p.mult = poly[i];
+  
+  terms.AddBack(p);
+ }
+ 
+ power.Size(poly.Size());
+}
+
+void Func::SetPolyNC(const Vector<real32> & poly)
+{
+ terms.Reset();
+ for (nat32 i=0;i<poly.Size();i++)
+ {
+  Poly p;
+  p.power = i+1;
+  p.mult = poly[i];
+  
+  terms.AddBack(p);
+ }
+ 
+ power.Size(poly.Size()+1);
 }
 
 //------------------------------------------------------------------------------
