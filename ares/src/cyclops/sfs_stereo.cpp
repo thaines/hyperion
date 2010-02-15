@@ -357,7 +357,12 @@ void StereoSfS::Run(gui::Base * obj,gui::Event * event)
     // Stereo information - the disparity value and its confidence...
      if ((!mask.Valid())||(mask.Get(x,y)))
      {
-      ibp.SetVal(x,y,disp.Get(x,y),1.0/dispSd.Get(x,y));
+      real32 val = disp.Get(x,y);
+      real32 prec = 1.0/dispSd.Get(x,y);
+      if (math::IsFinite(val)&&math::IsFinite(prec))
+      {
+       ibp.SetVal(x,y,val,prec);
+      }
      }
     
     // SfS information - the expected differences between disparity values.
@@ -416,7 +421,10 @@ void StereoSfS::Run(gui::Base * obj,gui::Event * event)
         {
          real32 d = exp[i]-disp.Get(x,y);
          real32 w = (1.0/nWeight) / math::Pow(real32(2.0),math::Abs(d)/dCap);
-         ibp.SetRel(x,y,i,1.0,d,w);
+         if (math::IsFinite(d)&&math::IsFinite(w))
+         {
+          ibp.SetRel(x,y,i,1.0,d,w);
+         }
         }
       }
       else
