@@ -455,7 +455,7 @@ $(OBJ)/cyclops_segmentation.o: $(DIRS) $(SRC)/cyclops/segmentation.h $(SRC)/cycl
 	$(C) -o $(OBJ)/cyclops_segmentation.o $(SRC)/cyclops/segmentation.cpp
 
 $(OBJ)/cyclops_light_est.o: $(DIRS) $(SRC)/cyclops/light_est.h $(SRC)/cyclops/light_est.cpp
-	$(C) -o $(OBJ)/c0yclops_light_est.o $(SRC)/cyclops/light_est.cpp
+	$(C) -o $(OBJ)/cyclops_light_est.o $(SRC)/cyclops/light_est.cpp
 
 $(OBJ)/cyclops_cam_response.o: $(DIRS) $(SRC)/cyclops/cam_response.h $(SRC)/cyclops/cam_response.cpp
 	$(C) -o $(OBJ)/cyclops_cam_response.o $(SRC)/cyclops/cam_response.cpp
