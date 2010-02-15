@@ -20,7 +20,7 @@ Other Modules:
 
 aegle (Helios's daughter.) - A large scale data proccessing environment, takes xml script files and dynamically linked modules of algorithms to run scripts on. Integrates with helios.
 
-ares (God of war) - Contains test code for all other parts of the system, plus Cyclops.
+ares (God of war) - Contains test code for all other parts of the system.
 
 
 
