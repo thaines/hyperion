@@ -40,7 +40,7 @@ clean:
 	-rm out.txt
 
 
-EXES	= cyclops svt mscr
+EXES	= cyclops svt mscr geo_test
 
 EXES_S1	= sfgs colour sad_stereo ba_test mya sfs fitter sift spec_rem mser segs 
 EXES_S2	= bleyer04 eos_test fg_test orient sur_test sur_stereo ds_test voronoi
@@ -830,6 +830,25 @@ $(FINAL_MSCR): $(OBJS_MSCR)
 
 $(OBJ)/mscr_main.o: $(DIRS) $(SRC)/mscr/main.h $(SRC)/mscr/main.cpp
 	$(C) -o $(OBJ)/mscr_main.o $(SRC)/mscr/main.cpp
+
+
+
+############
+# geo_test #
+############
+
+FINAL_GEO_TEST	= $(OUT)/geo_test$(PEXT)
+OBJS_GEO_TEST	= $(OBJ)/geo_test_main.o
+
+
+geo_test: $(FINAL_GEO_TEST)
+
+$(FINAL_GEO_TEST): $(OBJS_GEO_TEST)
+	$(L_EXE) -o $(FINAL_GEO_TEST) $(OBJS_GEO_TEST) -L$(EOS_LIB) -leos
+
+
+$(OBJ)/geo_test_main.o: $(DIRS) $(SRC)/geo_test/main.h $(SRC)/geo_test/main.cpp
+	$(C) -o $(OBJ)/geo_test_main.o $(SRC)/geo_test/main.cpp
 
 
 
