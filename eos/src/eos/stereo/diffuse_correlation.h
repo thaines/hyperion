@@ -297,7 +297,9 @@ class EOS_CLASS DiffusionCorrelationImage
 //------------------------------------------------------------------------------
 /// An actual stereopsis algorithm that uses the diffusion correlation - wraps
 /// the various parts in a neat interface and also refines the final location by 
-/// fitting a polynoimial.
+/// fitting a polynoimial. (Note: Whilst I'm sure this could give good results
+/// its just too computationally intensive - I havn't tested it as I havn't the
+/// patience to let it run on any real input.)
 class EOS_CLASS DiffCorrStereo : public DSI
 {
  public:
@@ -414,6 +416,83 @@ class EOS_CLASS DiffCorrStereo : public DSI
   // Out...
    ds::Array2D<real32> disp;
    ds::Array2D<real32> sd; // Negative sd values indicate masked eregions.
+};
+
+//------------------------------------------------------------------------------
+/// A simple stereopsis refinement algorithm - given a disparity map takes each
+/// disparity value and refines its position by running diffusion correlation in
+/// a region around the results - if there is no maxima it prunes the value, if
+/// there is it does subpixel refinement by fitting a polynomial based on area.
+class EOS_CLASS DiffCorrRefine 
+{
+ public:
+  /// &nbsp;
+   DiffCorrRefine();
+
+  /// &nbsp;
+   ~DiffCorrRefine();
+
+
+  /// Sets the image pair to use.
+   void SetImages(const svt::Field<bs::ColourLuv> & left,const svt::Field<bs::ColourLuv> & right);
+
+  /// Optionally call to set masks.
+   void SetMasks(const svt::Field<bit> & left,const svt::Field<bit> & right);
+
+  /// Sets the disparity map to refine.
+   void SetDisparity(const svt::Field<real32> & disp);
+
+
+  /// Sets luv range from image construction flags. All default to true.
+   void SetFlags(bit useHalfX, bit useHalfY, bit useCorners);
+   
+  /// Sets diffusion parameters.
+  /// The multiplier for distance when doing diffusion before the negative log
+  /// is taken, and the number of steps to take - default to 0.1 and 5
+   void SetDiff(real32 distMult,nat32 diffSteps);
+   
+  /// Sets distance related stuff - the distance cap nad the distance difference
+  /// required for a minima to be good enough compared to neighbours.
+  /// Default to 4.0 and 0.1
+   void SetDist(real32 cap,real32 prune);
+
+
+  /// Runs the algorithm.
+   void Run(time::Progress * prog = null<time::Progress*>());
+
+
+  /// &nbsp;
+   void GetDisp(svt::Field<real32> & disp) const;
+
+  /// &nbsp;
+   void GetMask(svt::Field<bit> & mask) const;
+
+
+  /// &nbsp;
+   inline cstrconst TypeString() const {return "eos::stereo::DiffCorrRefine";}
+
+
+ private:
+  // Input...
+   svt::Field<bs::ColourLuv> left;
+   svt::Field<bs::ColourLuv> right;
+   svt::Field<bit> leftMask;
+   svt::Field<bit> rightMask;
+   svt::Field<real32> disp;
+  
+  // Parameters...
+   bit useHalfX;
+   bit useHalfY;
+   bit useCorners;
+   
+   real32 distMult;
+   nat32 diffSteps;
+   
+   real32 cap;
+   real32 prune;
+
+  // Output...
+   ds::Array2D<real32> out; // I use infinity to indicate masked values.
 };
 
 //------------------------------------------------------------------------------
