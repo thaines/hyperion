@@ -22,6 +22,7 @@ class LightEst
   
   gui::ComboBox * viewSelect;
   gui::ComboBox * algSelect;
+  gui::EditBox * ambient;
   
   gui::Expander * brutalFish;
   gui::EditBox * bfMinAlb;

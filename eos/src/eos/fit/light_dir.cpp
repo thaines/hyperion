@@ -12,8 +12,8 @@ namespace eos
  {
 //------------------------------------------------------------------------------
 LightDir::LightDir()
-:minAlbedo(0.001),maxAlbedo(1.5),maxSegCostPP(0.1),lowAlbErr(8192.0),segPruneThresh(0.1),
-subdiv(1),furtherSubdiv(3),recDepth(8),bestLightDir(0.0,0.0,1.0)
+:minAlbedo(0.001),maxAlbedo(1.5),ambient(0.0),maxSegCostPP(0.1),lowAlbErr(8192.0),
+segPruneThresh(0.1),subdiv(1),furtherSubdiv(3),recDepth(7),bestLightDir(0.0,0.0,1.0)
 {}
 
 LightDir::~LightDir()
@@ -31,6 +31,12 @@ void LightDir::SetAlbRange(real32 min,real32 max)
  minAlbedo = min;
  maxAlbedo = max;
 }
+
+void LightDir::SetAmbient(real32 a)
+{
+ ambient = a;
+}
+
 void LightDir::SetSegCapPP(real32 maxCost)
 {
  maxSegCostPP = maxCost;
@@ -219,7 +225,7 @@ void LightDir::Run(time::Progress * prog)
    {
     for (nat32 x=0;x<seg.Size(0);x++)
     {
-     if (!math::IsZero(irr.Get(x,y)))
+     if ((!math::IsZero(irr.Get(x,y)))&&(!math::IsZero(dir.Get(x,y).Length())))
      {
       size[seg.Get(x,y)] += 1;
      }
@@ -243,7 +249,7 @@ void LightDir::Run(time::Progress * prog)
    {
     for (nat32 x=0;x<seg.Size(0);x++)
     {
-     if (!math::IsZero(irr.Get(x,y)))
+     if ((!math::IsZero(irr.Get(x,y)))&&(!math::IsZero(dir.Get(x,y).Length())))
      {
       nat32 s = seg.Get(x,y);
       Pixel & targ = pixel[offset[s]+size[s]];
@@ -258,7 +264,7 @@ void LightDir::Run(time::Progress * prog)
 
 
  // Now iterate the light sources and segments and sum up the costs, for the 
- // initial segmentation...
+ // initial sampling...
   prog->Report(step++,steps);
   ds::Array<real32> segCost(lc.Size());
   ds::Array<real32> minSegCost(segCount);
@@ -412,13 +418,14 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
   {
    real32 k = data[startInd+i].dir.Length();
    real32 dot = (lightDir * data[startInd+i].dir) / k;
-   if (!math::IsFinite(dot)) dot = 1.0;
-   
-   tAux[i].mult = -k*math::Sqrt(1.0-math::Sqr(dot));
+
+   tAux[i].s = -k*dot;
+   tAux[i].t = -k*math::Sqrt(1.0-math::Sqr(dot));
    tAux[i].irr = data[startInd+i].irr;
-   tAux[i].irrSqr = math::Sqr(data[startInd+i].irr);
-   tAux[i].c = -k*dot*data[startInd+i].irr;
-   tAux[i].lowAlbCost = -k*dot;
+   tAux[i].minR = math::Abs(tAux[i].s)/math::Sqrt(math::Sqr(tAux[i].s)+math::Sqr(tAux[i].t));
+   tAux[i].minC = tAux[i].s*tAux[i].minR + tAux[i].t*math::Sqrt(1.0-math::Sqr(tAux[i].minR));
+   
+   /*LogDebug("seg {i,k,dot,s,t,irr,minR,minC}" << LogDiv() << i << LogDiv() << k << LogDiv() << dot << LogDiv() << tAux[i].s << LogDiv() << tAux[i].t << LogDiv() << tAux[i].irr << LogDiv() << tAux[i].minR << LogDiv() << tAux[i].minC);*/
   }
 
 
@@ -431,42 +438,42 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
   real32 bestAlb = 0.0;
   {
    CostRange targ;
-   targ.minA = minAlbedo;
-   targ.maxA = maxAlbedo;
+   targ.minAlbedo = minAlbedo;
+   targ.maxAlbedo = maxAlbedo;
    targ.depth = recDepth;
-   targ.CalcCost(tAux,length,lowAlbErr);
+   targ.CalcCost(tAux,length,ambient,lowAlbErr);
   
    while(targ.depth!=0)
    {
-    real32 half = 0.5*(targ.minA+targ.maxA);
+    real32 half = 0.5*(targ.minAlbedo+targ.maxAlbedo);
     
     CostRange low;
-    low.minA = targ.minA;
-    low.maxA = half;
+    low.minAlbedo = targ.minAlbedo;
+    low.maxAlbedo = half;
     low.depth = targ.depth - 1;
-    low.CalcCost(tAux,length,lowAlbErr);
+    low.CalcCost(tAux,length,ambient,lowAlbErr);
     
     CostRange high;
-    high.minA = half;
-    high.maxA = targ.maxA;
+    high.minAlbedo = half;
+    high.maxAlbedo = targ.maxAlbedo;
     high.depth = targ.depth - 1;
-    high.CalcCost(tAux,length,lowAlbErr);
+    high.CalcCost(tAux,length,ambient,lowAlbErr);
     
-    maxCost = math::Min(maxCost,low.maxCost,high.maxCost);
+    maxCost = math::Min(maxCost,low.highMinCost,high.highMinCost);
     
-    if (low.minCost<high.minCost)
+    if (low.lowMinCost<high.lowMinCost)
     {
      targ = low;
-     if (high.minCost<maxCost) tWork.Add(high);
+     if (high.lowMinCost<maxCost) tWork.Add(high);
     }
     else
     {
      targ = high;
-     if (low.minCost<maxCost) tWork.Add(low);   
+     if (low.lowMinCost<maxCost) tWork.Add(low);   
     }
    }
    
-   real32 half = 0.5*(targ.minA+targ.maxA);
+   real32 half = 0.5*(targ.minAlbedo+targ.maxAlbedo);
    real32 cost = CalcCost(half,tAux,length);
    maxCost = math::Min(maxCost,cost);
    bestAlb = half;
@@ -474,12 +481,12 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
 
 
  // Keep processing work queue items until done...
-  while ((tWork.Size()!=0)&&(tWork.Peek().minCost<maxCost))
+  while ((tWork.Size()!=0)&&(tWork.Peek().lowMinCost<maxCost))
   {
    CostRange targ = tWork.Peek();
    tWork.Rem();
    
-   real32 half = 0.5*(targ.minA+targ.maxA);
+   real32 half = 0.5*(targ.minAlbedo+targ.maxAlbedo);
    
    if (targ.depth==0)
    {
@@ -494,27 +501,27 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
    else
    {
     CostRange low;
-    low.minA = targ.minA;
-    low.maxA = half;
+    low.minAlbedo = targ.minAlbedo;
+    low.maxAlbedo = half;
     low.depth = targ.depth - 1;
-    low.CalcCost(tAux,length,lowAlbErr);
+    low.CalcCost(tAux,length,ambient,lowAlbErr);
     
-    if (low.minCost<maxCost)
+    if (low.lowMinCost<maxCost)
     {
      tWork.Add(low);
-     maxCost = math::Min(maxCost,low.maxCost);
+     maxCost = math::Min(maxCost,low.highMinCost);
     }
     
     CostRange high;
-    high.minA = half;
-    high.maxA = targ.maxA;
+    high.minAlbedo = half;
+    high.maxAlbedo = targ.maxAlbedo;
     high.depth = targ.depth - 1;
-    high.CalcCost(tAux,length,lowAlbErr);   
+    high.CalcCost(tAux,length,ambient,lowAlbErr);   
    
-    if (high.minCost<maxCost)
+    if (high.lowMinCost<maxCost)
     {
      tWork.Add(high);
-     maxCost = math::Min(maxCost,high.maxCost);
+     maxCost = math::Min(maxCost,high.highMinCost);
     }   
    }
   }
@@ -528,63 +535,56 @@ real32 LightDir::CalcCost(real32 albedo,ds::Array<LightDir::PixelAux> & tAux,nat
  LogTime("eos::fit::LightDir::CalcCost");
  
  real32 ret = 0.0;
- real32 lowRet = 0.0;
- real32 sqrAlb = math::Sqr(albedo);
  
  for (nat32 i=0;i<length;i++)
  {
-  if (albedo>tAux[i].irr) ret += tAux[i].mult*math::Sqrt(sqrAlb - tAux[i].irrSqr) + tAux[i].c;
-                     else lowRet += tAux[i].lowAlbCost + lowAlbErr*math::Sqr(tAux[i].irr - albedo);
+  real32 r = (tAux[i].irr/albedo) - ambient;
+  
+  ret += (r<0.0)?(tAux[i].t + lowAlbErr*(albedo*ambient - tAux[i].irr)):
+         ((r>1.0)?(tAux[i].s + lowAlbErr*(tAux[i].irr - albedo*(1.0+ambient))):
+         (tAux[i].s*r + tAux[i].t*math::Sqrt(1.0 - math::Sqr(r))));
+  ret -= tAux[i].minC;
  }
  
- return ret/albedo + lowRet;
+ return ret;
 }
 
 //------------------------------------------------------------------------------
-void LightDir::CostRange::CalcCost(ds::Array<LightDir::PixelAux> & tAux,nat32 length,real32 lowAlbErr)
+void LightDir::CostRange::CalcCost(ds::Array<LightDir::PixelAux> & tAux,nat32 length,
+                                   real32 ambient,real32 lowAlbErr)
 {
  LogTime("eos::fit::LightDir::CostRange::CalcCost");
- minCost = 0.0;
- maxCost = 0.0;
- 
- real32 othMinCost = 0.0; 
- real32 othMaxCost = 0.0;
- 
- real32 furMinCost = 0.0; 
- real32 furMaxCost = 0.0;
- 
- real32 sqrMaxA = math::Sqr(maxA);
- real32 sqrMinA = math::Sqr(minA);
+
+ lowMinCost = 0.0;
+ highMinCost = 0.0; 
  
  for (nat32 i=0;i<length;i++)
  {
-  if (sqrMaxA>tAux[i].irrSqr)
-  {
-   real32 minBase = tAux[i].mult*math::Sqrt(sqrMaxA - tAux[i].irrSqr) + tAux[i].c;
-   if (minBase<0.0) minCost += minBase;
-            else othMinCost += minBase;
-            
-   if (sqrMinA>tAux[i].irrSqr)
+  real32 lowR = (tAux[i].irr/maxAlbedo) - ambient;
+  real32 highR = (tAux[i].irr/minAlbedo) - ambient;
+  
+  // Calculate the cost for lowR and the cost for highR...
+   // low...
+    real32 lowC = (lowR<0.0)?(tAux[i].t + lowAlbErr*(maxAlbedo*ambient - tAux[i].irr)):
+                  ((lowR>1.0)?(tAux[i].s + lowAlbErr*(tAux[i].irr - maxAlbedo*(1.0+ambient))):
+                  (tAux[i].s*lowR + tAux[i].t*math::Sqrt(1.0 - math::Sqr(lowR))));
+
+   // high...
+    real32 highC = (highR<0.0)?(tAux[i].t + lowAlbErr*(minAlbedo*ambient - tAux[i].irr)):
+                   ((highR>1.0)?(tAux[i].s + lowAlbErr*(tAux[i].irr - minAlbedo*(1.0+ambient))):
+                   (tAux[i].s*highR + tAux[i].t*math::Sqrt(1.0 - math::Sqr(highR))));
+   
+  // If the minima is inside the range then we can do nothing - the minimum cost is 0,
+  // otherwise updates need to be made...
+   if ((highR<tAux[i].minR)||(lowR>tAux[i].minR))
    {
-    real32 maxBase = tAux[i].mult*math::Sqrt(sqrMinA - tAux[i].irrSqr) + tAux[i].c;
-    if (maxBase<0.0) maxCost += maxBase;
-            else othMaxCost += maxBase;
+    lowMinCost += math::Min(lowC,highC) - tAux[i].minC;
    }
-   else
-   {
-    furMaxCost += tAux[i].lowAlbCost + lowAlbErr*math::Sqr(tAux[i].irr - minA);
-    // This branch is potentially wrong in certain cases, i.e. it could be larger, but this shall do.
-   }
-  }
-  else
-  {
-   furMinCost += tAux[i].lowAlbCost + lowAlbErr*math::Sqr(tAux[i].irr - maxA);
-   furMaxCost += tAux[i].lowAlbCost + lowAlbErr*math::Sqr(tAux[i].irr - minA);
-  }
+   
+  // Maximum cost always needs updating...
+   highMinCost += math::Max(lowC,highC) - tAux[i].minC;
+     // Can optimise (reduce) by split calculation into 2 cases + minima boost. *************
  }
- 
- minCost = minCost/minA + othMinCost/maxA + furMinCost;
- maxCost = maxCost/maxA + othMaxCost/minA + furMaxCost;
 }
 
 //------------------------------------------------------------------------------
