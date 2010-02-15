@@ -58,8 +58,10 @@ class EOS_CLASS DispNormFish
   /// Sets the probability weight to match - trys to make the region of the input
   /// distribution of the given size have the same angular range as the same
   /// region of the output Fisher distribution.
-  /// Defaults to 0.1
-   void SetRegion(real32 prob);
+  /// Also sets the sd multiplier - simply applied to the standard deviation to
+  /// tweak the outputs confidence.
+  /// Defaults to 0.1 and 1.0
+   void SetRegion(real32 prob,real32 mult = 1.0);
    
   /// Sets the range of concentration parameters it will consider -
   /// defaults to 0.1 and 10.0
@@ -88,6 +90,7 @@ class EOS_CLASS DispNormFish
    svt::Field<bit> mask;
    cam::CameraPair pair;
    real32 prob;
+   real32 mult;
    real32 minK;
    real32 maxK;
     

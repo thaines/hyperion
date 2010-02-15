@@ -120,6 +120,7 @@ class Stereopsis
   
   //gui::EditBox * fisherRange;
   gui::EditBox * fisherProb;
+  gui::EditBox * fisherMult;
   gui::EditBox * fisherMin;
   gui::EditBox * fisherMax;
   //gui::EditBox * fisherBias;
