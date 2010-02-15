@@ -59,7 +59,7 @@ void LightDir::Run(time::Progress * prog)
 
  // Prep for logging...
   nat32 step = 0;
-  nat32 steps = 5 + segCount + 1;
+  nat32 steps = 5 + segCount + 2;
   
    
  // First generate the sampling set of light source directions to sample...
@@ -146,7 +146,21 @@ void LightDir::Run(time::Progress * prog)
    if (lc[l].cost<lc[best].cost) best = l;
   }
   bestLightDir = lc[best].dir;
- 
+
+
+ // Calculate an albedo map using the choosen light source direction...
+  prog->Report(step++,steps);
+  albedo.Size(segCount);
+  prog->Push();
+  for (nat32 s=0;s<segCount;s++)
+  {
+   prog->Report(s,segCount);
+   SegLightCost(bestLightDir,recDepth, pixel,offset[s],offset[s+1]-offset[s], 
+                tAux,tWork,&albedo[s]);
+  }
+  prog->Pop();
+
+
  prog->Pop();
 }
 
@@ -173,9 +187,14 @@ real32 LightDir::SampleCost(nat32 i) const
 //------------------------------------------------------------------------------
 real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
                               const ds::Array<Pixel> & data,nat32 startInd,nat32 length,
-                              ds::Array<PixelAux> & tAux,ds::PriorityQueue<CostRange> & tWork)
+                              ds::Array<PixelAux> & tAux,ds::PriorityQueue<CostRange> & tWork,
+                              real32 * bestAlbedo)
 {
- if (length==0) return math::Infinity<real32>();
+ if (length==0)
+ {
+  if (bestAlbedo) *bestAlbedo = 0.0;
+  return math::Infinity<real32>();
+ }
  LogTime("eos::fit::LightDir::SegLightCost");
 
  // First fill in tAux from the data and lightDir...
@@ -198,6 +217,7 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
  // of work - we push the excess off into the work queue...
   tWork.MakeEmpty();
   real32 maxCost = math::Infinity<real32>(); // Any cost higher than this value has already been beaten.
+  real32 bestAlb = 0.0;
   {
    CostRange targ;
    targ.minA = minAlbedo;
@@ -238,6 +258,7 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
    real32 half = 0.5*(targ.minA+targ.maxA);
    real32 cost = CalcCost(half,tAux,length);
    maxCost = math::Min(maxCost,cost);
+   bestAlb = half;
   }
 
 
@@ -253,7 +274,11 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
    {
     // Take the average, calculate the cost at the average...
      real32 cost = CalcCost(half,tAux,length);
-     maxCost = math::Min(maxCost,cost);
+     if (cost<maxCost)
+     {
+      maxCost = cost;
+      bestAlb = half;
+     }
    }
    else
    {
@@ -283,6 +308,7 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
    }
   }
  
+ if (bestAlbedo) *bestAlbedo = bestAlb;
  return maxCost;
 }
 
@@ -312,7 +338,7 @@ void LightDir::CostRange::CalcCost(ds::Array<LightDir::PixelAux> & tAux,nat32 le
  real32 sqrMinA = math::Sqr(minA);
  
  for (nat32 i=0;i<length;i++)
- {  
+ {
   real32 minBase = tAux[i].mult*math::Sqrt(math::Max<real32>(sqrMaxA - tAux[i].irrSqr,0.0)) + tAux[i].c;
   real32 maxBase = tAux[i].mult*math::Sqrt(math::Max<real32>(sqrMinA - tAux[i].irrSqr,0.0)) + tAux[i].c;
   if (minBase<0.0) minCost += minBase;

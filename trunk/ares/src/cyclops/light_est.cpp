@@ -6,14 +6,13 @@
 //------------------------------------------------------------------------------
 LightEst::LightEst(Cyclops & cyc)
 :cyclops(cyc),win(null<gui::Window*>()),lightD(0.0,0.0,1.0),
-irrVar(null<svt::Var*>()),segVar(null<svt::Var*>()),dispVar(null<svt::Var*>()),albedoVar(null<svt::Var*>()),
+irrVar(null<svt::Var*>()),segVar(null<svt::Var*>()),dispVar(null<svt::Var*>()),
 imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 {
  // Create default images maps...
   bs::ColourRGB colourIni(0.0,0.0,0.0);
   nat32 segIni = 0;
   math::Fisher fishIni;
-  real32 albedoIni = 0.0;
 
   irrVar = new svt::Var(cyclops.Core());
   irrVar->Setup2D(320,240);
@@ -32,12 +31,6 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
   dispVar->Add("fish",fishIni);
   dispVar->Commit();
   dispVar->ByName("fish",fish);
-
-  albedoVar = new svt::Var(cyclops.Core());
-  albedoVar->Setup2D(320,240);
-  albedoVar->Add("albedo",albedoIni);
-  albedoVar->Commit();
-  albedoVar->ByName("albedo",albedo);
 
 
   imageVar = new svt::Var(cyclops.Core());
@@ -105,6 +98,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    viewSelect->Append("Sphere Rendered with Estimate");
    viewSelect->Append("Cost of Direction Sphere");
    viewSelect->Append("Albedo");
+   viewSelect->Append("Per Pixel Solution Cost");
    viewSelect->Set(0);
    
    algSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
@@ -208,7 +202,6 @@ LightEst::~LightEst()
  delete irrVar;
  delete segVar;
  delete dispVar;
- delete albedoVar;
  delete imageVar;
  delete imgVar;
 }
@@ -415,6 +408,7 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
 
  // Get the output...
   lightD = ld.BestLightDir();
+  
   samples.Size(ld.SampleSize());
   for (nat32 i=0;i<samples.Size();i++)
   {
@@ -423,8 +417,17 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
    LogDebug("sample {dir,cost}" << LogDiv() << samples[i].dir << LogDiv() << samples[i].cost);
   }
   
+  albedo.Size(ld.SegmentCount());
+  real32 maxAlbedo = 0.0;
+  for (nat32 i=0;i<albedo.Size();i++)
+  {
+   albedo[i] = ld.SegmentAlbedo(i);
+   maxAlbedo = math::Max(maxAlbedo,albedo[i]);
+  }
+  
+  
   str::String s;
-  s << lightD << " (" << ld.SampleSize() << " samples)";
+  s << lightD << " (" << ld.SampleSize() << " samples; highest albedo is " << maxAlbedo << ")";
   lightDir->Set(s);
   
  // Update the view...
@@ -465,12 +468,14 @@ void LightEst::Update()
   {
    case 0: // Irradiance
    case 1: // Corrected Irradiance
-   case 6: // Cost Sphere
    case 5: // Light Source Sphere
+   case 6: // Cost Sphere
     width = irr.Size(0);
     height = irr.Size(1);
    break;
    case 2: // Segmentation
+   case 7: // Albedo
+   case 8: // Per Pixel Solution Cost.
     width = seg.Size(0);
     height = seg.Size(1);
    break;
@@ -478,10 +483,6 @@ void LightEst::Update()
    case 4: // Fisher Concentration
     width = fish.Size(0);
     height = fish.Size(1);
-   break;
-   case 7: // Albedo
-    width = albedo.Size(0);
-    height = albedo.Size(1);
    break;
   }
 
@@ -738,13 +739,73 @@ void LightEst::Update()
    break;
    case 7: // Albedo
    {
+    real32 maxL = 0.001;
     for (nat32 y=0;y<image.Size(1);y++)
     {
      for (nat32 x=0;x<image.Size(0);x++)
      {
-      image.Get(x,y).r = albedo.Get(x,y);
-      image.Get(x,y).g = albedo.Get(x,y);
-      image.Get(x,y).b = albedo.Get(x,y);
+      real32 l = -1.0;
+      nat32 s = seg.Get(x,y);
+      if (albedo.Size()>s) l = albedo[s];
+      maxL = math::Max(maxL,l);
+     
+      image.Get(x,y).r = l;
+      image.Get(x,y).g = l;
+      image.Get(x,y).b = l;
+     }
+    }
+    
+    for (nat32 y=0;y<image.Size(1);y++)
+    {
+     for (nat32 x=0;x<image.Size(0);x++)
+     {
+      if (image.Get(x,y).r<0.0)
+      {
+       image.Get(x,y).r = 0.0;
+       image.Get(x,y).g = 0.0;
+       image.Get(x,y).b = 0.5;
+      }
+      else
+      {
+       image.Get(x,y) /= maxL;
+      }
+     }
+    }
+   }
+   break;
+   case 8: // Per Pixel Solution Cost
+   {
+    if (albedo.Size()!=0)
+    {
+     real32 maxL = 0.001;
+     for (nat32 y=0;y<image.Size(1);y++)
+     {
+      for (nat32 x=0;x<image.Size(0);x++)
+      {
+       real32 i = crf((irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0);
+       real32 a = albedo[seg.Get(x,y)];
+      
+       real32 angI = math::InvCos(math::IsZero(a)?1.0:math::Min<real32>(i/a,1.0));
+       real32 k = fish.Get(x,y).Length();
+       real32 angS = math::IsZero(k)?angI:(math::InvCos(math::Min<real32>((lightD * fish.Get(x,y))/k,1.0)));
+       
+       real32 l = -k*math::Cos(angI-angS) + k;
+     
+       image.Get(x,y).r = l;
+       maxL = math::Max(maxL,l);
+      }
+     }
+    
+     for (nat32 y=0;y<image.Size(1);y++)
+     {
+      for (nat32 x=0;x<image.Size(0);x++)
+      {
+       real32 l = image.Get(x,y).r/maxL;
+      
+       image.Get(x,y).r = l;
+       image.Get(x,y).g = l;
+       image.Get(x,y).b = l;
+      }
      }
     }
    }

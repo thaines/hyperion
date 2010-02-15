@@ -68,6 +68,12 @@ class EOS_CLASS LightDir
 
   /// Returns the cost for sample i.
    real32 SampleCost(nat32 i) const;
+   
+  /// Returns the number of segments.
+   nat32 SegmentCount() const {return albedo.Size();}
+   
+  /// Returns the albedo for a given segment number.
+   real32 SegmentAlbedo(nat32 s) const {return albedo[s];}
 
 
   /// &nbsp;
@@ -96,6 +102,8 @@ class EOS_CLASS LightDir
     real32 cost;
    };
    ds::Array<LightCost> lc; // Cost for each light source direction - for diagnostics really.
+   
+   ds::Array<real32> albedo; // Albedo for each segment number.
 
 
   // Runtime...
@@ -138,7 +146,8 @@ class EOS_CLASS LightDir
    // Uses a divide and conquer recursive approach
     real32 SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
                         const ds::Array<Pixel> & data,nat32 startInd,nat32 length,
-                        ds::Array<PixelAux> & tAux,ds::PriorityQueue<CostRange> & tWork);
+                        ds::Array<PixelAux> & tAux,ds::PriorityQueue<CostRange> & tWork,
+                        real32 * bestAlbedo = null<real32*>());
    
    // Returns the cost of a given albedo using the data structures used by SegLightCost.
     real32 CalcCost(real32 albedo,ds::Array<LightDir::PixelAux> & tAux,nat32 length);

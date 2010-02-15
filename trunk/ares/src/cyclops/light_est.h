@@ -40,6 +40,7 @@ class LightEst
    bs::Normal dir;
   };
   ds::Array<Sample> samples;
+  ds::Array<real32> albedo;
 
 
   math::Func crf;
@@ -50,8 +51,6 @@ class LightEst
   svt::Field<nat32> seg;
   svt::Var * dispVar;
   svt::Field<math::Fisher> fish;
-  svt::Var * albedoVar;
-  svt::Field<real32> albedo;
 
   svt::Var * imageVar;
   svt::Field<bs::ColourRGB> image;
