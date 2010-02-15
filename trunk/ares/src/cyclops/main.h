@@ -79,6 +79,7 @@ class Cyclops
   void StartLightEst(gui::Base * obj,gui::Event * event);
   void PairToDefault(gui::Base * obj,gui::Event * event);
   void StartCamResponse(gui::Base * obj,gui::Event * event);
+  void StartIntrinsicToCamera(gui::Base * obj,gui::Event * event);
 };
 
 //------------------------------------------------------------------------------

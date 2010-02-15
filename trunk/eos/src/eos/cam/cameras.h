@@ -300,6 +300,14 @@ class EOS_CLASS Camera : public Extrinsic
   /// Initialises it to an extended identity.
    Camera() {Identity(*this);}
 
+  /// Initialises it from an intrinsic matrix alone - sets the rotation matrix
+  /// to the identity and the translation matrix to 0.
+   Camera(const Intrinsic & intr)
+   {
+    math::Zero(*this);
+    math::SetSub(*this,intr,0,0);
+   }
+
   /// Initialises it from an intrinsic matrix, rotation matrix and translation
   /// matrix.
    Camera(const Intrinsic & intr,const math::Mat<3,3> & rot,math::Vect<3> & trans)
