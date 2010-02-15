@@ -237,6 +237,173 @@ void LightAmb::Run(time::Progress * prog)
 }
 
 //------------------------------------------------------------------------------
+void LightAmb::SegCostRange(real32 lowAmb,real32 highAmb,
+                            real32 & outLow,real32 & outHigh,
+                            const ds::Array<PixelAux> & pixel,nat32 start,nat32 size,
+                            ds::PriorityQueue<AlbRange> & work)
+{
+ LogTime("eos::fit::LightAmb::SegCostRange");
+
+ // Empty work list...
+  work.MakeEmpty();
+   
+ // Create initial work item...
+  AlbRange ini;
+  ini.minAlbedo = minAlbedo;
+  ini.maxAlbedo = maxAlbedo;
+  ini.depth = albedoRecDepth;
+    
+  ini.lowMinCost = 0.0; // Doesn't matter for this first entry.
+  ini.highMinCost = math::Infinity<real32>(); // "
+  
+ // Initialise output variables...
+  outHigh = math::Infinity<real32>();
+  outLow = math::Infinity<real32>();
+   
+   
+ // Keep eatting work items until no more remain - take a greedy sub-pass 
+ // approach to quickly find tight bounds...
+  while ((work.Size()!=0)&&(work.Peek().lowMinCost<outHigh))
+  {
+   AlbRange targ = work.Peek();
+   work.Rem();
+   
+   // Do a greedy search - first whitle down our target to a depth of 0 by subdivision...
+    while (targ.depth!=0)
+    {
+     real32 halfAlb = (targ.minAlbedo + targ.maxAlbedo) * 0.5;
+    
+     AlbRange low;
+     low.minAlbedo = targ.minAlbedo;
+     low.maxAlbedo = halfAlb;
+     low.depth = targ.depth - 1;
+     CostDualRange(lowAmb,highAmb,low.minAlbedo,low.maxAlbedo,
+                   low.lowMinCost,low.highMinCost,pixel,start,size);
+     
+     AlbRange high;
+     high.minAlbedo = halfAlb;
+     high.maxAlbedo = targ.maxAlbedo;
+     high.depth = targ.depth - 1;
+     CostDualRange(lowAmb,highAmb,high.minAlbedo,high.maxAlbedo,
+                   high.lowMinCost,high.highMinCost,pixel,start,size);
+     
+     outHigh = math::Min(outHigh,low.highMinCost,high.highMinCost);
+     
+     if (low.lowMinCost<high.lowMinCost)
+     {
+      targ = low;
+      if (high.lowMinCost<outHigh) work.Add(high);
+      else outLow = math::Min(outLow,high.lowMinCost);
+     }
+     else
+     {
+      targ = high;
+      if (low.lowMinCost<outHigh) work.Add(low);
+      else outLow = math::Min(outLow,low.lowMinCost);
+     }
+    }
+  
+   // And now deal with the remaining non-range before moving on to a further target...
+   {
+    real32 alb = (targ.minAlbedo + targ.maxAlbedo) * 0.5;
+    real32 oLow, oHigh;
+    CostRangeAmb(lowAmb,highAmb,alb,oLow,oHigh,pixel,start,size);
+
+    outHigh = math::Min(outHigh,oHigh);
+    outLow = math::Min(outLow,oLow);
+   }
+  }
+
+
+ // Eat remaining work items to make sure outLow is correct...
+  while (work.Size()!=0)
+  {
+   outLow = math::Min(outLow,work.Peek().lowMinCost);
+   work.Rem();
+  }
+}
+
+real32 LightAmb::SegCost(real32 amb,const ds::Array<PixelAux> & pixel,nat32 start,nat32 size,
+                         ds::PriorityQueue<AlbRange> & work,real32 * albedo)
+{
+ LogTime("eos::fit::LightAmb::SegCost");
+ 
+ // Empty work list...
+  work.MakeEmpty();
+   
+ // Create initial work item...
+  AlbRange ini;
+  ini.minAlbedo = minAlbedo;
+  ini.maxAlbedo = maxAlbedo;
+  ini.depth = albedoRecDepth;
+    
+  ini.lowMinCost = 0.0; // Doesn't matter for this first entry.
+  ini.highMinCost = math::Infinity<real32>(); // "
+  
+ // Initialise pruning variable and associated albedo...
+  real32 maxMinCost = math::Infinity<real32>();
+  real32 bestAlbedo = 0.0;
+   
+   
+ // Keep eatting work items until no more remain - take a greedy sub-pass 
+ // approach to quickly find tight bounds...
+  while ((work.Size()!=0)&&(work.Peek().lowMinCost<maxMinCost))
+  {
+   AlbRange targ = work.Peek();
+   work.Rem();
+   
+   // Do a greedy search - first whitle down our target to a depth of 0 by subdivision...
+    while (targ.depth!=0)
+    {
+     real32 halfAlb = (targ.minAlbedo + targ.maxAlbedo) * 0.5;
+    
+     AlbRange low;
+     low.minAlbedo = targ.minAlbedo;
+     low.maxAlbedo = halfAlb;
+     low.depth = targ.depth - 1;
+     CostRangeAlb(amb,low.minAlbedo,low.maxAlbedo,
+                  low.lowMinCost,low.highMinCost,pixel,start,size);
+     
+     AlbRange high;
+     high.minAlbedo = halfAlb;
+     high.maxAlbedo = targ.maxAlbedo;
+     high.depth = targ.depth - 1;
+     CostRangeAlb(amb,high.minAlbedo,high.maxAlbedo,
+                  high.lowMinCost,high.highMinCost,pixel,start,size);
+     
+     maxMinCost = math::Min(maxMinCost,low.highMinCost,high.highMinCost);
+     
+     if (low.lowMinCost<high.lowMinCost)
+     {
+      targ = low;
+      if (high.lowMinCost<maxMinCost) work.Add(high);
+     }
+     else
+     {
+      targ = high;
+      if (low.lowMinCost<maxMinCost) work.Add(low);
+     }
+    }
+  
+   // And now deal with the remaining non-range before moving on to a further target...
+   {
+    real32 alb = (targ.minAlbedo + targ.maxAlbedo) * 0.5;
+    real32 c = Cost(amb,alb,pixel,start,size);
+    
+    if (c<maxMinCost)
+    {
+     maxMinCost = c;
+     bestAlbedo = alb;
+    }
+   }
+  }
+
+
+ // Finish with the outputs...
+  if (albedo) *albedo = bestAlbedo;
+  return maxMinCost;
+}
+
 real32 LightAmb::Cost(real32 amb,real32 alb,const ds::Array<PixelAux> & pixel,nat32 start,nat32 size)
 {
  LogTime("eos::fit::LightAmb::Cost");
@@ -306,9 +473,38 @@ void LightAmb::CostRangeAmb(real32 lowAmb,real32 highAmb,real32 alb,
 {
  LogTime("eos::fit::LightAmb::CostRangeAmb");
  
+ outLow = 0.0;
+ outHigh = 0.0; 
  
+ for (nat32 i=0;i<size;i++)
+ {
+  PixelAux & pix = pixel[start+i];
  
- 
+  real32 lowR = (pix.irr/alb) - highAmb;
+  real32 highR = (pix.irr/alb) - lowAmb;
+  
+  // Calculate the cost for lowR and the cost for highR...
+   // low...
+    real32 lowC = (lowR<0.0)?(pix.t + lowAlbErr*(alb*highAmb - pix.irr)):
+                  ((lowR>1.0)?(pix.s + lowAlbErr*(pix.irr - alb*(1.0+highAmb))):
+                  (pix.s*lowR + pix.t*math::Sqrt(1.0 - math::Sqr(lowR))));
+
+   // high...
+    real32 highC = (highR<0.0)?(pix.t + lowAlbErr*(alb*lowAmb - pix.irr)):
+                   ((highR>1.0)?(pix.s + lowAlbErr*(pix.irr - alb*(1.0+lowAmb))):
+                   (pix.s*highR + pix.t*math::Sqrt(1.0 - math::Sqr(highR))));
+   
+  // If the minima is inside the range then we use the minimum, otherwise we use
+  // the two bounds already calculated...
+   if ((highR<pix.minR)||(lowR>pix.minR))
+   {
+    outLow += math::Min(lowC,highC);
+   }
+   else outLow += pix.minC;
+   
+  // Maximum cost...
+   outHigh += math::Max(lowC,highC);
+ }
 }
 
 void LightAmb::CostDualRange(real32 lowAmb,real32 highAmb,
