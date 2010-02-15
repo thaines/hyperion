@@ -36,6 +36,7 @@
 #include "cyclops/lighting.h"
 #include "cyclops/segmentation.h"
 #include "cyclops/light_est.h"
+#include "cyclops/cam_response.h"
 
 //------------------------------------------------------------------------------
 // Code for cyclops class...
@@ -130,6 +131,7 @@ Cyclops::Cyclops()
   gui::Button * but41 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but42 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but43 = static_cast<gui::Button*>(guiFact.Make("Button"));
+  gui::Button * but44 = static_cast<gui::Button*>(guiFact.Make("Button"));
 
   gui::Label * lab1 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab2 = static_cast<gui::Label*>(guiFact.Make("Label"));
@@ -174,6 +176,7 @@ Cyclops::Cyclops()
   gui::Label * lab41 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab42 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab43 = static_cast<gui::Label*>(guiFact.Make("Label"));
+  gui::Label * lab44 = static_cast<gui::Label*>(guiFact.Make("Label"));
 
   but1->SetChild(lab1); lab1->Set("Intrinsic Calibration");
   but2->SetChild(lab2); lab2->Set("Protractor");
@@ -218,6 +221,7 @@ Cyclops::Cyclops()
   but41->SetChild(lab41); lab41->Set("Segmentation");
   but42->SetChild(lab42); lab42->Set("Light Estimation");
   but43->SetChild(lab43); lab43->Set("Pair to Default");
+  but44->SetChild(lab44); lab44->Set("Camera Response");
 
   vert0->AttachBottom(but19,false);
   vert0->AttachBottom(but21,false);
@@ -259,6 +263,7 @@ Cyclops::Cyclops()
   vert7->AttachBottom(but36,false);
   vert7->AttachBottom(but29,false);
   
+  vert8->AttachBottom(but44,false);
   vert8->AttachBottom(but42,false);
 
   vert9->AttachBottom(but25,false);
@@ -324,6 +329,7 @@ Cyclops::Cyclops()
   but41->OnClick(MakeCB(this,&Cyclops::StartSegmentation));
   but42->OnClick(MakeCB(this,&Cyclops::StartLightEst));
   but43->OnClick(MakeCB(this,&Cyclops::PairToDefault));
+  but44->OnClick(MakeCB(this,&Cyclops::StartCamResponse));
 
  // Enter the message pump...
   app->Go();
@@ -751,6 +757,11 @@ void Cyclops::PairToDefault(gui::Base * obj,gui::Event * event)
     }
   }
  }
+}
+
+void Cyclops::StartCamResponse(gui::Base * obj,gui::Event * event)
+{
+ new CamResponse(*this);
 }
 
 //------------------------------------------------------------------------------

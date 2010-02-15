@@ -343,7 +343,7 @@ $(OBJ)/fitter_all_algs.o: $(DIRS) $(SRC)/fitter/all_algs.h $(SRC)/fitter/all_alg
 ###########
 
 FINAL_CYCLOPS	= $(OUT)/cyclops$(PEXT)
-OBJS_CYCLOPS	= $(OBJ)/cyclops_intrinsic.o $(OBJ)/cyclops_protractor.o $(OBJ)/cyclops_fundamental.o $(OBJ)/cyclops_triangulator.o $(OBJ)/cyclops_crop.o $(OBJ)/cyclops_crop_pair.o $(OBJ)/cyclops_rectification.o $(OBJ)/cyclops_capture.o $(OBJ)/cyclops_to_mesh.o $(OBJ)/cyclops_stereopsis.o $(OBJ)/cyclops_warp.o $(OBJ)/cyclops_scale_pair.o $(OBJ)/cyclops_homography.o $(OBJ)/cyclops_calibration.o $(OBJ)/cyclops_model_disp.o $(OBJ)/cyclops_comp_disp.o $(OBJ)/cyclops_file_info.o $(OBJ)/cyclops_disp_mask.o $(OBJ)/cyclops_colour_balance.o $(OBJ)/cyclops_undistorter.o $(OBJ)/cyclops_disp_scale.o $(OBJ)/cyclops_to_orient.o $(OBJ)/cyclops_model_render.o $(OBJ)/cyclops_anaglyph.o $(OBJ)/cyclops_disp_clean.o $(OBJ)/cyclops_scale.o $(OBJ)/cyclops_disp_crop.o $(OBJ)/cyclops_mesh_ops.o $(OBJ)/cyclops_comp_needle.o $(OBJ)/cyclops_sfs.o $(OBJ)/cyclops_integration.o $(OBJ)/cyclops_lighting.o $(OBJ)/cyclops_segmentation.o $(OBJ)/cyclops_light_est.o
+OBJS_CYCLOPS	= $(OBJ)/cyclops_intrinsic.o $(OBJ)/cyclops_protractor.o $(OBJ)/cyclops_fundamental.o $(OBJ)/cyclops_triangulator.o $(OBJ)/cyclops_crop.o $(OBJ)/cyclops_crop_pair.o $(OBJ)/cyclops_rectification.o $(OBJ)/cyclops_capture.o $(OBJ)/cyclops_to_mesh.o $(OBJ)/cyclops_stereopsis.o $(OBJ)/cyclops_warp.o $(OBJ)/cyclops_scale_pair.o $(OBJ)/cyclops_homography.o $(OBJ)/cyclops_calibration.o $(OBJ)/cyclops_model_disp.o $(OBJ)/cyclops_comp_disp.o $(OBJ)/cyclops_file_info.o $(OBJ)/cyclops_disp_mask.o $(OBJ)/cyclops_colour_balance.o $(OBJ)/cyclops_undistorter.o $(OBJ)/cyclops_disp_scale.o $(OBJ)/cyclops_to_orient.o $(OBJ)/cyclops_model_render.o $(OBJ)/cyclops_anaglyph.o $(OBJ)/cyclops_disp_clean.o $(OBJ)/cyclops_scale.o $(OBJ)/cyclops_disp_crop.o $(OBJ)/cyclops_mesh_ops.o $(OBJ)/cyclops_comp_needle.o $(OBJ)/cyclops_sfs.o $(OBJ)/cyclops_integration.o $(OBJ)/cyclops_lighting.o $(OBJ)/cyclops_segmentation.o $(OBJ)/cyclops_light_est.o $(OBJ)/cyclops_cam_response.o
 
 
 cyclops: $(FINAL_CYCLOPS)
@@ -455,7 +455,10 @@ $(OBJ)/cyclops_segmentation.o: $(DIRS) $(SRC)/cyclops/segmentation.h $(SRC)/cycl
 	$(C) -o $(OBJ)/cyclops_segmentation.o $(SRC)/cyclops/segmentation.cpp
 
 $(OBJ)/cyclops_light_est.o: $(DIRS) $(SRC)/cyclops/light_est.h $(SRC)/cyclops/light_est.cpp
-	$(C) -o $(OBJ)/cyclops_light_est.o $(SRC)/cyclops/light_est.cpp
+	$(C) -o $(OBJ)/c0yclops_light_est.o $(SRC)/cyclops/light_est.cpp
+
+$(OBJ)/cyclops_cam_response.o: $(DIRS) $(SRC)/cyclops/cam_response.h $(SRC)/cyclops/cam_response.cpp
+	$(C) -o $(OBJ)/cyclops_cam_response.o $(SRC)/cyclops/cam_response.cpp
 
 
 
