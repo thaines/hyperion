@@ -425,7 +425,7 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
    tAux[i].minR = math::Abs(tAux[i].s)/math::Sqrt(math::Sqr(tAux[i].s)+math::Sqr(tAux[i].t));
    tAux[i].minC = tAux[i].s*tAux[i].minR + tAux[i].t*math::Sqrt(1.0-math::Sqr(tAux[i].minR));
    
-   /*LogDebug("seg {i,k,dot,s,t,irr,minR,minC}" << LogDiv() << i << LogDiv() << k << LogDiv() << dot << LogDiv() << tAux[i].s << LogDiv() << tAux[i].t << LogDiv() << tAux[i].irr << LogDiv() << tAux[i].minR << LogDiv() << tAux[i].minC);*/
+   //LogDebug("seg {i,k,dot,s,t,irr,minR,minC}" << LogDiv() << i << LogDiv() << k << LogDiv() << dot << LogDiv() << tAux[i].s << LogDiv() << tAux[i].t << LogDiv() << tAux[i].irr << LogDiv() << tAux[i].minR << LogDiv() << tAux[i].minC);
   }
 
 
@@ -543,7 +543,6 @@ real32 LightDir::CalcCost(real32 albedo,ds::Array<LightDir::PixelAux> & tAux,nat
   ret += (r<0.0)?(tAux[i].t + lowAlbErr*(albedo*ambient - tAux[i].irr)):
          ((r>1.0)?(tAux[i].s + lowAlbErr*(tAux[i].irr - albedo*(1.0+ambient))):
          (tAux[i].s*r + tAux[i].t*math::Sqrt(1.0 - math::Sqr(r))));
-  ret -= tAux[i].minC;
  }
  
  return ret;
@@ -574,15 +573,16 @@ void LightDir::CostRange::CalcCost(ds::Array<LightDir::PixelAux> & tAux,nat32 le
                    ((highR>1.0)?(tAux[i].s + lowAlbErr*(tAux[i].irr - minAlbedo*(1.0+ambient))):
                    (tAux[i].s*highR + tAux[i].t*math::Sqrt(1.0 - math::Sqr(highR))));
    
-  // If the minima is inside the range then we can do nothing - the minimum cost is 0,
-  // otherwise updates need to be made...
+  // If the minima is inside the range then we use the minimum, otherwise we use
+  // the two bounds already calculated...
    if ((highR<tAux[i].minR)||(lowR>tAux[i].minR))
    {
-    lowMinCost += math::Min(lowC,highC) - tAux[i].minC;
+    lowMinCost += math::Min(lowC,highC);
    }
+   else lowMinCost += tAux[i].minC;
    
   // Maximum cost always needs updating...
-   highMinCost += math::Max(lowC,highC) - tAux[i].minC;
+   highMinCost += math::Max(lowC,highC);
      // Can optimise (reduce) by split calculation into 2 cases + minima boost. *************
  }
 }
