@@ -355,6 +355,27 @@ EOS_FUNC real32 FocalLength35mmDiag(real64 width,real64 height,
 }
 
 //------------------------------------------------------------------------------
+EOS_FUNC real32 FocalLengthToAngleHoriz(real32 length)
+{
+ return 2.0*math::InvTan(18.0/length);
+}
+
+EOS_FUNC real32 FocalLengthToAngleVert(real32 length)
+{
+ return 2.0*math::InvTan(12.0/length);
+}
+
+EOS_FUNC real32 AngleToFocalLengthHoriz(real32 angle)
+{
+ return 18.0/math::Tan(angle*0.5);
+}
+
+EOS_FUNC real32 AngleToFocalLengthVert(real32 angle)
+{
+ return 12.0/math::Tan(angle*0.5);
+}
+
+//------------------------------------------------------------------------------
 void Camera::Load(const bs::Element & root)
 {
  str::String def("[1,0,0,0;0,1,0,0;0,0,1,0]");
