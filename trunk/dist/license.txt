@@ -1,0 +1,17 @@
+The following license is probably about as watertight as a colander. I am relying on common sense in its interpretation. Consider the spirit of the license to outweigh any legally precise interpretation, as legally precise language has not been used.
+
+
+1) The software may not be distributed without this license being included in the same directory as the executable. If a user of the software does not have access to the directory in which the software is installed to read the license then an alternative method for them to read the license must be provided.
+
+2) This software is provided by Tom SF Haines `as is' and any express or implied warranties, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose are disclaimed. In no event shall Tom SF Haines be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (Including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of the use of this software, even if advised of the possibility of such damage.
+
+3) For copyright purposes the output of this program shall be considered a derivative work of the input alone. (e.g. if you own the input then you own the output, and may use it as you see fit, for commercial purposes or otherwise.)
+
+4) Anyone may mirror, backup or otherwise store and distribute this program as they see fit, subject to all other clauses in this license.
+
+5) Any user of the program must be able to recover the same information as provided by the About button in an obvious way. (This is provided in case a GUI transformation of some kind is applied, so that the transformation can not hide the about information and therefore the fact this license must be available.)
+
+6) I may arbitrarily prohibit any individual or group from using the supplied software. (I have added this clause to make arguing with me over the interpretation of any other clauses stupid. I doubt I will ever use it, and would not use it on individuals/groups I dislike unless provoked.)
+
+
+Note: The lgpl.txt file is provided with reference to the DevIL library that I am redistributing with this package. It is not relevant to Cyclops itself.

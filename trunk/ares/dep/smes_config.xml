@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<smes>
+	<main iters="1"/>
+
+
+	<stereo mode="hbp">
+		<hdp occCost="5.0" vertCost="0.25" vertMult="0.75" pixLim="8"/>
+		
+		<hbp highOccCost="16.0" lowOccCost="8.0" occLimMult="2.0" 
+		     matchCap="36.0" occCap="6.0" iters="6" outCap="1"/>
+	</stereo>
+
+
+	<segment mode="synergism">
+		<synergism radius="2" mix="0.3" spatial="7.0" range="4.5" 
+		           cutoff="2.25" min_seg="20" avg_steps="2" max_merge="0.9"/>
+	</segment>
+
+
+	<integration>
+		<iters value="100"/>
+		<disp mode="simple" best_mean="true"/>
+		<disp_diff invSd="28" imageMod="true" threshold="24.0" halflife="4.0"/>
+	</integration>
+
+
+	<fitter mode="ransac" refine="false">
+		<size population="20" generations="50"/>
+		<lifelines keptBest="1" immigrants="2"/>
+		<mutation rate="0.1" alb_sd="1.0" light_sd="0.1"/>
+		
+		<lims chance="0.999" limit="300.0" cap="1000000"/>
+		
+		<fitness cutoff="5.0" halflife="0.25"/>
+	</fitter>
+	
+	<mc irrSd="2.0" irrCap="4.0" freedomCost="15.0"/>
+	
+	
+	<ppl enabled="false">
+		<window radius="5" radSD="1.0"/>
+		<ransac prob="0.99" cutoff="2.0" maxSamples="1000"/>
+	</ppl>
+	
+	<hough enabled="true">
+		<size subDivs="5" minAlb="0.0" maxAlb="200.0" albDivs="200"/>
+		<blur albSd="2.0" cutoff="2.0"/>
+		<prune bestCap="3" maxErr="2.0"/>
+	</hough>
+	
+	<modelSeg enabled="true" iters="12">
+		<noise base="1.0"/>
+		<neighbour min="0.001" max="0.1" threshold="4.0" halflife="0.5"/>
+		<model prob="0.2"/>
+	</modelSeg>
+</smes>

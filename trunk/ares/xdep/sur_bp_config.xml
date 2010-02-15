@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<sfgs>
+	<light pos="(5.5,6,2,1)"/>
+
+	<dsi occCost="3.0" vertCost="0.25" vertMult="0.75" errLim="0.03"/>
+	<seg colour="14.0" spatial="6.0" disp="6.0" minMerge="175" minKill="0"/>
+	<sfs iters="100"/>
+	<refine iters="100" dsiSd="1.0" costBase="1.0" norm="0.1" maxD="5"/>
+	<refine-ex eps="true" threshold="7.0" width="0.8"/>
+	<alb sur_sd="2.0" dosa_sd="0.1" soda_sd="0.25" cutoff="5.0" iters="100" radius="5"/>
+</sfgs>

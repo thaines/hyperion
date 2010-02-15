@@ -1,0 +1,16 @@
+<sfs_bp>
+	<light x="0.0" y="0.0" z="1.0"/>
+	<albedo value="1.0"/>
+	<mesh zMult="1.0"/>
+
+	<cone k="16.0" fade="0.5"/>
+	<similarity k="4.5"/>
+	<border k="0.0"/>
+	<centre k="0.0"/>
+	
+	<gradCalc steps="8" exp="12.0" stop="0.0"/>
+	<grad ev="4.0" dBias="4.0"/>
+	
+	<paras iters="8" levels="32"/>
+</sfs_bp>
+
