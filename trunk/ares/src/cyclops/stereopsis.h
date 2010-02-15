@@ -67,6 +67,13 @@ class Stereopsis
   gui::EditBox * segEdge;
   
   gui::EditBox * gaussianRange;
+  gui::EditBox * gaussianSdMult;
+  gui::EditBox * gaussianMin;
+  gui::EditBox * gaussianMax;
+  gui::EditBox * gaussianMinK;
+  gui::EditBox * gaussianMaxK;
+  gui::EditBox * gaussianIters;
+  
   gui::EditBox * fisherRange;
   gui::EditBox * fisherMin;
   gui::EditBox * fisherMax;

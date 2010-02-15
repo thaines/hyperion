@@ -8,8 +8,9 @@ namespace eos
  {
 //------------------------------------------------------------------------------
 DispNorm::DispNorm()
-:dsc(null<stereo::DSC*>()),dscMult(1.0),range(20),sdCount(2.0),
-minSd(0.0),maxSd(10.0),maxIters(1000)
+:dsc(null<stereo::DSC*>()),dscMult(1.0),
+range(20),sdCount(2.0),minK(2.5),maxK(10.0),
+minSd(0.1),maxSd(10.0),maxIters(1000)
 {}
 
 DispNorm::~DispNorm()
@@ -31,6 +32,12 @@ void DispNorm::SetRange(nat32 r,real32 sdC)
 {
  range = r;
  sdCount = sdC;
+}
+
+void DispNorm::SetClampK(real32 miK,real32 maK)
+{
+ minK = miK;
+ maxK = maK;
 }
 
 void DispNorm::SetClamp(real32 minS,real32 maxS)
@@ -74,7 +81,7 @@ void DispNorm::Run(time::Progress * prog)
     int32 maxDisp = math::Clamp<int32>(int32(math::Round(mean))+int32(range),
                                        -x,int32(dsc->WidthRight())-x);
     
-    // Cache the disparity weights to save repeated calcualtion...
+    // Cache the disparity weights to save repeated calculation...
      for (int32 d=minDisp;d<=maxDisp;d++)
      {
       buf[d-minDisp] = math::Exp(-dsc->Cost(x,x+d,y) * dscMult);
@@ -86,7 +93,7 @@ void DispNorm::Run(time::Progress * prog)
       real32 newVar = 0.0;
       real32 newVarW = 0.0;
      
-      real32 iSigma = 1.0/math::Sqrt(var);
+      real32 iSigma = 1.0/math::Clamp(math::Sqrt(var),minK,maxK);
       for (int32 d=minDisp;d<=maxDisp;d++)
       {
        real32 delta = math::Abs(real32(d) - mean);
