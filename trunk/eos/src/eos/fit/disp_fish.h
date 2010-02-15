@@ -53,6 +53,10 @@ class EOS_CLASS DispFish
   /// Default is 3
    void SetRange(nat32 range);
    
+  /// Sets the bias, which biases it towards higher concentrations, 0 for no
+  /// bias, which is the default.
+   void SetBias(real32 bias);
+   
   /// Sets the clamping range for the concentration, defaults to 1 to 24.
    void SetClamp(real32 minCon,real32 maxCon);
 
@@ -82,6 +86,7 @@ class EOS_CLASS DispFish
    nat32 range;
    real32 minCon;
    real32 maxCon;
+   real32 bias;
    
   // Output...
    ds::Array2D<bs::Vert> out;

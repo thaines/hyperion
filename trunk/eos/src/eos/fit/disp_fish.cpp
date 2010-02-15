@@ -17,7 +17,7 @@ real32 medDotToK[1000] = {0.0, 0.00200000133338, 0.00400001066667, 0.00600003600
 
 //------------------------------------------------------------------------------
 DispFish::DispFish()
-:dscMult(1.0),range(3),minCon(1.0),maxCon(24.0)
+:dscMult(1.0),range(3),minCon(1.0),maxCon(24.0),bias(0.0)
 {}
 
 DispFish::~DispFish()
@@ -43,6 +43,11 @@ void DispFish::SetPair(const cam::CameraPair & p)
 void DispFish::SetRange(nat32 r)
 {
  range = r;
+}
+
+void DispFish::SetBias(real32 b)
+{
+ bias = b;
 }
 
 void DispFish::SetClamp(real32 minC,real32 maxC)
@@ -241,7 +246,7 @@ void DispFish::Run(time::Progress * prog)
            }
            
           // Bias term...
-           weight *= math::Pow(1.0 - 0.5*(1.0-r),3.0); // *************************************************
+           weight *= math::Pow<real32>(1.0 - 0.5*(1.0-r),bias);
            
           // Store in the rb array...
            rb[rbInd].r = r;
