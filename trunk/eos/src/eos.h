@@ -311,6 +311,7 @@
 #include "eos/fit/sphere_sample.h"
 #include "eos/fit/light_ambient.h"
 #include "eos/fit/image_sphere.h"
+#include "eos/fit/disp_norm_fish.h"
 
 //------------------------------------------------------------------------------
 #endif

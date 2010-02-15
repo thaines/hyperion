@@ -9,6 +9,29 @@ namespace eos
  namespace math
  {
 //------------------------------------------------------------------------------
+EOS_FUNC real32 ChiSquareCulmInv(real32 prob,nat32 dims,real32 accuracy)
+{
+ // Multiply prob by the integral normalisation divisor, so we can then forget it...
+  prob  *= math::Pow(2.0,0.5*real32(dims)) * GammaHalfs(dims);
+  
+ // Loop through, starting from zero and increasing by the step size using 
+ // numeric integration, until we have the answer needed...
+  real32 sum = 0.0; // Sum so far - stop when it excedes prob.
+  real32 x = 0.0; // x value we are upto.
+  real32 prev = 0.0; // Previous value - so we can approximate with linear interpolation.
+  
+  while (sum<prob)
+  {
+   x += accuracy;
+   real32 sample = math::Exp(-0.5*x) * math::Pow<real32>(x,real32(dims)/2.0-1.0);
+   sum += 0.5*(sample+prev) * accuracy;
+   prev = sample;
+  }
+
+ return x;
+}
+
+//------------------------------------------------------------------------------
 Gauss2D::Gauss2D()
 {
  math::Zero(iv);
