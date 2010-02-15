@@ -3,6 +3,7 @@
 #include "eos/fit/light_dir.h"
 
 #include "eos/alg/shapes.h"
+#include "eos/file/csv.h"
 
 namespace eos
 {
@@ -46,6 +47,7 @@ void LightDir::SetRecursion(nat32 depth)
 
 void LightDir::Run(time::Progress * prog)
 {
+ LogTime("eos::fit::LightDir::Run");
  prog->Push();
 
  // Count how many segments there are...
@@ -171,6 +173,7 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
                               ds::Array<PixelAux> & tAux,ds::PriorityQueue<CostRange> & tWork)
 {
  if (length==0) return math::Infinity<real32>();
+ LogTime("eos::fit::LightDir::SegLightCost");
 
  // First fill in tAux from the data and lightDir...
   for (nat32 i=0;i<length;i++)
@@ -243,6 +246,7 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
 
 real32 LightDir::CalcCost(real32 albedo,ds::Array<LightDir::PixelAux> & tAux,nat32 length)
 {
+ LogTime("eos::fit::LightDir::CalcCost");
  real32 ret = 0.0;
  for (nat32 i=0;i<length;i++)
  {
@@ -256,6 +260,7 @@ real32 LightDir::CalcCost(real32 albedo,ds::Array<LightDir::PixelAux> & tAux,nat
 //------------------------------------------------------------------------------
 void LightDir::CostRange::CalcCost(ds::Array<LightDir::PixelAux> & tAux,nat32 length)
 {
+ LogTime("eos::fit::LightDir::CostRange::CalcCost");
  minCost = 0.0;
  maxCost = 0.0;
  
