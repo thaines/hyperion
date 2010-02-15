@@ -719,8 +719,216 @@ real32 DiffusionCorrelationImage::ScoreRight(nat32 x,nat32 y,nat32 i,int32 offse
 }
 
 //------------------------------------------------------------------------------
+DiffCorrStereo::DiffCorrStereo()
+:useHalfX(true),useHalfY(true),useCorners(true),halfHeight(true),
+distMult(0.1),minimaLimit(8),baseDistCap(4.0),distCapMult(2.0),distCapThreshold(0.5),dispRange(2),diffSteps(5)
+{}
+
+DiffCorrStereo::~DiffCorrStereo()
+{}
+
+void DiffCorrStereo::SetImages(const svt::Field<bs::ColourLuv> & l,const svt::Field<bs::ColourLuv> & r)
+{
+ left = l;
+ right = r;
+}
+
+void DiffCorrStereo::SetMasks(const svt::Field<bit> & lm,const svt::Field<bit> & rm)
+{
+ leftMask = lm;
+ rightMask = rm;
+}
+
+void DiffCorrStereo::SetPyramid(bit ux, bit uy, bit uc, bit hh)
+{
+ useHalfX = ux;
+ useHalfY = uy;
+ useCorners = uc;
+ halfHeight = hh;
+}
+
+void DiffCorrStereo::SetDiff(real32 dm,nat32 ds)
+{
+ distMult = dm;
+ diffSteps = ds;
+}
+
+void DiffCorrStereo::SetCorr(nat32 ml,real32 bdc,real32 dcm,real32 dct,nat32 dr)
+{
+ minimaLimit = ml;
+ baseDistCap = bdc;
+ distCapMult = dcm;
+ distCapThreshold = dct;
+ dispRange = dr;
+}
+
+void DiffCorrStereo::SetRefine(bit lr,real32 dcd,real32 dsm)
+{
+ doLR = lr;
+ distCapDifference = dcd;
+ distSdMult = dsm;
+}
+
+void DiffCorrStereo::Run(time::Progress * prog)
+{
+ prog->Push();
+ 
+ // First we need luv range pyramids for both images...
+  prog->Report(0,3);
+  bs::LuvRangePyramid leftP;
+  leftP.Create(left,leftMask,useHalfX,useHalfY,useCorners,true,halfHeight);
+
+  bs::LuvRangePyramid rightP;
+  rightP.Create(right,rightMask,useHalfX,useHalfY,useCorners,true,halfHeight);
+  
+
+ // Now do the real work - construct the maxima sets...
+  prog->Report(1,3);
+  bs::BasicLRD dist; // Latter on the ability to choose this will probably need adding.
+  DiffusionCorrelationImage dci;
+  
+  dci.Set(dist,distMult,leftP,rightP);
+  dci.Set(minimaLimit,baseDistCap,distCapMult,distCapThreshold,dispRange,diffSteps);
+
+  dci.Run(prog);
 
 
+ // Finally, do the work this class is meant to do - for each pixel calculate a
+ // refined disparity value based on the information, when confidence is high
+ // enough...
+  prog->Report(2,3);
+  
+  prog->Push();
+  disp.Resize(left.Size(0),left.Size(1));
+  sd.Resize(left.Size(0),left.Size(1));
+  for (nat32 y=0;y<disp.Height();y++)
+  {
+   prog->Report(y,disp.Height());
+   for (nat32 x=0;x<disp.Width();x++)
+   {
+    // Decide if the match is good enough - if not indicate it is masked with a
+    // negative standard deviation, otherwise refine the disparity and assign
+    // a standard deviation...
+     // Set it to masked values, so we can just continue on it failing a test...
+      disp.Get(x,y) = 0.0;
+      sd.Get(x,y) = -1.0;
+      
+     // Check it actually has a minima to consider...
+      if (dci.CountLeft(x,y)==0) continue;
+      nat32 rx = int32(x) + dci.DisparityLeft(x,y,0);
+      nat32 ry = y;
+     
+     // Left-right consistancy check...
+      if (doLR)
+      {
+       if (dci.CountRight(rx,ry)==0) continue;
+       if (int32(rx)+dci.DisparityRight(rx,ry,0)!=int32(x)) continue;
+      }
+     
+     // Sufficiently better than alternative matches in *both* images...
+      real32 thresh = baseDistCap * distCapDifference;
+      
+      if (dci.CountLeft(x,y)>1)
+      {
+       if (dci.ScoreLeft(x,y,0,0)-dci.ScoreLeft(x,y,1,0) < thresh) continue;
+      }
+     
+      if (dci.CountRight(rx,ry)>1)
+      {
+       if (dci.ScoreRight(rx,ry,0,0)-dci.ScoreRight(rx,ry,1,0) < thresh) continue;
+      }
+
+     
+     // Ok - its passed - next step is to refine the disparity value via
+     // polynomial fitting, we take an average of the offset values from both
+     // images to maintain symmetry. The fitting itself is done by matching area
+     // under the curve, as our correlations are for regions...
+      real32 p = 0.5*(dci.ScoreLeft(x,y,0,-1) + dci.ScoreRight(rx,ry,0,-1));
+      real32 q = 0.5*(dci.ScoreLeft(x,y,0, 0) + dci.ScoreRight(rx,ry,0, 0));
+      real32 r = 0.5*(dci.ScoreLeft(x,y,0, 1) + dci.ScoreRight(rx,ry,0, 1));
+      
+      real32 dOS = (p-r)/(2.0*(p+r) - 4.0*q);
+      disp.Get(x,y) = real32(dci.DisparityLeft(x,y,0)) + dOS;
+     
+     // Finally, calculate a standard deviation, based on nearby matches...
+      sd.Get(x,y) = 1.0; // Code me! ********************************************
+   }
+  }
+  prog->Pop();
+ 
+ prog->Pop();
+}
+
+nat32 DiffCorrStereo::Width() const
+{
+ return disp.Width();
+}
+   
+nat32 DiffCorrStereo::Height() const
+{
+ return disp.Height();
+}
+   
+nat32 DiffCorrStereo::Size(nat32 x, nat32 y) const
+{
+ if (sd.Get(x,y)>0.0) return 1;
+                 else return 0;
+}
+   
+real32 DiffCorrStereo::Disp(nat32 x, nat32 y, nat32 i) const
+{
+ return disp.Get(x,y);
+}
+   
+real32 DiffCorrStereo::Cost(nat32 x, nat32 y, nat32 i) const
+{
+ return 0.0;
+}
+   
+real32 DiffCorrStereo::Prob(nat32 x, nat32 y, nat32 i) const
+{
+ return 1.0;
+}
+  
+real32 DiffCorrStereo::DispWidth(nat32 x, nat32 y, nat32 i) const
+{
+ return 0.5;
+}
+
+void DiffCorrStereo::GetDisp(svt::Field<real32> & d) const
+{
+ for (nat32 y=0;y<disp.Height();y++)
+ {
+  for (nat32 x=0;x<disp.Width();x++)
+  {
+   d.Get(x,y) = disp.Get(x,y);
+  }
+ }
+}
+
+void DiffCorrStereo::GetSd(svt::Field<real32> & s) const
+{
+ for (nat32 y=0;y<sd.Height();y++)
+ {
+  for (nat32 x=0;x<sd.Width();x++) s.Get(x,y) = sd.Get(x,y);
+ }
+}
+
+void DiffCorrStereo::GetMask(svt::Field<bit> & m) const
+{
+ for (nat32 y=0;y<disp.Height();y++)
+ {
+  for (nat32 x=0;x<disp.Width();x++)
+  {
+   m.Get(x,y) = sd.Get(x,y)>0.0;
+  }
+ }
+}
+
+cstrconst DiffCorrStereo::TypeString() const
+{
+ return "eos::stereo::DiffCorrStereo";
+}
 
 //------------------------------------------------------------------------------
  };

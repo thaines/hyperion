@@ -10,6 +10,7 @@
 #include "eos/types.h"
 #include "eos/time/progress.h"
 #include "eos/bs/luv_range.h"
+#include "eos/stereo/dsi.h"
 
 
 namespace eos
@@ -294,8 +295,125 @@ class EOS_CLASS DiffusionCorrelationImage
 };
 
 //------------------------------------------------------------------------------
+/// An actual stereopsis algorithm that uses the diffusion correlation - wraps
+/// the various parts in a neat interface and also refines the final location by 
+/// fitting a polynoimial.
+class EOS_CLASS DiffCorrStereo : public DSI
+{
+ public:
+  /// &nbsp;
+   DiffCorrStereo();
+
+  /// &nbsp;
+   ~DiffCorrStereo();
 
 
+  /// Sets the image pair to use.
+   void SetImages(const svt::Field<bs::ColourLuv> & left,const svt::Field<bs::ColourLuv> & right);
+
+  /// Optionally call to set masks.
+   void SetMasks(const svt::Field<bit> & left,const svt::Field<bit> & right);
+   
+  /// Sets luv range pyramid construction options. All default to true.
+   void SetPyramid(bit useHalfX, bit useHalfY, bit useCorners, bit halfHeight);
+   
+  /// Sets diffusion parameters.
+  /// The multiplier for distance when doing diffusion before the negative log
+  /// is taken and the number of steps to take - default to 0.1 and 5
+   void SetDiff(real32 distMult,nat32 diffSteps);
+   
+  /// Sets the parameters to do with corelation and its use in the hierachy.
+  /// minima limit is the maximum number of minimas to finally output per pixel,
+  /// defaults to 8.
+  /// baseDistCap is the distance cap at the base level, whilst dispCapMult is 
+  /// the multiplier to get from one level to the next reduced resolution level,
+  /// and distCapThreshold is the multiplier of the current levels distance cap
+  /// to get the threshold to be passed to the next higher resolution level.
+  /// They default to 4.0, 2.0 and 0.5 respectivly.
+  /// Finally, dispRange is the number of adjacent correlation scores to give
+  /// for each match - they are then used for fitting the final gaussian.
+  /// also affects the search range around matches passed down from lower 
+  /// resolution levels. Defaults to 2.
+   void SetCorr(nat32 minimaLimit,real32 baseDistCap,real32 distCapMult,real32 distCapThreshold,nat32 dispRange);
+   
+  /// Refinement parameters - if doLR it does a left right check,
+  /// distCapDifference indicates the distance cap multiplier used to determine
+  /// how much below the other minima the best minima has to be to be considered
+  /// authorative and distSdMult is a multiplier of correlation score before -ln
+  /// is applied to get a probability to which a Gaussian is fitted.
+   void SetRefine(bit doLR,real32 distCapDifference,real32 distSdMult);
+
+
+  /// Runs the algorithm.
+   void Run(time::Progress * prog = null<time::Progress*>());
+
+  
+  /// &nbsp;
+   nat32 Width() const;
+   
+  /// &nbsp;
+   nat32 Height() const;
+   
+  /// &nbsp;
+   nat32 Size(nat32 x, nat32 y) const;
+   
+  /// &nbsp;
+   real32 Disp(nat32 x, nat32 y, nat32 i) const;
+   
+  /// &nbsp;
+   real32 Cost(nat32 x, nat32 y, nat32 i) const;
+   
+  /// &nbsp;
+   real32 Prob(nat32 x, nat32 y, nat32 i) const;
+  
+  /// &nbsp;
+   real32 DispWidth(nat32 x, nat32 y, nat32 i) const;
+
+
+  /// &nbsp;
+   void GetDisp(svt::Field<real32> & disp) const;
+
+  /// Extracts a map of standard deviations for each pixel.
+   void GetSd(svt::Field<real32> & sd) const;
+
+  /// &nbsp;
+   void GetMask(svt::Field<bit> & mask) const;
+   
+
+  /// &nbsp;
+   cstrconst TypeString() const;
+
+
+ private:
+  // In...
+   svt::Field<bs::ColourLuv> left;
+   svt::Field<bs::ColourLuv> right;
+   svt::Field<bit> leftMask;
+   svt::Field<bit> rightMask;
+
+  // Parameters...
+   bit useHalfX;
+   bit useHalfY;
+   bit useCorners;
+   bit halfHeight;
+   
+   real32 distMult;
+   nat32 minimaLimit;
+   real32 baseDistCap;
+   real32 distCapMult;
+   real32 distCapThreshold;
+   nat32 dispRange;
+   nat32 diffSteps;
+   
+   bit doLR;
+   real32 distCapDifference;
+   real32 distSdMult;
+   
+  
+  // Out...
+   ds::Array2D<real32> disp;
+   ds::Array2D<real32> sd; // Negative sd values indicate masked eregions.
+};
 
 //------------------------------------------------------------------------------
  };
