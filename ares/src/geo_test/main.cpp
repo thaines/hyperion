@@ -111,7 +111,7 @@ int main()
  // Testing of concentration from probability within an angle class...
  // (The geometrical link is really getting stretched here.)
   sfs::FisherAngProb fap;
-  fap.Make(0.02,0.1,8.0,120,1800,&con.BeginProg());
+  fap.Make(0.01,1.0,5.0,120,1800,&con.BeginProg());
   con.EndProg();
   
   con << "  0 degrees = " << fap.Concentration(0.0 * math::pi/180.0) << "\n";
