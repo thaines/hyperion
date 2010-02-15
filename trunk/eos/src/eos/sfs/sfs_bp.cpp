@@ -1329,16 +1329,25 @@ void SfS_BP_Nice3::Run(time::Progress * prog)
        real32 dx,dy;
        gws.Query(x,y,dx,dy);
        
+       math::Vect<3,real32> edgeDir;
+       if (image.Get(x,y)<0.05) edgeDir = toLight; // This is more than a touch dodgy, only matters for oblique lighting however.
+       else
+       {
+        edgeDir[0] = 0.0;
+        edgeDir[1] = 0.0;
+        edgeDir[2] = 1.0;
+       }
+       
        math::Vect<3,real32> rawDir;
        rawDir[0] = -dx;
        rawDir[1] = -dy;
        rawDir[2] = 0.0;
        
        math::Vect<3,real32> perpDir;
-       math::CrossProduct(rawDir,toLight,perpDir);
+       math::CrossProduct(rawDir,edgeDir,perpDir);
        
        math::Fisher fish;
-       math::CrossProduct(toLight,perpDir,fish);
+       math::CrossProduct(edgeDir,perpDir,fish);
        
        real32 len = fish.Length();
        if (!math::IsZero(len))
