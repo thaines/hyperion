@@ -252,7 +252,12 @@ class EOS_CLASS CameraPair
    void Project(const math::Vect<4,real64> & pos,real32 & outX,real32 & outY,real32 & outDisp,
                 const math::Mat<3,3,real64> * rectLeft = 0,
                 const math::Mat<3,3,real64> * rectRight = 0) const;
-                
+  
+  /// Varient of Project for a real32 position.
+   void Project(const math::Vect<4,real32> & pos,real32 & outX,real32 & outY,real32 & outDisp,
+                const math::Mat<3,3,real64> * rectLeft = 0,
+                const math::Mat<3,3,real64> * rectRight = 0) const;
+      
   /// Given a 3D homogenous point this projects back to calculate the 2d
   /// position for the left image and right image.
   /// rectLeft and rectRight can be optionally given. As they are not directly
