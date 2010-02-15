@@ -20,6 +20,8 @@ namespace eos
  namespace fit
  {
 //------------------------------------------------------------------------------
+/// Light source direction estimation based on a bayesian/sampling model - 
+/// uses stereopsis as its input.
 class EOS_CLASS LightDir
 {
  public:

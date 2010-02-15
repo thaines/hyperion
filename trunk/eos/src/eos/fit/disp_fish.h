@@ -3,7 +3,7 @@
 //------------------------------------------------------------------------------
 // Copyright 2008 Tom Haines
 
-/// \namespace eos::math
+/// \namespace eos::fit
 /// Provides tools for 'fitting' to data sets.
 
 /// \file disp_fish.h
