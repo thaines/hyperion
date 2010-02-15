@@ -755,23 +755,86 @@ inline bit SameSign(T a,T b,nat32 range = 1000)
 //------------------------------------------------------------------------------
 /// Floating point type checks...
 
+#ifdef EOS_64BIT // On my 64 bit computer these functions are totally broken :-( - they all think *all* bit sequences are finite.
+// (The below will work as long as it is ieee compliant.)
+
+
 /// Returns true if given a NaN, false otherwise.
-inline bit IsNan(real32 n) {return isnan(n);}
+inline bit IsNan(real32 n)
+{
+ nat32 & nn = *(nat32*)(void*)&n;
+ bit expFF = (0x7F800000&nn)==0x7F800000;
+ bit fracZero = (0x7FFFFF&nn)==0;
+ return expFF and !fracZero;
+}
+
+/// Returns true if given a NaN, false otherwise.
+inline bit IsNan(real64 n)
+{
+ nat64 & nn = *(nat64*)(void*)&n;
+ bit expFF = (0x7FF0000000000000&nn)==0x7FF0000000000000;
+ bit fracZero = (0x000FFFFFFFFFFFFF&nn)==0;
+ return expFF and !fracZero;
+}
+
+/// Returns true if given an infinity, false otherwise.
+inline bit IsInf(real32 n)
+{
+ nat32 & nn = *(nat32*)(void*)&n;
+ bit expFF = (0x7F800000&nn)==0x7F800000;
+ bit fracZero = (0x7FFFFF&nn)==0;
+ return expFF and fracZero;
+}
+
+/// Returns true if given an infinity, false otherwise.
+inline bit IsInf(real64 n)
+{ 
+ nat64 & nn = *(nat64*)(void*)&n;
+ bit expFF = (0x7FF0000000000000&nn)==0x7FF0000000000000;
+ bit fracZero = (0x000FFFFFFFFFFFFF&nn)==0;
+ return expFF and fracZero;
+}
+
+/// Returns true if given a finite number, i.e. one that is neither infinite nor nan, false otherwise.
+inline bit IsFinite(real32 n)
+{
+ nat32 & nn = *(nat32*)(void*)&n;
+ bit expFF = (0x7F800000&nn)==0x7F800000;
+ return !expFF;
+}
+
+/// Returns true if given a finite number, i.e. one that is neither infinite nor nan, false otherwise.
+inline bit IsFinite(real64 n)
+{
+ nat64 & nn = *(nat64*)(void*)&n;
+ bit expFF = (0x7FF0000000000000&nn)==0x7FF0000000000000;
+ return !expFF;
+}
+
+
+#else
+
+
+/// Returns true if given a NaN, false otherwise.
+inline bit IsNan(real32 n) {return isnanf(n);}
 
 /// Returns true if given a NaN, false otherwise.
 inline bit IsNan(real64 n) {return isnan(n);}
 
 /// Returns true if given an infinity, false otherwise.
-inline bit IsInf(real32 n) {return isinf(n);}
+inline bit IsInf(real32 n) {return isinff(n);}
 
 /// Returns true if given an infinity, false otherwise.
 inline bit IsInf(real64 n) {return isinf(n);}
 
 /// Returns true if given a finite number, i.e. one that is neither infinite nor nan, false otherwise.
-inline bit IsFinite(real32 n) {return finite(n);}
+inline bit IsFinite(real32 n) {return finitef(n);}
 
 /// Returns true if given a finite number, i.e. one that is neither infinite nor nan, false otherwise.
 inline bit IsFinite(real64 n) {return finite(n);}
+
+
+#endif
 
 //------------------------------------------------------------------------------
 // Unit conversion functions...

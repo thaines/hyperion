@@ -39,8 +39,72 @@ int main()
    con << i << ": " << out[i] << "\n";
   }
   con << "\n";
+  
+  
+  
+ // Test NaN handling...
+  real32 nan = math::Sqrt(-1.0);
+  con << "nan = " << nan << "\n";
 
+  con << " isNan = " << math::IsNan(nan) << "\n";
+  con << " isInf = " << math::IsInf(nan) << "\n";
+  con << " isFinite = " << math::IsFinite(nan) << "\n";
+  
+  real32 inf = 1.0/0.0;
+  con << "inf = " << inf << "\n";
 
+  con << " isNan = " << math::IsNan(inf) << "\n";
+  con << " isInf = " << math::IsInf(inf) << "\n";
+  con << " isFinite = " << math::IsFinite(inf) << "\n";
+
+  real32 normal = 0.0;
+  con << "num = " << normal << "\n";
+
+  con << " isNan = " << math::IsNan(normal) << "\n";
+  con << " isInf = " << math::IsInf(normal) << "\n";
+  con << " isFinite = " << math::IsFinite(normal) << "\n";
+  
+  real64 nan64 = math::Sqrt(-1.0);
+  con << "nan64 = " << nan64 << "\n";
+
+  con << " isNan = " << math::IsNan(nan64) << "\n";
+  con << " isInf = " << math::IsInf(nan64) << "\n";
+  con << " isFinite = " << math::IsFinite(nan64) << "\n";
+  
+  real64 inf64 = 1.0/0.0;
+  con << "inf64 = " << inf64 << "\n";
+
+  con << " isNan = " << math::IsNan(inf64) << "\n";
+  con << " isInf = " << math::IsInf(inf64) << "\n";
+  con << " isFinite = " << math::IsFinite(inf64) << "\n";
+
+  real64 normal64 = 0.0;
+  con << "num64 = " << normal64 << "\n";
+
+  con << " isNan = " << math::IsNan(normal64) << "\n";
+  con << " isInf = " << math::IsInf(normal64) << "\n";
+  con << " isFinite = " << math::IsFinite(normal64) << "\n";  
+
+ // Lets get brute force...
+ /*{
+  nat32 val = 0;
+  do
+  {
+   if ((val%0xFFFFFF)==0) con << (val/0xFFFFFF) << "\n";
+   real32 rv = *(real32*)(void*)&val;
+   if (math::IsNan(rv))
+   {
+    con << "\nFound a nan! - " << rv << " - " << val << "\n";
+   }
+   if ((rv==rv)==false)
+   {
+    con << "\nFound a nan!(2) - " << rv << " - " << val << "\n";
+   }
+   
+   val++;
+  } while (val!=0);
+ }*/
+ 
  con.WaitSize(1);
  return 0;
 }

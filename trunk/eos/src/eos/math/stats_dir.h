@@ -284,13 +284,31 @@ class EOS_CLASS FisherBingham
   /// &nbsp;
    ~FisherBingham() {}
    
+  
+  /// Returns true if the distribution contains nan's or infinities...
+   bit Bad() const
+   {
+    if (!math::IsFinite(fisher[0])) return true;
+    if (!math::IsFinite(fisher[1])) return true;
+    if (!math::IsFinite(fisher[2])) return true;
+    if (!math::IsFinite(bingham[0][0])) return true;
+    if (!math::IsFinite(bingham[0][1])) return true;
+    if (!math::IsFinite(bingham[0][2])) return true;
+    if (!math::IsFinite(bingham[1][0])) return true;
+    if (!math::IsFinite(bingham[1][1])) return true;
+    if (!math::IsFinite(bingham[1][2])) return true;
+    if (!math::IsFinite(bingham[2][0])) return true;
+    if (!math::IsFinite(bingham[2][1])) return true;
+    if (!math::IsFinite(bingham[2][2])) return true;
+    return false;
+   }
 
- /// Rotates the distribution.
-  void Rotate(const Mat<3,3,real32> & rot)
-  {
-   fisher.Rotate(rot);
-   bingham.Rotate(rot);
-  }
+  /// Rotates the distribution.
+   void Rotate(const Mat<3,3,real32> & rot)
+   {
+    fisher.Rotate(rot);
+    bingham.Rotate(rot);
+   }
 
   /// &nbsp;
    FisherBingham & operator *= (const Fisher & rhs)

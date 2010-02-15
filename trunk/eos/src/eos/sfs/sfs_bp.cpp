@@ -260,7 +260,7 @@ void SfS_BP::Run(time::Progress * prog)
      }
      
      level[l].Get(x,y).data /= div;
-     
+
      for (nat32 d=0;d<4;d++)
      {
       level[l].Get(x,y).in[d] = math::FisherBingham();
@@ -297,14 +297,14 @@ void SfS_BP::Run(time::Progress * prog)
    // Iterate the level, passing messages...
     prog->Report(step++,steps);
     prog->Push();
-    for (nat32 i=0;i<iters;i++)
+    for (nat32 it=0;it<iters;it++)
     {
-     prog->Report(i,iters);
+     prog->Report(it,iters);
      prog->Push();
      for (nat32 y=0;y<level[l].Height();y++)
      {
       prog->Report(y,level[l].Height());
-      for (nat32 x=(i+y)%2;x<level[l].Width();x+=2)
+      for (nat32 x=(it+y)%2;x<level[l].Width();x+=2)
       {
        MsgSet & ms = level[l].Get(x,y);
        //LogDebug("Calculating (" << x << "," << y << ") at level " << l);
@@ -330,9 +330,21 @@ void SfS_BP::Run(time::Progress * prog)
           for (nat32 i=0;i<d;i++) msg *= ms.in[i];
           for (nat32 i=d+1;i<4;i++) msg *= ms.in[i];
           
+          if (msg.Bad())
+          {
+           LogDebug("pre conv nan" << LogDiv() << l << LogDiv() << it << LogDiv() << x << LogDiv() 
+                    << y << LogDiv() << d << LogDiv() << msg.fisher << ";" << msg.bingham);
+          }          
+          
           //LogDebug("Pre-convolution" << LogDiv() << msg);
           msg.Convolve(ms.send[d]);
-         
+          
+          if (msg.Bad())
+          {
+           LogDebug("post conv nan" << LogDiv() << l << LogDiv() << it << LogDiv() << x << LogDiv() 
+                    << y << LogDiv() << d << LogDiv() << msg.fisher << ";" << msg.bingham);
+          }
+                   
          // Send...
           level[l].Get(ox,oy).in[(d+2)%4] = msg;
           //LogDebug("Sent message for direction " << d << LogDiv() << msg);
@@ -389,7 +401,15 @@ void SfS_BP::Run(time::Progress * prog)
    for (nat32 y=0;y<distMax.Height();y++)
    {
     prog->Report(y,distMax.Height());
-    for (nat32 x=0;x<distMax.Width();x++) dist.Get(x,y).Maximum(distMax.Get(x,y));
+    for (nat32 x=0;x<distMax.Width();x++)
+    {
+     dist.Get(x,y).Maximum(distMax.Get(x,y));
+     if (!math::IsFinite(distMax.Get(x,y).Length()))
+     {
+      LogDebug("NaN maximum {x,y,dir,fish,bing}" << LogDiv() << x << LogDiv() << y << LogDiv()
+               << distMax.Get(x,y) << LogDiv() << dist.Get(x,y).fisher << LogDiv() << dist.Get(x,y).bingham);
+     }
+    }
    }
    prog->Pop();
   }
@@ -527,7 +547,7 @@ void SfS_BP_Nice::Run(time::Progress * prog)
    {
     // Similarity terms...
      sfsbp.SetHoriz(x,y,simK);
-     sfsbp.SetVert(x,y,simK);  
+     sfsbp.SetVert(x,y,simK);
 
     // Cone term...
      real32 corL = math::Min(image.Get(x,y)/albedo.Get(x,y),real32(1.0));
@@ -592,9 +612,12 @@ void SfS_BP_Nice::Run(time::Progress * prog)
        fish[1] = -dy.Get(x,y);
        fish[2] = 0.0;
        
-       fish.Normalise();
-       fish *= borderK;
-       sfsbp.MultDist(x,y,fish);
+       real32 len = fish.Length();
+       if (!math::IsZero(len))
+       {
+        fish *= borderK/len;
+        sfsbp.MultDist(x,y,fish);
+       }
       }
      }
    }
@@ -705,6 +728,8 @@ void NeedleFromFB::Run(time::Progress * prog)
    {
     prog->Report(x,in.Width());
     math::Vect<3> vect[6];
+    LogDebug("{x,y,fb}" << LogDiv() << x << LogDiv() << y << LogDiv() 
+             << "[" << in.Get(x,y).fisher << ";" << in.Get(x,y).bingham << "]");
     nat32 num = in.Get(x,y).Critical(vect);
     switch(num)
     {
@@ -999,9 +1024,12 @@ void SfS_BP_Nice2::Run(time::Progress * prog)
        fish[1] = -dy;
        fish[2] = 0.0;
        
-       fish.Normalise();
-       fish *= boundK;
-       sfsbp.MultDist(x,y,fish);
+       real32 len = fish.Length();
+       if (!math::IsZero(len))
+       {
+        fish *= boundK/len;
+        sfsbp.MultDist(x,y,fish);
+       }
       }
      }
      

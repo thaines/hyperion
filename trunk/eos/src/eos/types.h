@@ -28,7 +28,7 @@
 namespace eos
 {
 //------------------------------------------------------------------------------
-#ifdef __LP64__
+#ifdef _LP64
 #define EOS_64BIT
 #else
 #define EOS_32BIT
