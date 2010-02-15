@@ -1,6 +1,9 @@
 Work Bag:
 ---------
 
+- Gaussian augmentation changes the Fisher distribution output somehow in stereopsis - want the version when its on all the time.
+- Negative light source directions - wtf? (Running off edge, appears to have reverse of expected cost function.)
+- Make sphere calibration system, with reflection direction calculation.
 
 
 
