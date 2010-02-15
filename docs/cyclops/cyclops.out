@@ -29,35 +29,39 @@
 \BOOKMARK [1][-]{section.13}{Disparity Cleaner}{}
 \BOOKMARK [1][-]{section.14}{Disparity Comparator}{}
 \BOOKMARK [1][-]{section.15}{Disparity To Needle Map}{}
-\BOOKMARK [1][-]{section.16}{Scale}{}
-\BOOKMARK [1][-]{section.17}{Crop}{}
+\BOOKMARK [1][-]{section.16}{Crop}{}
+\BOOKMARK [1][-]{section.17}{Scale}{}
 \BOOKMARK [1][-]{section.18}{Crop Rectified Pair}{}
 \BOOKMARK [1][-]{section.19}{Scale Rectified Pair}{}
 \BOOKMARK [1][-]{section.20}{Warp}{}
-\BOOKMARK [1][-]{section.21}{Super Warp}{}
-\BOOKMARK [1][-]{section.22}{Distorter}{}
-\BOOKMARK [1][-]{section.23}{Undistortor}{}
-\BOOKMARK [1][-]{section.24}{Cameras to Pair}{}
-\BOOKMARK [1][-]{section.25}{Pair to Cameras}{}
-\BOOKMARK [1][-]{section.26}{Swap Pair}{}
+\BOOKMARK [1][-]{section.21}{Undistortor}{}
+\BOOKMARK [1][-]{section.22}{Cameras to Pair}{}
+\BOOKMARK [1][-]{section.23}{Pair to Cameras}{}
+\BOOKMARK [1][-]{section.24}{Pair to Default}{}
+\BOOKMARK [1][-]{section.25}{Swap Pair}{}
+\BOOKMARK [1][-]{section.26}{File Info}{}
 \BOOKMARK [1][-]{section.27}{Camera Calibration}{}
 \BOOKMARK [1][-]{section.28}{Camera to Intrinsic}{}
 \BOOKMARK [1][-]{section.29}{Mesh to Disparity}{}
 \BOOKMARK [1][-]{section.30}{Mesh Wibbalizer}{}
 \BOOKMARK [1][-]{section.31}{Render Mesh}{}
-\BOOKMARK [1][-]{section.32}{Visualise}{}
+\BOOKMARK [1][-]{section.32}{Light Estimation}{}
 \BOOKMARK [1][-]{section.33}{Colour Matching}{}
 \BOOKMARK [1][-]{section.34}{Homography}{}
 \BOOKMARK [1][-]{section.35}{Anaglyph}{}
-\BOOKMARK [1][-]{section.36}{Crop Disparity}{}
-\BOOKMARK [1][-]{section.37}{Scale Disparity}{}
-\BOOKMARK [1][-]{section.38}{File Info}{}
-\BOOKMARK [1][-]{section.39}{Capturing Advice}{}
-\BOOKMARK [2][-]{subsection.39.1}{Choice of Camera}{section.39}
-\BOOKMARK [2][-]{subsection.39.2}{Image Quality}{section.39}
-\BOOKMARK [3][-]{subsubsection.39.2.1}{Shooting}{subsection.39.2}
-\BOOKMARK [3][-]{subsubsection.39.2.2}{Post-processing}{subsection.39.2}
-\BOOKMARK [2][-]{subsection.39.3}{Camera layout}{section.39}
-\BOOKMARK [2][-]{subsection.39.4}{Scenes}{section.39}
-\BOOKMARK [1][-]{section.40}{Technology}{}
-\BOOKMARK [1][-]{section.41}{File Formats}{}
+\BOOKMARK [1][-]{section.36}{Segmentation}{}
+\BOOKMARK [1][-]{section.37}{Crop Disparity}{}
+\BOOKMARK [1][-]{section.38}{Scale Disparity}{}
+\BOOKMARK [1][-]{section.39}{Shape from Shading}{}
+\BOOKMARK [1][-]{section.40}{Integration}{}
+\BOOKMARK [1][-]{section.41}{Needle Comparator}{}
+\BOOKMARK [1][-]{section.42}{Re-lighter}{}
+\BOOKMARK [1][-]{section.43}{Capturing Advice}{}
+\BOOKMARK [2][-]{subsection.43.1}{Choice of Camera}{section.43}
+\BOOKMARK [2][-]{subsection.43.2}{Image Quality}{section.43}
+\BOOKMARK [3][-]{subsubsection.43.2.1}{Shooting}{subsection.43.2}
+\BOOKMARK [3][-]{subsubsection.43.2.2}{Post-processing}{subsection.43.2}
+\BOOKMARK [2][-]{subsection.43.3}{Camera layout}{section.43}
+\BOOKMARK [2][-]{subsection.43.4}{Scenes}{section.43}
+\BOOKMARK [1][-]{section.44}{Technology}{}
+\BOOKMARK [1][-]{section.45}{File Formats}{}

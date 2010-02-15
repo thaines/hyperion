@@ -18,6 +18,8 @@ namespace eos
  namespace file
  {
 //------------------------------------------------------------------------------
+/// Loads a jpeg file and provides access to its exif data - provides a
+/// conveniant interface for a subset of tags that I tend to find useful.
 class EOS_CLASS Exif
 {
  public:
