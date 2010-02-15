@@ -469,7 +469,7 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
    haw3SmoothBase->Set("15.0");
    haw3SmoothMult->Set("0.0");
    haw3SmoothMinK->Set("1.0");
-   haw3SmoothMaxK->Set("4.0");
+   haw3SmoothMaxK->Set("6.0");
    haw3Cone0->Set("24.0");
    haw3Cone45->Set("32.0");
    haw3Cone90->Set("24.0");
@@ -477,7 +477,7 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
    haw3BoundK->Set("16.0");
    haw3BoundLength->Set("8");
    haw3BoundExp->Set("6.0");
-   haw3GradK->Set("2.0");
+   haw3GradK->Set("0.1");
    haw3GradLength->Set("8");
    haw3GradExp->Set("6.0");
    haw3AngMult->Set("1.0");

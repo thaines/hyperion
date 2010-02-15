@@ -22,9 +22,9 @@ real32 Fisher::InvAk(real32 x,real32 accuracy,nat32 limit)
  // There is no analytical method that I know of - have to resort to Newton 
  // iterations.
  
- // Initialise with a sigmoid, as that matches the shape reasonably well...
- // Sigmoid is x=tanh(k/4)
-  real32 ret = 4.0*InvTanh(x);
+ // Initialise with a good approximation, a polynomial approximation compliments of some physists...
+  real32 xSqr = math::Sqr(x);
+  real32 ret = ((((1539.0/875.0)*xSqr + (297.0/175.0))*xSqr + (9.0/5.0))*xSqr + 3.0)*x;
 
  // Iterate till convergance/limit reached...
   for (nat32 i=0;i<limit;i++)
