@@ -2,6 +2,8 @@
 // Copyright 2008 Tom Haines
 #include "eos/fit/light_ambient.h"
 
+#include "eos/file/csv.h"
+
 namespace eos
 {
  namespace fit
@@ -235,7 +237,81 @@ void LightAmb::Run(time::Progress * prog)
 }
 
 //------------------------------------------------------------------------------
+void LightAmb::CostRange(real32 lowAmb,real32 highAmb,
+                         real32 lowAlb,real32 highAlb,
+                         real32 & outLow,real32 & outHigh,
+                         const ds::Array<Pixel> & pixel,nat32 start,nat32 size)
+{
+ LogTime("eos::fit::LightAmb::CostRange");
 
+ outLow = 0.0;
+ outHigh = 0.0;
+
+ real32 invLowAlb = 1.0/lowAlb; 
+ real32 invHighAlb = 1.0/highAlb;
+
+ // Iterate all the pixels and sum...
+  for (nat32 i=0;i<size;i++)
+  {
+   Pixel & targ = pixel[start+i];
+
+   // First calculate the r value range...
+    real32 lowR = targ.irr - highAmb;
+    if (lowR>0.0) lowR *= invHighAlb;
+             else lowR *= invLowAlb;
+
+    real32 highR = targ.irr - lowAmb;
+    if (highR>0.0) highR *= invLowAlb;
+              else highR *= invHighAlb;
+   
+   
+   // Calculate the minimum value in the range...
+   // (Easy-ish as the function only has one minima and an (ignorable) pair of 
+   // standing point/discontinuity things.)
+    real32 low,high;
+
+    // Calculate the value at lowR...
+     real32 valLowR;
+     if (lowR<0.0) valLowR = targ.b + lowAlbErr * (highAmb - targ.irr);
+     else
+     {
+      if (lowR>1.0) valLowR = targ.a + lowAlbErr * (targ.irr - highAmb - highAlb);
+      else
+      {
+       // Typical case...
+        valLowR = targ.a*lowR + targ.b*math::Sqrt(1.0-math::Sqr(lowR));
+      }
+     }
+     low = valLowR;
+     high = valLowR;
+   
+    // Calculate the value at highR...
+     real32 valHighR;
+     if (highR<0.0) valHighR = targ.b + lowAlbErr * (lowAmb - targ.irr);
+     else
+     {
+      if (highR>1.0) valHighR = targ.a + lowAlbErr * (targ.irr - lowAmb - lowAlb);
+      else
+      {
+       // Typical case...
+        valHighR = targ.a*highR + targ.b*math::Sqrt(1.0-math::Sqr(highR));
+      }
+     }
+     low = math::Min(low,valHighR);
+     high = math::Max(high,valHighR);
+    
+    // See if the minima is in the range, if it is add in its effect...
+     if ((targ.min<highR)&&(targ.min>lowR))
+     {
+      real32 valAtMin = targ.a*targ.min + targ.b*math::Sqrt(1.0-math::Sqr(targ.min));
+      low = math::Min(low,valAtMin);
+     }
+   
+   // And sum in the min/max to the score so far...
+    outLow += low;
+    outHigh += high;
+  }
+} 
 
 //------------------------------------------------------------------------------
  };

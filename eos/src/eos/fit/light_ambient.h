@@ -12,6 +12,7 @@
 #include "eos/bs/geo3d.h"
 #include "eos/math/stats_dir.h"
 #include "eos/ds/arrays.h"
+#include "eos/ds/priority_queues.h"
 #include "eos/svt/field.h"
 
 namespace eos
@@ -150,13 +151,13 @@ class EOS_CLASS LightAmb
      real32 min; // r value of its minimum.
     }; // Function is a*r + b*sqrt(1-r^2), where r is the variable.
     
-   // Method that is given an ambient range and outputs a cost range for a 
-   // segment... (Needs a whole host of data, can also output the optimal 
-   // albedo value.)
-    void AmbientCost(real32 lowAmb,real32 highAmb,
-                     real32 & outMin,real32 & outMax,
-                     const ds::Array<Pixel> & pixel,nat32 start,nat32 size,
-                     real32 * alb = null<real32*>());
+   // Method that is given an ambient and albedo range and outputs a cost
+   // range for the minimum cost of a segment...
+   // (Needs a whole host of data.)
+    void CostRange(real32 lowAmb,real32 highAmb,
+                   real32 lowAlb,real32 highAlb,
+                   real32 & outLow,real32 & outHigh,
+                   const ds::Array<Pixel> & pixel,nat32 start,nat32 size);
 };
 
 //------------------------------------------------------------------------------
