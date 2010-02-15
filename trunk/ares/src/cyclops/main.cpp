@@ -34,6 +34,7 @@
 #include "cyclops/sfs.h"
 #include "cyclops/integration.h"
 #include "cyclops/lighting.h"
+#include "cyclops/segmentation.h"
 
 //------------------------------------------------------------------------------
 // Code for cyclops class...
@@ -125,6 +126,7 @@ Cyclops::Cyclops()
   gui::Button * but38 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but39 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but40 = static_cast<gui::Button*>(guiFact.Make("Button"));
+  gui::Button * but41 = static_cast<gui::Button*>(guiFact.Make("Button"));
 
   gui::Label * lab1 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab2 = static_cast<gui::Label*>(guiFact.Make("Label"));
@@ -166,6 +168,7 @@ Cyclops::Cyclops()
   gui::Label * lab38 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab39 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab40 = static_cast<gui::Label*>(guiFact.Make("Label"));
+  gui::Label * lab41 = static_cast<gui::Label*>(guiFact.Make("Label"));
 
   but1->SetChild(lab1); lab1->Set("Intrinsic Calibration");
   but2->SetChild(lab2); lab2->Set("Protractor");
@@ -207,6 +210,7 @@ Cyclops::Cyclops()
   but38->SetChild(lab38); lab38->Set("Shape from Shading");
   but39->SetChild(lab39); lab39->Set("Integration");
   but40->SetChild(lab40); lab40->Set("Re-lighter");
+  but41->SetChild(lab41); lab41->Set("Segmentation");
 
   vert0->AttachBottom(but19,false);
   vert0->AttachBottom(but21,false);
@@ -250,7 +254,8 @@ Cyclops::Cyclops()
 
   vert9->AttachBottom(but25,false);
   vert9->AttachBottom(but14,false);
-  vert9->AttachBottom(but30,false);  
+  vert9->AttachBottom(but30,false);
+  vert9->AttachBottom(but41,false);
 
   vert10->AttachBottom(but35,false);
   vert10->AttachBottom(but27,false);
@@ -307,6 +312,7 @@ Cyclops::Cyclops()
   but38->OnClick(MakeCB(this,&Cyclops::StartSfS));
   but39->OnClick(MakeCB(this,&Cyclops::StartIntegration));
   but40->OnClick(MakeCB(this,&Cyclops::StartLighting));
+  but41->OnClick(MakeCB(this,&Cyclops::StartSegmentation));
 
  // Enter the message pump...
   app->Go();
@@ -688,6 +694,11 @@ void Cyclops::StartIntegration(gui::Base * obj,gui::Event * event)
 void Cyclops::StartLighting(gui::Base * obj,gui::Event * event)
 {
  new Lighting(*this);
+}
+
+void Cyclops::StartSegmentation(gui::Base * obj,gui::Event * event)
+{
+ new Segmentation(*this);
 }
 
 //------------------------------------------------------------------------------
