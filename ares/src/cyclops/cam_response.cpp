@@ -5,32 +5,18 @@
 
 //------------------------------------------------------------------------------
 CamResponse::CamResponse(Cyclops & cyc)
-:cyclops(cyc),win(null<gui::Window*>()),lightD(0.0,0.0,1.0),
-irrVar(null<svt::Var*>()),segVar(null<svt::Var*>()),dispVar(null<svt::Var*>()),
-imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
+:cyclops(cyc),win(null<gui::Window*>()),expRec(false),
+irrVar(null<svt::Var*>()),imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 {
  // Create default images maps...
   bs::ColourRGB colourIni(0.0,0.0,0.0);
-  nat32 segIni = 0;
-  math::Fisher fishIni;
+  bs::ColRGB colIni(0,0,0);
 
   irrVar = new svt::Var(cyclops.Core());
   irrVar->Setup2D(320,240);
   irrVar->Add("rgb",colourIni);
   irrVar->Commit();
   irrVar->ByName("rgb",irr);
-
-  segVar = new svt::Var(cyclops.Core());
-  segVar->Setup2D(320,240);
-  segVar->Add("seg",segIni);
-  segVar->Commit();
-  segVar->ByName("seg",seg);
-  
-  dispVar = new svt::Var(cyclops.Core());
-  dispVar->Setup2D(320,240);
-  dispVar->Add("fish",fishIni);
-  dispVar->Commit();
-  dispVar->ByName("fish",fish);
 
 
   imageVar = new svt::Var(cyclops.Core());
@@ -41,18 +27,23 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
   
   imgVar = new svt::Var(cyclops.Core());
   imgVar->Setup2D(320,240);
-  bs::ColRGB colIni(0,0,0);
   imgVar->Add("rgb",colIni);
   imgVar->Commit();
   imgVar->ByName("rgb",img);
   
  // Make default camera response function flat...
   crf.SetMult();
-
+  expNorm = -1.0;
+  
+ // Make default region a suitable size...
+  pMin[0] = 80;
+  pMin[1] = 60;
+  pMax[0] = 240;
+  pMax[1] = 180;
 
  // Build gui...
   win = static_cast<gui::Window*>(cyclops.Fact().Make("Window"));
-  win->SetTitle("Light Source Estimation");
+  win->SetTitle("Camera Response Function Estimator");
   cyclops.App().Attach(win);
   win->SetSize(image.Size(0)+16,image.Size(1)+96);
 
@@ -64,137 +55,69 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    gui::Horizontal * horiz2 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
    vert1->AttachBottom(horiz2,false);
 
-   lightDir = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   lightDir2 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   lightDir->Set("Not yet run");
-   vert1->AttachBottom(lightDir,false);
-   vert1->AttachBottom(lightDir2,false);
+   info = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   result = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   info->Set("Samples = 0");
+   result->Set("Not yet run");
+   vert1->AttachBottom(info,false);
+   vert1->AttachBottom(result,false);
 
    gui::Button * but1 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but2 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but3 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but4 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
-   gui::Button * but5 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
-   gui::Button * but6 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Label * lab1 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab2 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab3 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab4 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab5 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab6 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
 
-   but1->SetChild(lab1); lab1->Set("Load Irradiance...");
-   but2->SetChild(lab2); lab2->Set("Load Camera Response...");
-   but3->SetChild(lab3); lab3->Set("Load Segmentation...");
-   but4->SetChild(lab4); lab4->Set("Load Disparity...");
-   but5->SetChild(lab5); lab5->Set("Run");
-   but6->SetChild(lab6); lab6->Set("Save View...");
+   but1->SetChild(lab1); lab1->Set("Load Image...");
+   but2->SetChild(lab2); lab2->Set("Add");
+   but3->SetChild(lab3); lab3->Set("Run");
+   but4->SetChild(lab4); lab4->Set("Save Camera Response...");
+
    
    
    viewSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
-   viewSelect->Append("Irradiance");
-   viewSelect->Append("Corrected Irradiance");
-   viewSelect->Append("Segmentation");
-   viewSelect->Append("Fisher Direction");
-   viewSelect->Append("Fisher Concentration (log10)");
-   viewSelect->Append("Sphere Rendered with Estimate");
-   viewSelect->Append("Cost of Direction Sphere");
-   viewSelect->Append("Albedo");
-   viewSelect->Append("Per Pixel Solution Cost");
-   viewSelect->Append("Segment Value");
+   viewSelect->Append("Image");
+   viewSelect->Append("Graph");
    viewSelect->Set(0);
+
    
-   algSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
-   algSelect->Append("Haines & Wilson");
-   algSelect->Set(0);
-
-
-   horiz1->AttachRight(but1,false);
-   horiz1->AttachRight(but2,false);
-   horiz1->AttachRight(but3,false);
-   horiz1->AttachRight(but4,false);
-   horiz2->AttachRight(viewSelect,false);
-   horiz2->AttachRight(algSelect,false);
-   horiz2->AttachRight(but5,false);
-   horiz2->AttachRight(but6,false);
-
-
-
-   brutalFish = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
-   vert1->AttachBottom(brutalFish,false);
-   brutalFish->Visible(true);
-   brutalFish->Set("Haines & Wilson Parameters");
-   brutalFish->Expand(false);
-   
-   gui::Vertical * vert2 = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));         
-   gui::Horizontal * horiz3 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
-   gui::Horizontal * horiz4 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
-   brutalFish->SetChild(vert2);
-   vert2->AttachBottom(horiz3,false);
-   vert2->AttachBottom(horiz4,false);
-   
+   gui::Label * lab5 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab6 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab7 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab8 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab9 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab10 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab11 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab12 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab13 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab14 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    
-   bfMinAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfMaxAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfMaxSegCost = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfIrrErr = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfPruneThresh = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfSampleSubdiv = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfFurtherSubdiv = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfAlbRecursion = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   exposure = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   exposureInv = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   degrees = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
 
-   lab7->Set("  Minimum Albedo");
-   lab8->Set(" Maximum Albedo");
-   lab9->Set(" Maximum Segment Cost PP");
-   lab10->Set("  Irradiance Error sd");
-   lab11->Set(" Pruning Threshold");
-   lab12->Set(" Base Subdivs");
-   lab13->Set(" Albedo Recursion");
-   lab14->Set(" Refine Subdivs");
+   lab5->Set("  Exposure (seconds)");
+   lab6->Set(" Exposure (1/seconds)");
+   lab7->Set(" Degrees");
    
-   bfMinAlb->Set("0.001");
-   bfMaxAlb->Set("1.5");
-   bfMaxSegCost->Set("0.1");
-   bfIrrErr->Set("0.0078");
-   bfPruneThresh->Set("0.2");
-   bfSampleSubdiv->Set("1");
-   bfFurtherSubdiv->Set("3");
-   bfAlbRecursion->Set("7");
+   exposure->Set("1.0");
+   exposureInv->Set("1.0");
+   degrees->Set("5");
+
+   exposure->SetSize(96,24);
+   exposureInv->SetSize(96,24);
+   degrees->SetSize(48,24);
+
    
-   bfMinAlb->SetSize(48,24);
-   bfMaxAlb->SetSize(48,24);
-   bfMaxSegCost->SetSize(48,24);
-   bfIrrErr->SetSize(64,24);
-   bfPruneThresh->SetSize(48,24);
-   bfSampleSubdiv->SetSize(48,24);
-   bfFurtherSubdiv->SetSize(48,24);
-   bfAlbRecursion->SetSize(48,24);
-   
-   horiz3->AttachRight(lab7,false);
-   horiz3->AttachRight(bfMinAlb,false);
-   horiz3->AttachRight(lab8,false);
-   horiz3->AttachRight(bfMaxAlb,false);
-   horiz3->AttachRight(lab9,false);
-   horiz3->AttachRight(bfMaxSegCost,false);
-   horiz3->AttachRight(lab13,false);
-   horiz3->AttachRight(bfAlbRecursion,false);
- 
-   horiz4->AttachRight(lab10,false);
-   horiz4->AttachRight(bfIrrErr,false);
-   horiz4->AttachRight(lab11,false);
-   horiz4->AttachRight(bfPruneThresh,false);
-   horiz4->AttachRight(lab12,false);
-   horiz4->AttachRight(bfSampleSubdiv,false);
-   horiz4->AttachRight(lab14,false);
-   horiz4->AttachRight(bfFurtherSubdiv,false);
+   horiz1->AttachRight(but1,false);
+   horiz1->AttachRight(viewSelect,false);
+   horiz1->AttachRight(lab7,false);
+   horiz1->AttachRight(degrees,false);
+   horiz1->AttachRight(but3,false);
+   horiz1->AttachRight(but4,false);   
+
+   horiz2->AttachRight(lab5,false);
+   horiz2->AttachRight(exposure,false);
+   horiz2->AttachRight(lab6,false);
+   horiz2->AttachRight(exposureInv,false);
+   horiz2->AttachRight(but2,false);   
+
 
 
 
@@ -210,22 +133,23 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
  // Event handlers...
   win->OnDeath(MakeCB(this,&CamResponse::Quit));
   canvas->OnResize(MakeCB(this,&CamResponse::Resize));
+  canvas->OnClick(MakeCB(this,&CamResponse::Click));
+  canvas->OnMove(MakeCB(this,&CamResponse::Move));
+    
   but1->OnClick(MakeCB(this,&CamResponse::LoadIrr));
-  but2->OnClick(MakeCB(this,&CamResponse::LoadCRF));
-  but3->OnClick(MakeCB(this,&CamResponse::LoadSeg));
-  but4->OnClick(MakeCB(this,&CamResponse::LoadDisp));
-  but5->OnClick(MakeCB(this,&CamResponse::Run));
-  but6->OnClick(MakeCB(this,&CamResponse::SaveView));
+  but2->OnClick(MakeCB(this,&CamResponse::Add));
+  but3->OnClick(MakeCB(this,&CamResponse::Run));
+  but4->OnClick(MakeCB(this,&CamResponse::SaveCRF));
   viewSelect->OnChange(MakeCB(this,&CamResponse::ChangeView));
-  algSelect->OnChange(MakeCB(this,&CamResponse::ChangeAlg));
+  
+  exposure->OnChange(MakeCB(this,&CamResponse::ExpChange));
+  exposureInv->OnChange(MakeCB(this,&CamResponse::InvExpChange));
 }
 
 CamResponse::~CamResponse()
 {
  delete win;
  delete irrVar;
- delete segVar;
- delete dispVar;
  delete imageVar;
  delete imgVar;
 }
@@ -246,15 +170,89 @@ void CamResponse::Resize(gui::Base * obj,gui::Event * event)
   nat32 sx = (canvas->P().Width() - img.Size(0))/2;
   nat32 sy = (canvas->P().Height() - img.Size(1))/2;
   canvas->P().Image(bs::Rect(bs::Pos(0,0),bs::Pos(img.Size(0),img.Size(1))),bs::Pos(sx,sy),img);
+  
+ // If needed render the selected box...
+  if (viewSelect->Get()==0)
+  {
+   math::Vect<2,real32> tr;
+    tr[0] = pMax[0];
+    tr[1] = pMin[1];
+   math::Vect<2,real32> bl;
+    bl[0] = pMin[0];
+    bl[1] = pMax[1];
+
+   RenderLine(pMin,tr,bs::ColourRGB(1.0,0.0,1.0));
+   RenderLine(pMin,bl,bs::ColourRGB(1.0,0.0,1.0));
+   RenderLine(tr,pMax,bs::ColourRGB(1.0,0.0,1.0));
+   RenderLine(bl,pMax,bs::ColourRGB(1.0,0.0,1.0));
+  }
 
  // Update...
   canvas->Update();
 }
 
+void CamResponse::Click(gui::Base * obj,gui::Event * event)
+{
+ // Determine image coordinates...
+  gui::MouseButtonEvent * mbe = static_cast<gui::MouseButtonEvent*>(event);
+  math::Vect<2,real32> mp;
+  
+  nat32 sx = (canvas->P().Width() - img.Size(0))/2;
+  nat32 sy = (canvas->P().Height() - img.Size(1))/2; 
+
+  mp[0] = mbe->x - sx;
+  mp[1] = mbe->y - sy;
+  
+  if (mbe->button==gui::MouseButtonEvent::LMB)
+  {
+   // Move the nearest corner point, including the 2 virtual corners...
+    if (mp[0]<(0.5*(pMin[0]+pMax[0]))) pMin[0] = mp[0];
+                                  else pMax[0] = mp[0];
+
+    if (mp[1]<(0.5*(pMin[1]+pMax[1]))) pMin[1] = mp[1];
+                                  else pMax[1] = mp[1];  
+  }
+  else
+  {
+   pMin[0] = mp[0];
+   pMax[0] = mp[0]+1;
+   pMin[1] = mp[1];
+   pMax[1] = mp[1]+1;
+  }
+
+
+ // Redraw the display... 
+  canvas->Redraw();
+}
+
+void CamResponse::Move(gui::Base * obj,gui::Event * event)
+{
+ // Determine image coordinates...
+  gui::MouseMoveEvent * mme = static_cast<gui::MouseMoveEvent*>(event);
+  if (!mme->lmb) return;
+  math::Vect<2,real32> mp;
+  
+  nat32 sx = (canvas->P().Width() - img.Size(0))/2;
+  nat32 sy = (canvas->P().Height() - img.Size(1))/2; 
+  
+  mp[0] = mme->x - sx;
+  mp[1] = mme->y - sy;
+  
+ // Move the nearest end point...
+  if (mp[0]<(0.5*(pMin[0]+pMax[0]))) pMin[0] = mp[0];
+                                else pMax[0] = mp[0];
+
+  if (mp[1]<(0.5*(pMin[1]+pMax[1]))) pMin[1] = mp[1];
+                                else pMax[1] = mp[1];
+ 
+ // Redraw the display... 
+  canvas->Redraw();
+}
+
 void CamResponse::LoadIrr(gui::Base * obj,gui::Event * event)
 {
  str::String fn;
- if (cyclops.App().LoadFileDialog("Select Irradiance Image","*.bmp,*.jpg,*.png,*.tif",fn))
+ if (cyclops.App().LoadFileDialog("Select Image","*.bmp,*.jpg,*.JPG,*.png,*.tif",fn))
  {
   // Load image into memory...
    cstr filename = fn.ToStr();
@@ -264,6 +262,18 @@ void CamResponse::LoadIrr(gui::Base * obj,gui::Event * event)
    {
     cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load image");
     return;
+   }
+   
+  // Try and get the exposure time...
+   file::Exif exif;
+   if (exif.Load(fn))
+   {
+    if (exif.HasExposureTime())
+    {
+     str::String s;
+     s << exif.GetExposureTime();
+     exposure->Set(s);
+    }
    }
 
   // Stick in right variables...
@@ -276,198 +286,46 @@ void CamResponse::LoadIrr(gui::Base * obj,gui::Event * event)
  }
 }
 
-void CamResponse::LoadCRF(gui::Base * obj,gui::Event * event)
+void CamResponse::Add(gui::Base * obj,gui::Event * event)
 {
- str::String fn;
- if (cyclops.App().LoadFileDialog("Select Camera Response Function","*.crf",fn))
- {
-  // Load...
-   if (crf.Load(fn)==false)
+ // Find the average colour in the selected region...
+  nat32 minX = nat32(math::Clamp<int32>(int32(math::Round(pMin[0])),0,irr.Size(0)-1));
+  nat32 maxX = nat32(math::Clamp<int32>(int32(math::Round(pMax[0])),0,irr.Size(0)-1));
+  nat32 minY = nat32(math::Clamp<int32>(int32(math::Round(pMin[1])),0,irr.Size(1)-1));
+  nat32 maxY = nat32(math::Clamp<int32>(int32(math::Round(pMax[1])),0,irr.Size(1)-1));
+  
+  bs::ColourRGB avg(0.0,0.0,0.0);
+  nat32 div = 0;
+  for (nat32 y=minY;y<=maxY;y++)
+  {
+   for (nat32 x=minX;x<=maxX;x++)
    {
-    cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load function");
+    div += 1;
+    avg.r += (irr.Get(x,y).r-avg.r)/real32(div);
+    avg.g += (irr.Get(x,y).g-avg.g)/real32(div);
+    avg.b += (irr.Get(x,y).b-avg.b)/real32(div);
    }
-   
-  // Update the display...
-   Update();   
- }
-}
+  }
 
-void CamResponse::LoadSeg(gui::Base * obj,gui::Event * event)
-{
- str::String fn;
- if (cyclops.App().LoadFileDialog("Select Segmentation File","*.seg",fn))
- {
-  // Load svt, verify it is a segmentation...
-   cstr filename = fn.ToStr();
-   svt::Node * floatNode = svt::Load(cyclops.Core(),filename);
-   mem::Free(filename);
-   if (floatNode==null<svt::Node*>())
-   {
-    cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load file.");
-    delete floatNode;
-    return;
-   }
-
-   if (str::Compare(typestring(*floatNode),"eos::svt::Var")!=0)
-   {
-    cyclops.App().MessageDialog(gui::App::MsgErr,"File is the wrong structure for a segmentation");
-    delete floatNode;
-    return;
-   }
-   svt::Var * floatVar = static_cast<svt::Var*>(floatNode);
-
-   nat32 segInd;
-   if ((floatVar->Dims()!=2)||
-       (floatVar->GetIndex(cyclops.TT()("seg"),segInd)==false)||
-       (floatVar->FieldType(segInd)!=cyclops.TT()("eos::nat32")))
-   {
-    cyclops.App().MessageDialog(gui::App::MsgErr,"File is the wrong format for a segmentation");
-    delete floatVar;
-    return;
-   }
-
-  // Store it...
-   delete segVar;
-   segVar = floatVar;
-   segVar->ByName("seg",seg);
-   
-  // Update the display...
-   Update();   
- }
-}
-
-void CamResponse::LoadDisp(gui::Base * obj,gui::Event * event)
-{
- str::String fn;
- if (cyclops.App().LoadFileDialog("Select Disparity File","*.dis",fn))
- {
-  // Load svt, verify it is a disparity map...
-   cstr filename = fn.ToStr();
-   svt::Node * floatNode = svt::Load(cyclops.Core(),filename);
-   mem::Free(filename);
-   if (floatNode==null<svt::Node*>())
-   {
-    cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load file.");
-    delete floatNode;
-    return;
-   }
-
-   if (str::Compare(typestring(*floatNode),"eos::svt::Var")!=0)
-   {
-    cyclops.App().MessageDialog(gui::App::MsgErr,"File is the wrong structure for a disparity map");
-    delete floatNode;
-    return;
-   }
-   svt::Var * floatVar = static_cast<svt::Var*>(floatNode);
-
-   nat32 dispInd;
-   if ((floatVar->Dims()!=2)||
-       (floatVar->GetIndex(cyclops.TT()("disp"),dispInd)==false)||
-       (floatVar->FieldType(dispInd)!=cyclops.TT()("eos::real32")))
-   {
-    cyclops.App().MessageDialog(gui::App::MsgErr,"File is the wrong format for a disparity map");
-    delete floatVar;
-    return;
-   }
-
-   nat32 fishInd;
-   if ((floatVar->GetIndex(cyclops.TT()("fish"),fishInd)==false)||
-       (floatVar->FieldType(fishInd)!=cyclops.TT()("eos::math::Fisher")))
-   {
-    cyclops.App().MessageDialog(gui::App::MsgErr,"File is not augmented with orientation information.");
-    delete floatVar;
-    return;
-   }
+ // Add the sample...
+  nat32 ind = samples.Size();
+  samples.Size(ind+1);
+  
+  samples[ind].colour = avg;
+  samples[ind].expTime = exposure->GetReal(1.0);
 
 
-  // Move the floatVar into the asReal array, deleting previous...
-   delete dispVar;
-   dispVar = floatVar;
-   dispVar->ByName("fish",fish);
-
-
-  // Refresh the display...
-   Update();
- }
+ // Update the view...
+  if (viewSelect->Get()!=0) Update(); 
 }
 
 void CamResponse::Run(gui::Base * obj,gui::Event * event)
 {
- // Get the parameters...
-  real32 minAlb = bfMinAlb->GetReal(0.001);
-  real32 maxAlb = bfMaxAlb->GetReal(3.0);
-  real32 maxCost = bfMaxSegCost->GetReal(1.0);
-  real32 irrErr = bfIrrErr->GetReal(0.0078);
-  real32 pruneThresh = bfPruneThresh->GetReal(0.2);
-  nat32 subdiv = bfSampleSubdiv->GetInt(2);
-  nat32 further = bfFurtherSubdiv->GetInt(3);
-  nat32 recursion = bfAlbRecursion->GetInt(8);
-
-
- // Calculate the corrected irradiance...
-  svt::Var tempVar(irr);
-  real32 irrIni = 0.0;
-  tempVar.Add("irr",irrIni);
-  tempVar.Commit();
-  svt::Field<real32> irradiance(&tempVar,"irr");
-  
-  for (nat32 y=0;y<irr.Size(1);y++)
-  {
-   for (nat32 x=0;x<irr.Size(0);x++)
-   {
-    irradiance.Get(x,y) = crf((irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0);
-   }
-  }
-
-
- // Setup the algorithm object...
-  fit::LightDir ld;
-  ld.SetData(seg,irradiance,fish);
-  ld.SetAlbRange(minAlb,maxAlb);
-  ld.SetSegCapPP(maxCost);
-  ld.SetIrrErr(irrErr);
-  ld.SetPruneThresh(pruneThresh);
-  ld.SetSampleSubdiv(subdiv,further);
-  ld.SetRecursion(recursion);
-
-
- // Run the algorithm...
-  ld.Run(cyclops.BeginProg());
-  cyclops.EndProg();
-
-
- // Get the output...
-  lightD = ld.BestLightDir();
-  
-  samples.Size(ld.SampleSize());
-  for (nat32 i=0;i<samples.Size();i++)
-  {
-   samples[i].cost = ld.SampleCost(i);
-   samples[i].dir = ld.SampleDir(i);
-   //LogDebug("sample {dir,cost}" << LogDiv() << samples[i].dir << LogDiv() << samples[i].cost);
-  }
-  
-  albedo.Size(ld.SegmentCount());
-  real32 maxAlbedo = 0.0;
-  for (nat32 i=0;i<albedo.Size();i++)
-  {
-   albedo[i] = ld.SegmentAlbedo(i);
-   maxAlbedo = math::Max(maxAlbedo,albedo[i]);
-  }
-  
-  
-  str::String s;
-  s << lightD << " (" << ld.SampleSize() << " samples)";
-  lightDir->Set(s);
-  
-  str::String s2;
-  s2 << "Highest albedo is " << maxAlbedo << ", which is " << crf.Inverse(maxAlbedo)
-     << " in the uncorrected irradiance.";
-  lightDir2->Set(s2);
+  // ****************************************************************************
 
 
  // Update the view...
-  Update();
+  if (viewSelect->Get()!=0) Update();
 }
 
 void CamResponse::ChangeView(gui::Base * obj,gui::Event * event)
@@ -475,537 +333,165 @@ void CamResponse::ChangeView(gui::Base * obj,gui::Event * event)
  Update();
 }
 
-void CamResponse::ChangeAlg(gui::Base * obj,gui::Event * event)
-{
- // Noop.
-}
-
-void CamResponse::SaveView(gui::Base * obj,gui::Event * event)
+void CamResponse::SaveCRF(gui::Base * obj,gui::Event * event)
 {
  str::String fn("");
- if (cyclops.App().SaveFileDialog("Save Image",fn))
+ if (cyclops.App().SaveFileDialog("Save Camera Response...",fn))
  {
-  if (!(fn.EndsWith(".bmp")||fn.EndsWith(".jpg")||fn.EndsWith(".tga")||fn.EndsWith(".png"))) fn << ".bmp";
-  cstr ts = fn.ToStr();
-  if (!filter::SaveImage(image,ts,true))
+  if (!fn.EndsWith(".crf")) fn += ".crf";
+  if (!crf.Save(fn,true))
   {
-   cyclops.App().MessageDialog(gui::App::MsgErr,"Error saving image file.");
+   cyclops.App().MessageDialog(gui::App::MsgErr,"Error saving back the file.");
+   return;	  
   }
-  mem::Free(ts); 
  }
 }
 
-// Helper class for calculating the segment value below...
-struct SegValue
+void CamResponse::ExpChange(gui::Base * obj,gui::Event * event)
 {
- real32 div;
+ if (expRec==true)
+ {
+  expRec = false;
+  return;
+ }
+ expRec = true;
  
- real32 expI; // Expectation of irradiance and axes multiplied by div.
- real32 expX;
- real32 expY;
- real32 expZ;
- 
- real32 expSqrI; // As above but squared (Before calcaulting expectation).
- real32 expSqrX;
- real32 expSqrY;
- real32 expSqrZ;
- 
- real32 expIrrX; // Expectation multiplied by div of irradiance multiplied by each of the axes.
- real32 expIrrY;
- real32 expIrrZ;
-};
+ real32 inv = 1.0/exposure->GetReal(1.0);
+ if (math::IsFinite(inv))
+ {
+  str::String s;
+  s << inv;
+  exposureInv->Set(s);
+ }
+}
+
+void CamResponse::InvExpChange(gui::Base * obj,gui::Event * event)
+{
+ if (expRec==true)
+ {
+  expRec = false;
+  return;
+ }
+ expRec = true;
+
+ real32 inv = 1.0/exposureInv->GetReal(1.0);
+ if (math::IsFinite(inv))
+ {
+  str::String s;
+  s << inv;
+  exposure->Set(s);
+ }
+}
 
 void CamResponse::Update()
 {
- // Find what size we need to be operatinf at...
-  nat32 width=320, height=240;
-  nat32 mode = viewSelect->Get();
-  switch(mode)
-  {
-   case 0: // Irradiance
-   case 1: // Corrected Irradiance
-    width = irr.Size(0);
-    height = irr.Size(1);   
-   break;
-   case 5: // Light Source Sphere
-   case 6: // Cost Sphere
-    width = math::Max<nat32>(math::Min(irr.Size(0),irr.Size(1)),450);
-    height = width;
-   break;
-   case 2: // Segmentation
-   case 7: // Albedo
-   case 8: // Per Pixel Solution Cost.
-   case 9: // Segment cost.
-    width = seg.Size(0);
-    height = seg.Size(1);
-   break;
-   case 3: // Fisher Direction
-   case 4: // Fisher Concentration
-    width = fish.Size(0);
-    height = fish.Size(1);
-   break;
-  }
-
- // Check sizes match, adjust if need be...
-  if ((image.Size(0)!=width)||(image.Size(1)!=height))
-  {
-   imageVar->Setup2D(width,height);
-   imageVar->Commit();
-   imageVar->ByName("rgb",image);
-  }
-  if ((img.Size(0)!=width)||(img.Size(1)!=height))
-  {
-   imgVar->Setup2D(width,height);
-   imgVar->Commit();
-   imgVar->ByName("rgb",img);
-  }
-
- 
- // Switch on mode and render correct image...  
-  switch(mode)
-  {
-   case 0: // Irradiance
+ if (viewSelect->Get()==0)
+ {
+  // Image...
+  
+  // Get the size right...
+   nat32 width = irr.Size(0);
+   nat32 height = irr.Size(1);
+   if ((image.Size(0)!=width)||(image.Size(1)!=height))
    {
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++)
-     {
-      real32 l = (irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0;
-      image.Get(x,y).r = l;
-      image.Get(x,y).g = l;
-      image.Get(x,y).b = l;
-     }
-    }
+    imageVar->Setup2D(width,height);
+    imageVar->Commit();
+    imageVar->ByName("rgb",image);
    }
-   break;
-   case 1: // Corrected Irradiance
+   if ((img.Size(0)!=width)||(img.Size(1)!=height))
    {
-    real32 max = 0.01;
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++)
-     {
-      real32 l = crf((irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0);
-      max = math::Max(max,l);
-      image.Get(x,y).r = l;
-      image.Get(x,y).g = l;
-      image.Get(x,y).b = l;
-     }
-    }
+    imgVar->Setup2D(width,height);
+    imgVar->Commit();
+    imgVar->ByName("rgb",img);
+   }
     
-    for (nat32 y=0;y<image.Size(1);y++)
+  // Copy in the image...
+   for (nat32 y=0;y<image.Size(1);y++)
+   {
+    for (nat32 x=0;x<image.Size(0);x++)
     {
-     for (nat32 x=0;x<image.Size(0);x++) image.Get(x,y) /= max;
+     real32 l = (irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0;
+     image.Get(x,y).r = l;
+     image.Get(x,y).g = l;
+     image.Get(x,y).b = l;
+    }
+   }    
+ }
+ else
+ {
+  // Graph...
+  
+  // Get the size right...
+   nat32 width = 400;
+   nat32 height = 400;
+   if ((image.Size(0)!=width)||(image.Size(1)!=height))
+   {
+    imageVar->Setup2D(width,height);
+    imageVar->Commit();
+    imageVar->ByName("rgb",image);
+   }
+   if ((img.Size(0)!=width)||(img.Size(1)!=height))
+   {
+    imgVar->Setup2D(width,height);
+    imgVar->Commit();
+    imgVar->ByName("rgb",img);
+   }
+   
+  // Make everything white...
+   for (nat32 y=0;y<image.Size(1);y++)
+   {
+    for (nat32 x=0;x<image.Size(0);x++) image.Get(x,y) = bs::ColourRGB(1.0,1.0,1.0);
+   }
+
+
+  // Get a normalising multiplier for exposure...
+   real32 expMult = expNorm;
+   if (expMult<0.0)
+   {
+    expMult = math::Infinity<real32>();
+    for (nat32 i=0;i<samples.Size();i++)
+    {
+     real32 val = 1.0/samples[i].expTime;
+     expMult = math::Min(expMult,val);
     }
    }
-   break;
-   case 2: // Segmentation
+  
+  // Render the samples...
+   for (nat32 i=0;i<samples.Size();i++)
    {
-    filter::RenderSegsMean(seg,irr,image);
-    filter::RenderSegsLines(seg,image,bs::ColourRGB(1.0,0.0,0.0));
-   }
-   break;
-   case 3: // Fisher Direction
-   {
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++)
-     {
-      math::Fisher f = fish.Get(x,y);
-      real32 len = f.Length();
-      if (math::IsZero(len))
-      {
-       image.Get(x,y).r = 0.0;
-       image.Get(x,y).g = 0.0;
-       image.Get(x,y).b = 0.0;
-      }
-      else
-      {
-       f /= len;
-       
-       image.Get(x,y).r = (f[0]+1.0)*0.5;
-       image.Get(x,y).g = (f[1]+1.0)*0.5;
-       image.Get(x,y).b = f[2];
-      }
-     }
-    }
-   }
-   break;
-   case 4: // Fisher Concentration
-   {
-    real32 max = 0.001;
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++)
-     {
-      real32 k = math::Log10(1.0 + fish.Get(x,y).Length());
-      max = math::Max(max,k);
-      
-      image.Get(x,y).r = k;
-      image.Get(x,y).g = k;
-      image.Get(x,y).b = k;
-     }
-    }
+    bs::Pnt loc;
+    loc[0] = (samples[i].colour.r+samples[i].colour.g+samples[i].colour.b)/3.0;
+    loc[1] = samples[i].expTime * expMult;
     
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++) image.Get(x,y) /= max;
-    }
-   }
-   break;
-   case 5: // Light Source Sphere
-   {
-    real32 centX = image.Size(0)/2.0;
-    real32 centY = image.Size(1)/2.0;
-    real32 radius = centX*0.9;
+    bs::Pnt locM = loc;
+    locM[0] *= real32(width);
+    locM[1] *= real32(height);
+
+    bs::Pnt left = locM; left[0] -= 3.0;
+    bs::Pnt right = locM; right[0] += 3.0;    
+    bs::Pnt up = locM; up[1] += 3.0;
+    bs::Pnt down = locM; down[1] -= 3.0;
     
-    for (nat32 y=0;y<image.Size(1);y++)
+    if ((loc[0]>0.05)&&(loc[0]<0.95))
     {
-     for (nat32 x=0;x<image.Size(0);x++)
-     {
-      real32 dirX = (x-centX)/radius;
-      real32 dirY = (y-centY)/radius;
-      
-      real32 l;
-      if (math::Sqr(dirX)+math::Sqr(dirY)<1.0)
-      {
-       real32 dirZ = math::Sqrt(1.0 - math::Sqr(dirX) - math::Sqr(dirY));
-       l = dirX*lightD[0] + dirY*lightD[1] + dirZ*lightD[2];
-       l = math::Max<real32>(l,0.0);
-      }
-      else
-      {
-       l = 0.0;
-      }
-      
-      image.Get(x,y).r = l;
-      image.Get(x,y).g = l;
-      image.Get(x,y).b = l;
-     }
+     rend::Line(image,up,down,bs::ColourRGB(0.0,0.0,1.0));
+     rend::Line(image,left,right,bs::ColourRGB(0.0,0.0,1.0));
     }
+    else
+    {
+     rend::Line(image,up,down,bs::ColourRGB(1.0,0.0,0.0));
+     rend::Line(image,left,right,bs::ColourRGB(1.0,0.0,0.0));
+    }    
    }
-   break;
-   case 6: // Cost Sphere
+
+
+  // Render the crf...
+   for (nat32 x=0;x<width;x++)
    {
-    if (samples.Size()!=0)
-    {
-     // First generate a Delauney triangulation with all the samples in, with 
-     // costs as the stored data...
-      ds::Delaunay2D<real32> doc;
-      real32 minCost = math::Infinity<real32>();
-      for (nat32 i=0;i<samples.Size();i++)
-      {
-       doc.Add(samples[i].dir[0],samples[i].dir[1],samples[i].cost);
-       minCost = math::Min(minCost,samples[i].cost);
-      }
-     
-     // Now iterate all the pixels, interpolating costs for those inside the 
-     // sphere and rendering the Log10 of the costs...
-      real32 max = 0.001;
-      real32 centX = image.Size(0)/2.0;
-      real32 centY = image.Size(1)/2.0;
-      real32 radius = centX*0.9;
-     
-      for (nat32 y=0;y<image.Size(1);y++)
-      {
-       for (nat32 x=0;x<image.Size(0);x++)
-       {
-        real32 dirX = (x-centX)/radius;
-        real32 dirY = (y-centY)/radius;
-       
-        real32 l;
-        if (math::Sqr(dirX)+math::Sqr(dirY)<1.0)
-        {
-         ds::Delaunay2D<real32>::Mid tri = doc.Triangle(dirX,dirY);
-         nat32 pc = 0;
-         real32 cost[3];
-         real32 xp[3];
-         real32 yp[3];
-         for (nat32 i=0;i<3;i++)
-         {
-          if (!tri.Infinite(i))
-          {
-           ds::Delaunay2D<real32>::Pos pos = tri.GetPos(i);
-           cost[pc] = *pos - minCost;
-           xp[pc] = pos.X();
-           yp[pc] = pos.Y();
-           ++pc;
-          }
-         }
-         
-         switch(pc)
-         {
-          case 0:
-           l = -1.0;
-          break;
-          case 1:
-           l = cost[0];
-          break;
-          case 2:
-          {
-           real32 length = math::Sqrt(math::Sqr(xp[1]-xp[0]) + math::Sqr(yp[1]-yp[0]));
-           real32 t = ((dirX-xp[0])*(xp[1]-xp[0]) + (dirY-yp[0])*(yp[1]-yp[0]))/math::Sqr(length);
-           l = (1.0-t)*cost[0] + t*cost[1];
-          }
-          break;
-          case 3:
-          {
-           // Below is using Barycentric Coordinates...
-            real32 xC =  dirX-xp[2];
-            real32 yC =  dirY-yp[2];
-            real32 x1 = xp[0]-xp[2];
-            real32 x2 = xp[1]-xp[2];
-            real32 y1 = yp[0]-yp[2];
-            real32 y2 = yp[1]-yp[2];
-           
-            real32 mult = 1.0/(x1*y2 - x2*y1);
-           
-            real32 lam1 = (y2*xC - x2*yC) * mult;
-            real32 lam2 = (x1*yC - y1*xC) * mult;
-
-            l = lam1*cost[0] + lam2*cost[1] + (1.0-lam1-lam2)*cost[2];
-          }
-          break;
-         }
-        }
-        else
-        {
-         l = -1.0;
-        }
-       
-        max = math::Max(max,l);
-        image.Get(x,y).r = l;
-        image.Get(x,y).g = l;
-        image.Get(x,y).b = l;
-       }
-      }
-    
-     // Normalise...
-      for (nat32 y=0;y<image.Size(1);y++)
-      {
-       for (nat32 x=0;x<image.Size(0);x++)
-       {
-        if (image.Get(x,y).r<0.0)
-        {
-         image.Get(x,y).r = 0.0;
-         image.Get(x,y).g = 0.0;
-         image.Get(x,y).b = 0.5;
-        }
-        else image.Get(x,y) /= max;
-       }
-      }
-    }
+    int32 y = int32(math::Round(real32(height)*crf(x/real32(width))));
+    if ((y>=0)&&(y<int32(height))) image.Get(x,y) = bs::ColourRGB(0.0,0.0,0.0);
    }
-   break;
-   case 7: // Albedo
-   {
-    real32 maxL = 0.001;
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++)
-     {
-      real32 l = -1.0;
-      nat32 s = seg.Get(x,y);
-      if (albedo.Size()>s) l = albedo[s];
-      maxL = math::Max(maxL,l);
-     
-      image.Get(x,y).r = l;
-      image.Get(x,y).g = l;
-      image.Get(x,y).b = l;
-     }
-    }
-    
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++)
-     {
-      if (image.Get(x,y).r<0.0)
-      {
-       image.Get(x,y).r = 0.0;
-       image.Get(x,y).g = 0.0;
-       image.Get(x,y).b = 0.5;
-      }
-      else
-      {
-       image.Get(x,y) /= maxL;
-      }
-     }
-    }
-   }
-   break;
-   case 8: // Per Pixel Solution Cost
-   {
-    if (albedo.Size()!=0)
-    {
-     real32 maxL = 0.001;
-     for (nat32 y=0;y<image.Size(1);y++)
-     {
-      for (nat32 x=0;x<image.Size(0);x++)
-      {
-       real32 i = crf((irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0);
-       real32 a = albedo[seg.Get(x,y)];
-      
-       real32 angI = math::InvCos(math::IsZero(a)?1.0:math::Min<real32>(i/a,1.0));
-       real32 k = fish.Get(x,y).Length();
-       real32 angS = math::IsZero(k)?angI:(math::InvCos(math::Min<real32>((lightD * fish.Get(x,y))/k,1.0)));
-       
-       real32 l = math::Log10(1.0 + -k*math::Cos(angI-angS) + k);
-     
-       image.Get(x,y).r = l;
-       maxL = math::Max(maxL,l);
-      }
-     }
-    
-     for (nat32 y=0;y<image.Size(1);y++)
-     {
-      for (nat32 x=0;x<image.Size(0);x++)
-      {
-       real32 l = image.Get(x,y).r/maxL;
-      
-       image.Get(x,y).r = l;
-       image.Get(x,y).g = l;
-       image.Get(x,y).b = l;
-      }
-     }
-    }
-   }
-   case 9: // Segment value
-   {
-    if ((seg.Size(0)==irr.Size(0))&&
-        (seg.Size(1)==irr.Size(1))&&
-        (seg.Size(0)==fish.Size(0))&&
-        (seg.Size(1)==fish.Size(1)))
-    {
-     // First count the segments...
-      nat32 segCount = 1;
-      for (nat32 y=0;y<seg.Size(1);y++)
-      {
-       for (nat32 x=0;x<seg.Size(0);x++) segCount = math::Max(segCount,seg.Get(x,y)+1);
-      }
-      
-      
-     // Create array to hold expectation values for every segment...
-      ds::Array<SegValue> segExp(segCount);
-      for (nat32 s=0;s<segCount;s++)
-      {
-       segExp[s].div = 0.0;
-       
-       segExp[s].expI = 0.0;
-       segExp[s].expX = 0.0;
-       segExp[s].expY = 0.0;
-       segExp[s].expZ = 0.0;
-
-       segExp[s].expSqrI = 0.0;
-       segExp[s].expSqrX = 0.0;
-       segExp[s].expSqrY = 0.0;
-       segExp[s].expSqrZ = 0.0;
-       
-       segExp[s].expIrrX = 0.0;
-       segExp[s].expIrrY = 0.0;
-       segExp[s].expIrrZ = 0.0;
-      }
-
-
-     // Now do a pass over the image and sum up the above for each segment...
-      for (nat32 y=0;y<seg.Size(1);y++)
-      {
-       for (nat32 x=0;x<seg.Size(0);x++)
-       {
-        real32 l = fish.Get(x,y).Length();
-        if (!math::IsZero(l))
-        {
-         real32 w = l;
-         bs::Normal pos;
-         for (nat32 i=0;i<3;i++) pos[i] = math::InvCos(fish.Get(x,y)[i]/l); // Makes 'em 0..pi
-         nat32 s = seg.Get(x,y);
-         real32 ir = crf((irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0);
-
-
-         segExp[s].div += w;
-       
-         segExp[s].expI += w*ir;
-         segExp[s].expX += w*pos[0];
-         segExp[s].expY += w*pos[1];
-         segExp[s].expZ += w*pos[2];
-
-         segExp[s].expSqrI += w*math::Sqr(ir);
-         segExp[s].expSqrX += w*math::Sqr(pos[0]);
-         segExp[s].expSqrY += w*math::Sqr(pos[1]);
-         segExp[s].expSqrZ += w*math::Sqr(pos[2]);
-       
-         segExp[s].expIrrX += w*ir*pos[0];
-         segExp[s].expIrrY += w*ir*pos[1];
-         segExp[s].expIrrZ += w*ir*pos[2];
-        }
-       }
-      }
-     
-     
-     // Now calculate the 0..1 value for every segment...
-      ds::Array<real32> segCost(segCount);
-      for (nat32 s=0;s<segCount;s++)
-      {
-       if (!math::IsZero(segExp[s].div))
-       {
-        real32 sqrDivI = (segExp[s].expSqrI/segExp[s].div) - math::Sqr(segExp[s].expI/segExp[s].div);
-        real32 sqrDivX = (segExp[s].expSqrX/segExp[s].div) - math::Sqr(segExp[s].expX/segExp[s].div);
-        real32 sqrDivY = (segExp[s].expSqrY/segExp[s].div) - math::Sqr(segExp[s].expY/segExp[s].div);
-        real32 sqrDivZ = (segExp[s].expSqrZ/segExp[s].div) - math::Sqr(segExp[s].expZ/segExp[s].div);
-        
-        if ((sqrDivI>0.0)&&(!math::IsZero(sqrDivI)))
-        {
-         real32 costX = 0.0,costY = 0.0,costZ = 0.0;
-         
-         if ((sqrDivX>0.0)&&(!math::IsZero(sqrDivX)))
-         {
-          costX = (segExp[s].expIrrX/segExp[s].div) - (segExp[s].expX*segExp[s].expI/math::Sqr(segExp[s].div));
-          costX /= math::Sqrt(sqrDivX) * math::Sqrt(sqrDivI);
-         }
-         
-         if ((sqrDivY>0.0)&&(!math::IsZero(sqrDivY)))
-         {
-          costY = (segExp[s].expIrrY/segExp[s].div) - (segExp[s].expY*segExp[s].expI/math::Sqr(segExp[s].div));
-          costY /= math::Sqrt(sqrDivY) * math::Sqrt(sqrDivI);
-         }
-         
-         if ((sqrDivZ>0.0)&&(!math::IsZero(sqrDivZ)))
-         {
-          costZ = (segExp[s].expIrrZ/segExp[s].div) - (segExp[s].expZ*segExp[s].expI/math::Sqr(segExp[s].div));
-          costZ /= math::Sqrt(sqrDivZ) * math::Sqrt(sqrDivI);
-         }
-         
-         segCost[s] = math::Sqrt(math::Sqr(costX) + math::Sqr(costY) + math::Sqr(costZ));
-        }
-        else segCost[s] = -1.0;
-       }
-       else segCost[s] = -1.0;
-      }
-     
-     
-     // And finally fill in the image with the values...
-      real32 pruneThresh = bfPruneThresh->GetReal(0.2);
-      for (nat32 y=0;y<image.Size(1);y++)
-      {
-       for (nat32 x=0;x<image.Size(0);x++)
-       {
-        image.Get(x,y).r = segCost[seg.Get(x,y)];
-        if (image.Get(x,y).r<pruneThresh)
-        {
-         image.Get(x,y).r = 0.0;
-         image.Get(x,y).g = 0.0;
-         image.Get(x,y).b = 0.5;
-        }
-        else
-        {
-         image.Get(x,y).g = image.Get(x,y).r;
-         image.Get(x,y).b = image.Get(x,y).r;
-        }
-       }
-      }
-    }
-   }
-   break;
-  }
+ }
 
 
  // Copy from image to img...
@@ -1014,10 +500,28 @@ void CamResponse::Update()
    for (nat32 x=0;x<img.Size(0);x++) img.Get(x,y) = image.Get(x,y);
   }
 
-
  // Redraw...
   canvas->SetSize(img.Size(0),img.Size(1));
   canvas->Redraw();
+  
+ // Also need to update the number of samples avaliable...
+  str::String s;
+  s << "Samples = " << samples.Size();
+  info->Set(s);
+}
+
+void CamResponse::RenderLine(const math::Vect<2,real32> & a,const math::Vect<2,real32> & b,const bs::ColourRGB & col)
+{
+ nat32 sx = (canvas->P().Width() - img.Size(0))/2;
+ nat32 sy = (canvas->P().Height() - img.Size(1))/2;
+ 
+ nat32 ax = sx + nat32(a[0]);
+ nat32 ay = sy + nat32(a[1]);
+ 
+ nat32 bx = sx + nat32(b[0]);
+ nat32 by = sy + nat32(b[1]);
+ 
+ canvas->P().Line(bs::Pos(ax,ay),bs::Pos(bx,by),col); 
 }
 
 //------------------------------------------------------------------------------
