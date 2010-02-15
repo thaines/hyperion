@@ -21,17 +21,29 @@ class Segmentation
   gui::Canvas * canvas;
   
   gui::ComboBox * viewSelect;
-  gui::EditBox * origLight;
-  gui::EditBox * newLight;
-  gui::Label * albLab;
+  gui::ComboBox * algSelect;
   
-  math::Func crf;
+  gui::Expander * kMeanGrid;
+  gui::EditBox * kmgDim;
+  gui::EditBox * kmgMinSeg;
+  gui::EditBox * kmgColMult;
+  gui::EditBox * kmgSpatialMult;
+  gui::EditBox * kmgMaxIters;
   
-  svt::Var * needleVar;
-  svt::Field<bs::ColourRGB> needleImage;
+  gui::Expander * meanShift;
+  gui::EditBox * msEdgeWindow;
+  gui::EditBox * msEdgeMix;
+  gui::EditBox * msSpatialSize;
+  gui::EditBox * msColourSize;
+  gui::EditBox * msMergeCutoff;
+  gui::EditBox * msMinSeg;
+  gui::EditBox * msAvgSteps;
+  gui::EditBox * msMergeMax;
   
-  svt::Var * origVar;
-  svt::Field<bs::ColourRGB> origImage;
+  
+  svt::Var * inputVar;
+  svt::Field<bs::ColourRGB> inputImage;
+  svt::Field<nat32> segmentation;
 
 
   svt::Var * imageVar;
@@ -45,11 +57,12 @@ class Segmentation
 
   void Resize(gui::Base * obj,gui::Event * event);
 
-  void LoadNeedle(gui::Base * obj,gui::Event * event);
-  void LoadOrig(gui::Base * obj,gui::Event * event);
-  void LoadCRF(gui::Base * obj,gui::Event * event);
-  void Render(gui::Base * obj,gui::Event * event);
-  void SaveRender(gui::Base * obj,gui::Event * event);
+  void LoadImage(gui::Base * obj,gui::Event * event);
+  void Run(gui::Base * obj,gui::Event * event);
+  void ChangeView(gui::Base * obj,gui::Event * event);
+  void ChangeAlg(gui::Base * obj,gui::Event * event);
+  void SaveView(gui::Base * obj,gui::Event * event);
+  void SaveSeg(gui::Base * obj,gui::Event * event);
   
   void Update();
 };

@@ -1090,7 +1090,7 @@ void Stereopsis::SaveSVT(gui::Base * obj,gui::Event * event)
     cstr ts = fn.ToStr();
     if (!svt::Save(ts,result,true))
     {
-     cyclops.App().MessageDialog(gui::App::MsgErr,"Error saving svt file.");
+     cyclops.App().MessageDialog(gui::App::MsgErr,"Error saving .dis file.");
     }
     mem::Free(ts);
    }
