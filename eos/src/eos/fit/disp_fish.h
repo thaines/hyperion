@@ -38,7 +38,8 @@ class EOS_CLASS DispFish
 
 
   /// Sets the disparity map and DSC to be used. Must be called before run.
-   void Set(const svt::Field<real32> & disp,const stereo::DSC & dsc);
+  /// Optional set a multiplier for the dsc costs, to emphasis differences.
+   void Set(const svt::Field<real32> & disp,const stereo::DSC & dsc,real32 dscMult = 1.0);
    
   /// Sets the mask, optional - will set masked areas to a ceoncentration of 0.
    void SetMask(const svt::Field<bit> & mask);
@@ -76,6 +77,7 @@ class EOS_CLASS DispFish
    svt::Field<real32> disp;
    svt::Field<bit> mask;
    const stereo::DSC * dsc;
+   real32 dscMult;
    cam::CameraPair pair;
    nat32 range;
    real32 minCon;
@@ -89,7 +91,7 @@ class EOS_CLASS DispFish
     struct Pixel
     {
      bs::Vert pos;
-     real32 cost;
+     real32 weight;
      
      static inline cstrconst TypeString() {return "eos::fit::DispFish::Pixel";}
     };

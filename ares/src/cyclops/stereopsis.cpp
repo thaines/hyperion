@@ -913,8 +913,10 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    {
     prog->Report(step++,steps);
     
+    stereo::LuvDSC luvDSC(leftLuv,rightLuv);
+    
     fit::DispFish dispFish;
-    dispFish.Set(disp,*dsc);
+    dispFish.Set(disp,luvDSC,1.0);
     dispFish.SetMask(leftMask);
     dispFish.SetPair(pair);
     dispFish.SetRange(fisherRange->GetInt(4));

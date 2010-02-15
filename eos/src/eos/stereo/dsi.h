@@ -575,7 +575,7 @@ class EOS_CLASS BoundLuvDSC : public DSC
 /// Cost is the difference between the closest points, if the regions overlap it will be zero.
 /// Also suports the setting of a cost cap.
 /// This version returns the square of the eucledian distance between the
-/// regions, rather than the staright eucledian as BoundLuvDSC does.
+/// regions, rather than the straight eucledian as BoundLuvDSC does.
 class EOS_CLASS SqrBoundLuvDSC : public DSC
 {
  public:

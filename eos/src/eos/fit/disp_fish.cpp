@@ -17,16 +17,17 @@ real32 medDotToK[1000] = {0.0, 0.00200000133338, 0.00400001066667, 0.00600003600
 
 //------------------------------------------------------------------------------
 DispFish::DispFish()
-:range(3),minCon(1.0),maxCon(24.0)
+:dscMult(1.0),range(3),minCon(1.0),maxCon(24.0)
 {}
 
 DispFish::~DispFish()
 {}
 
-void DispFish::Set(const svt::Field<real32> & di,const stereo::DSC & ds)
+void DispFish::Set(const svt::Field<real32> & di,const stereo::DSC & ds,real32 dscM)
 {
  disp = di;
  dsc = &ds;
+ dscMult = dscM;
 }
 
 void DispFish::SetMask(const svt::Field<bit> & m)
@@ -64,7 +65,7 @@ void DispFish::Run(time::Progress * prog)
     temp.Setup3D(scope,disp.Size(0),disp.Size(1)); // Note order.
     Pixel initPix;
      initPix.pos = bs::Vert(0.0,0.0,0.0);
-     initPix.cost = 0.0;
+     initPix.weight = 0.0;
     temp.Add("pix",initPix);
     temp.Commit();
    }
@@ -72,6 +73,7 @@ void DispFish::Run(time::Progress * prog)
   
   // Fill data structure...
    prog->Push();
+   //real32 diffWeight = 1.0/real32(range+1);
    for (nat32 y=0;y<disp.Size(1);y++)
    {
     prog->Report(y,disp.Size(1));
@@ -79,22 +81,46 @@ void DispFish::Run(time::Progress * prog)
     for (nat32 x=0;x<disp.Size(0);x++)
     {
      prog->Report(x,disp.Size(0));
-     if (mask.Valid()&&(mask.Get(x,y)==false)) continue;
-     real32 bd = disp.Get(x,y);
-     int32 base = int32(math::Round(bd)) - int32(range);
-     real32 minCost = math::Infinity<real32>();
-     for (nat32 s=0;s<scope;s++)
-     {
-      Pixel & p = pix.Get(s,x,y);
-      int32 d = base + int32(s);
-      
-      pair.Triangulate(x,y,d,p.pos);      
-      p.cost = dsc->Cost(x,math::Clamp<int32>(int32(x)+d,0,disp.Size(0)-1),y);
-      
-      minCost = math::Min(minCost,p.cost);
-     }
      
-     for (nat32 s=0;s<scope;s++) pix.Get(s,x,y).cost -= minCost;
+     // Prep for below...
+      if (mask.Valid()&&(mask.Get(x,y)==false)) continue;
+      real32 bd = disp.Get(x,y);
+      int32 base = int32(math::Round(bd)) - int32(range);
+      real32 minCost = math::Infinity<real32>();
+     
+     // Get costs and positions for each entry...
+      for (nat32 s=0;s<scope;s++)
+      {
+       Pixel & p = pix.Get(s,x,y);
+       int32 d = base + int32(s);
+      
+       pair.Triangulate(x,y,d,p.pos);      
+       p.weight = dsc->Cost(x,math::Clamp<int32>(int32(x)+d,0,disp.Size(0)-1),y) * dscMult;
+       if ((x==200)&&(y==200)) // *******************************************************
+       {
+        LogDebug("{s,d,pos,cost}" << LogDiv() << s << LogDiv() << d << LogDiv() 
+                 << p.pos << LogDiv() << p.weight);
+       }
+      
+       minCost = math::Min(minCost,p.weight);
+      }
+      
+      if ((x==200)&&(y==200)) // *******************************************************
+      {
+       LogDebug("{bd,base,minCost}" << LogDiv() << bd << LogDiv() << base << LogDiv() << minCost);
+      }
+     
+     // Convert costs to weights, apply a bias (If uncommented)...
+      for (nat32 s=0;s<scope;s++)
+      {
+       Pixel & p = pix.Get(s,x,y);
+       p.weight = math::Exp(-(p.weight-minCost));
+       //p.weight *= 1.0 - diffWeight*math::Abs(real32(base + int32(s)) - disp.Get(x,y));
+       if ((x==200)&&(y==200)) // *******************************************************
+       {
+        LogDebug("{s,weight}" << LogDiv() << s << LogDiv() << p.weight);
+       }
+      }
     }
     prog->Pop();
    }
@@ -167,7 +193,14 @@ void DispFish::Run(time::Progress * prog)
       // Cross product and normalise...
        math::CrossProduct(dx,dy,dir);
        dir.Normalise();
+       
+      if ((x==200)&&(y==200)) // *******************************************************
+      {
+       LogDebug("{b,ix,iy,dx,dy,dir}" << LogDiv() << b << LogDiv() << ix << LogDiv() << iy << LogDiv()
+                << dx << LogDiv() << dy << LogDiv() << dir);
+      }
      }
+
     
     // Calculate concentration - this involves a very, very expensive median calculation...
      real32 k;
@@ -197,7 +230,7 @@ void DispFish::Run(time::Progress * prog)
            real32 r = sDir * dir;
 
           // Calculate the weight...
-           real32 weight = math::Exp(-(base.cost + xx.cost + yy.cost));
+           real32 weight = base.weight * xx.weight * yy.weight;
            
           // Compensate for outliers - this is required in the case of passing
           // through the epipole which can happen if your really unlucky (Like me)...
@@ -207,10 +240,19 @@ void DispFish::Run(time::Progress * prog)
             weight = 0.0;
            }
            
+          // Bias term...
+           weight *= math::Pow(1.0 - 0.5*(1.0-r),3.0); // *************************************************
+           
           // Store in the rb array...
            rb[rbInd].r = r;
            rb[rbInd].weight = weight;
            ++rbInd;
+           
+           if ((x==200)&&(y==200)) // *******************************************************
+           {
+            LogDebug("{sb,sx,sy,dir,r,weight}" << LogDiv() << sb << LogDiv() << sx << LogDiv()
+                     << sy << LogDiv() << sDir << LogDiv() << r << LogDiv() << weight);
+           }
          }
         }
        }
@@ -228,9 +270,8 @@ void DispFish::Run(time::Progress * prog)
         real32 lowWeight = rb[lowInd].weight;
         real32 highWeight = rb[highInd].weight;
         
-        // Move the two indices closer to one another until they can move no
-        // closer - mean is then between them...
-         while(lowInd+1<highInd)
+        // Move the two indices closer to one another until they collide...
+         while(lowInd<highInd)
          {
           real32 lowMod = lowWeight + rb[lowInd+1].weight;
           real32 highMod = highWeight + rb[highInd-1].weight;
@@ -245,28 +286,35 @@ void DispFish::Run(time::Progress * prog)
            highWeight = highMod;
           }
          }
+         log::Assert(lowInd==highInd);
          
         // Get the median...
          medR = rb[lowInd].r;
        }
       
       // Convert the median value into a concentration via the big lookup table...
-       int32 index;
-       real32 t;
        medR *= 1000.0;
-       index = int32(medR);
-       t = medR - real32(index);
+       int32 index = int32(math::RoundDown(medR));
+       real32 t = medR - real32(index);
        
        k = medDotToK[math::Clamp<int32>(index,0,999)]*(1.0-t) +
            medDotToK[math::Clamp<int32>(index+1,0,999)]*t;
       
       // Clamp...
        k = math::Clamp<real32>(k,minCon,maxCon);
+       if ((x==200)&&(y==200)) // *******************************************************
+       {
+        LogDebug("{k,medR}" << LogDiv() << k << LogDiv() << (medR/1000.0));
+       }
      }
     
     // Store it in the output array...
      out.Get(x,y) = dir;
      out.Get(x,y) *= k;
+    if ((x==200)&&(y==200)) // *******************************************************     
+    {
+     LogDebug("{out}" << LogDiv() << out.Get(x,y));
+    }
    }
    prog->Pop();
   }
