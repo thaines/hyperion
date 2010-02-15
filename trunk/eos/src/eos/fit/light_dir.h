@@ -38,10 +38,16 @@ class EOS_CLASS LightDir
   /// of strength 1 with no falloff. Defaults to 0.001 to 3.0
    void SetAlbRange(real32 min,real32 max);
    
-  /// Sets the maximum cost per segment, relative to the minimum cost of that 
-  /// segment - used to cap influence so no one segment biases things too strongly.
-  /// Defaults to 1.0
-   void SetSegCap(real32 maxCost);
+  /// Sets the maximum cost per segment per pixel, relative to the minimum cost
+  /// of that segment - used to cap influence so no one segment biases things 
+  /// too strongly. Defaults to 0.1
+   void SetSegCapPP(real32 maxCost);
+   
+  /// Sets the irradiance errors standard deviation, this only matters for
+  /// calculating error when albedo is less than irradiance, as too small to
+  /// consider in other situations.
+  /// Default is 1/128, i.e. 2 values for a 2^8 colour image.
+   void SetIrrErr(real32 sd);
    
   /// Sets the number of subdivision of the alg::HemiOfNorm class used to 
   /// generate light source directions to sample.
@@ -84,7 +90,8 @@ class EOS_CLASS LightDir
   // Parameters...
    real32 minAlbedo;
    real32 maxAlbedo;
-   real32 maxSegCost;
+   real32 maxSegCostPP;
+   real32 lowAlbErr;
    nat32 subdiv;
    nat32 recDepth;
    
@@ -117,10 +124,12 @@ class EOS_CLASS LightDir
    // Structure for storing complimentary info to Pixel, used for the light source direction costing method...
     struct PixelAux
     {
-     real32 mult; // Multiplier of term with albedo in, -k*sqrt(1-(u*L)^2).
-     real32 irrSqr; // Irradaince squared.
+     real32 mult; // Multiplier of term with albedo in, -k*sqrt(1-(u*L)^2). (Always negative.)
+     real32 irr;
+     real32 irrSqr; // Irradiance squared.
      real32 c; // Added on constant, -k(u*L)I.
-    }; // C = (mult*sqrt(a^2 - irrSqr) + c)/a
+     real32 lowAlbCost; // Base cost when albedo is less than irradiance.
+    }; // C = (mult*sqrt(a^2 - irrSqr) + c)/a when a^2>irrSqr, lowAlbCost + err otherwise
     
    // Cost range structure, used in calculation of light source cost for a pixel...
     struct CostRange
@@ -132,7 +141,7 @@ class EOS_CLASS LightDir
      real32 minCost;
      real32 maxCost;
      
-     void CalcCost(ds::Array<PixelAux> & tAux,nat32 length); // Fills in the cost range.
+     void CalcCost(ds::Array<PixelAux> & tAux,nat32 length,real32 lowAlbErr); // Fills in the cost range.
      
      bit operator < (const CostRange & rhs) const {return minCost < rhs.minCost;}
     };
