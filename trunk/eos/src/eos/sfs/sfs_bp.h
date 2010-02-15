@@ -536,6 +536,9 @@ class EOS_CLASS SfS_BP_Nice3
   
   // Outputs...
    ds::Array2D<bs::Normal> result;
+   
+  // Helper function...
+   real32 SmoothK(real32 irrA,real32 irrB,const FisherAngProb & fap) const;
 };
 
 //------------------------------------------------------------------------------

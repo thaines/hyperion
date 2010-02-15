@@ -1244,7 +1244,160 @@ void SfS_BP_Nice3::Run(time::Progress * prog)
 {
  prog->Push();
 
+ nat32 step = 0;
+ nat32 steps = 3;
+ if ((!math::IsZero(boundK))||(!math::IsZero(gradK))) steps += 1;
+ if (!math::IsZero(gradK)) steps += 1;
+
+
+ // If doing boundaries or gradients we need a smoothed version of the input image...
+  svt::Var temp(image);
+  if ((!math::IsZero(boundK))||(!math::IsZero(gradK)))
+  {
+   prog->Report(step++,steps);
+   real32 realIni = 0.0;
+   temp.Add("l",realIni);
+   temp.Commit();
+  
+   svt::Field<real32> blurImage(&temp,"l");
+   filter::KernelVect kernel(3);
+   kernel.MakeGaussian(math::Sqrt(2.0));
+   kernel.Apply(image,blurImage);
+  }
+
+
+ // If doing gradients we need gradient information for the entire image...
+  if (!math::IsZero(gradK))
+  {
+   prog->Report(step++,steps);
+   
+   real32 realIni = 0.0;
+   temp.Add("dx",realIni);
+   temp.Add("dy",realIni);
+   temp.Commit();
+   
+   svt::Field<real32> blurImage(&temp,"l");
+   svt::Field<real32> dx(&temp,"dx");
+   svt::Field<real32> dy(&temp,"dy");
+   filter::GradWalkPerfect(blurImage,dx,dy,gradLength,gradExp,0.0,prog);
+  }
+
+
+ // Create and fill in the SfS object we are abstracting...
+  prog->Report(step++,steps);
+  sfs::SfS_BP sfsbp;
+  sfsbp.SetSize(image.Size(0),image.Size(1));
+  
+  filter::GradWalkSelect gws;
+  {
+   svt::Field<real32> blurImage(&temp,"l");
+   gws.SetInput(blurImage);
+   gws.SetParas(boundLength,boundExp);
+  }
+  
+ // Make a fap...
+  FisherAngProb fap;
+  fap.Make(smoothChance,smoothMinK,smoothMaxK,nat32((smoothMaxK-smoothMinK)*10.0),1800);
+  
+  
+  svt::Field<real32> dx(&temp,"dx");
+  svt::Field<real32> dy(&temp,"dy");
+  prog->Push();
+  for (nat32 y=0;y<image.Size(1);y++)
+  {
+   prog->Report(y,image.Size(1));
+   for (nat32 x=0;x<image.Size(0);x++)
+   {
+    // Similarity terms...
+     if (x+1!=image.Size(0)) sfsbp.SetHoriz(x,y,SmoothK(image.Get(x,y)/albedo.Get(x,y),image.Get(x+1,y)/albedo.Get(x+1,y),fap));
+     if (y+1!=image.Size(1)) sfsbp.SetVert(x,y,SmoothK(image.Get(x,y)/albedo.Get(x,y),image.Get(x,y+1)/albedo.Get(x,y+1),fap));
+
+    // Cone term...
+     real32 ang = math::InvCos(math::Min(image.Get(x,y)/albedo.Get(x,y),real32(1.0)));
+     real32 coneK;
+     if (ang<(math::pi*0.25))
+     {
+      real32 t = ang/(math::pi*0.25);
+      coneK = (1.0-t)*cone0 + t*cone45;
+     }
+     else
+     {
+      real32 t = (ang-math::pi*0.25)/(math::pi*0.25);
+      coneK = (1.0-t)*cone45 + t*cone90;
+     }
+     sfsbp.SetCone(x,y,image.Get(x,y),albedo.Get(x,y),toLight,coneK);
+     
+    // Boundary term...
+     if ((!math::IsZero(boundK))&&(math::IsZero(image.Get(x,y))))
+     {
+      bit boundary = false;
+      boundary |= (x>0)&&(!math::IsZero(image.Get(x-1,y)));
+      boundary |= (y>0)&&(!math::IsZero(image.Get(x,y-1)));
+      boundary |= (x+1<image.Size(0))&&(!math::IsZero(image.Get(x+1,y)));
+      boundary |= (y+1<image.Size(1))&&(!math::IsZero(image.Get(x,y+1)));
+      
+      if (boundary)
+      {
+       real32 dx,dy;
+       gws.Query(x,y,dx,dy);
+       
+       math::Fisher fish;
+       fish[0] = -dx;
+       fish[1] = -dy;
+       fish[2] = 0.0;
+       
+       real32 len = fish.Length();
+       if (!math::IsZero(len))
+       {
+        fish *= boundK/len;
+        sfsbp.MultDist(x,y,fish);
+       }
+      }
+     }
+     
+    // Gradient term...
+     if (!math::IsZero(gradK))
+     {
+      math::Vect<3,real32> dir;
+      dir[0] = dy.Get(x,y);
+      dir[1] = -dx.Get(x,y);
+      dir[2] = 0.0;
+      real32 len = dir.Length();
+      if (!math::IsZero(len))
+      {
+       dir /= len;
+       math::FisherBingham fb(len*gradK,dir);
+       sfsbp.MultDist(x,y,fb);
+      }
+     }
+   }
+  }
+  prog->Pop();
+
+
+ // Run...
+  prog->Report(step++,steps);
+  sfsbp.SetIters(iters);
+  sfsbp.Run(prog);
+  
  
+ // Extract the results with belief propagation based selection between maxima...
+  prog->Report(step++,steps);
+  NeedleFromFB nffb;
+  nffb.Fill(sfsbp);
+  nffb.SetParas(angMult,momentum);
+  
+  nffb.Run(prog);
+  
+  result.Resize(image.Size(0),image.Size(1));
+  for (nat32 y=0;y<image.Size(1);y++)
+  {
+   for (nat32 x=0;x<image.Size(0);x++)
+   {
+    sfsbp.GetDir(x,y,result.Get(x,y));
+   }
+  }
+
 
  prog->Pop();
 }
@@ -1260,6 +1413,19 @@ void SfS_BP_Nice3::GetNeedle(svt::Field<bs::Normal> & out) const
 cstrconst SfS_BP_Nice3::TypeString() const
 {
  return "eos::sfs::SfS_BP_Nice3";
+}
+
+real32 SfS_BP_Nice3::SmoothK(real32 irrA,real32 irrB,const FisherAngProb & fap) const
+{
+ real32 angA = math::InvCos(math::Min<real32>(irrA,1.0));
+ real32 angB = math::InvCos(math::Min<real32>(irrB,1.0));
+ real32 rot  = smoothBase + smoothMult * math::Abs(angA-angB);
+ 
+ bs::Normal normA(math::Sin(angA),0.0,math::Cos(angA));
+ bs::Normal normB(math::Cos(rot)*math::Sin(angB),math::Sin(rot)*math::Sin(angB),math::Cos(angB));
+ real32 ang = math::InvCos(normA*normB);
+ 
+ return fap.Concentration(ang);
 }
 
 //------------------------------------------------------------------------------
