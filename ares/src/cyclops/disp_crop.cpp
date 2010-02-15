@@ -37,13 +37,19 @@ imgVar(null<svt::Var*>()),dispVar(null<svt::Var*>())
   win = static_cast<gui::Window*>(cyclops.Fact().Make("Window"));
   win->SetTitle("Crop");
   cyclops.App().Attach(win);
-  win->SetSize(disp.Size(0)+8,disp.Size(1)+48);
+  win->SetSize(disp.Size(0)+8,disp.Size(1)+96);
    
    gui::Vertical * vert1 = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));
    win->SetChild(vert1);
    
    gui::Horizontal * horiz1 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   gui::Horizontal * horiz2 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
    vert1->AttachBottom(horiz1,false);
+   vert1->AttachBottom(horiz2,false);
+   
+   range = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   vert1->AttachBottom(range,false);
+   
    
    gui::Button * but1 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but1b = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
@@ -59,6 +65,42 @@ imgVar(null<svt::Var*>()),dispVar(null<svt::Var*>())
    horiz1->AttachRight(but1,false);
    horiz1->AttachRight(but1b,false);
    horiz1->AttachRight(but2,false);
+   
+   
+   gui::Label * lab3 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab4 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab5 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab6 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   
+   lab3->Set(" Extend: Up:");
+   lab4->Set(" Down:");
+   lab5->Set(" Left:");
+   lab6->Set(" Right:");
+   
+   extendUp = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   extendDown = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   extendLeft = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   extendRight = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   
+   extendUp->Set("0");
+   extendDown->Set("0");
+   extendLeft->Set("0");
+   extendRight->Set("0");
+   
+   extendUp->SetSize(48,24);
+   extendDown->SetSize(48,24);
+   extendLeft->SetSize(48,24);
+   extendRight->SetSize(48,24);
+   
+   horiz2->AttachRight(lab3,false);
+   horiz2->AttachRight(extendUp,false);
+   horiz2->AttachRight(lab4,false);
+   horiz2->AttachRight(extendDown,false);
+   horiz2->AttachRight(lab5,false);
+   horiz2->AttachRight(extendLeft,false);
+   horiz2->AttachRight(lab6,false);
+   horiz2->AttachRight(extendRight,false);
+   
 
    gui::Panel * panel = static_cast<gui::Panel*>(cyclops.Fact().Make("Panel"));
    vert1->AttachBottom(panel);
@@ -148,7 +190,12 @@ void DispCrop::Click(gui::Base * obj,gui::Event * event)
    pMax[1] = mp[1]+1;
   }
 
-
+ // Update the coordinates...
+  str::String s;
+  s << "min = " << pMin << "; max = " << pMax << "; dims = (" << (pMax[0]-pMin[0]+1) << "," << (pMax[1]-pMin[1]+1) << ")";
+  range->Set(s);
+  
+  
  // Redraw the display... 
   canvas->Redraw();
 }
@@ -246,13 +293,19 @@ void DispCrop::SaveDisp(gui::Base * obj,gui::Event * event)
      cMin[1] = img.Size(1)-1 - int32(pMax[1]);
      cMax[0] = int32(pMax[0]);
      cMax[1] = img.Size(1)-1 - int32(pMin[1]);
+     
+   // Get the extension 
+    int32 exUp = extendUp->GetInt(0);
+    int32 exDown = extendDown->GetInt(0);
+    int32 exLeft = extendLeft->GetInt(0);
+    int32 exRight = extendRight->GetInt(0);
   
    // Create a data structure to contain it...    
     real32 dispIni = 0.0;
-    bit maskIni = true;
+    bit maskIni = false;
 
     svt::Var cDispVar(cyclops.Core());
-    cDispVar.Setup2D(cMax[0]-cMin[0]+1,cMax[1]-cMin[1]+1);
+    cDispVar.Setup2D(cMax[0]-cMin[0]+1 + exLeft+exRight,cMax[1]-cMin[1]+1 + exUp+exDown);
     cDispVar.Add("disp",dispIni);
     cDispVar.Add("mask",maskIni);
     cDispVar.Commit(false);
@@ -265,8 +318,10 @@ void DispCrop::SaveDisp(gui::Base * obj,gui::Event * event)
     {
      for (int32 x=cMin[0];x<=cMax[0];x++)
      {
-      cDisp.Get(x-cMin[0],y-cMin[1]) = disp.Get(x,y) + real32(cMin[0]);
-      cMask.Get(x-cMin[0],y-cMin[1]) = mask.Get(x,y);
+      int32 cx = x-cMin[0] + exLeft; 
+      int32 cy = y-cMin[1] + exDown;
+      cDisp.Get(cx,cy) = disp.Get(x,y) + real32(cMin[0]);
+      cMask.Get(cx,cy) = mask.Get(x,y);
      }
     }
  
@@ -300,6 +355,16 @@ void DispCrop::UpdatePair(gui::Base * obj,gui::Event * event)
      cMin[1] = img.Size(1)-1 - int32(pMax[1]);
      cMax[0] = int32(pMax[0]);
      cMax[1] = img.Size(1)-1 - int32(pMin[1]);
+     
+    int32 exUp = extendUp->GetInt(0);
+    int32 exDown = extendDown->GetInt(0);
+    int32 exLeft = extendLeft->GetInt(0);
+    int32 exRight = extendRight->GetInt(0);
+    
+    cMax[1] += exUp;
+    cMin[1] -= exDown;
+    cMin[0] -= exLeft;
+    cMax[0] += exRight;
     
     pair.CropLeft(cMin[0],cMax[0]-cMin[0]+1.0,cMin[1],cMax[1]-cMin[1]+1.0);
     pair.CropRight(0.0,pair.rightDim[0],cMin[1],cMax[1]-cMin[1]+1.0);

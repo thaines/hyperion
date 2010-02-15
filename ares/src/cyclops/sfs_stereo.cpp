@@ -90,7 +90,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    gui::Label * lab8 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab9 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    
-   needleWeight->Set("1.0");
+   needleWeight->Set("0.1");
    iterations->Set("1120");
    deltaCap->Set("4.0");
    

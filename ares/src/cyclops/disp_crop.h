@@ -19,6 +19,12 @@ class DispCrop
 
   gui::Window * win;
   gui::Canvas * canvas;
+  
+  gui::Label * range;
+  gui::EditBox * extendUp;
+  gui::EditBox * extendDown;
+  gui::EditBox * extendLeft;
+  gui::EditBox * extendRight;
 
   svt::Var * imgVar;
   svt::Field<bs::ColRGB> img;
