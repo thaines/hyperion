@@ -211,6 +211,114 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    bpOccLim->Set("6.0"); bpOccLim->SetSize(48,24);
    bpIters->Set("6"); bpIters->SetSize(48,24);
    bpOutput->Set("1"); bpOutput->SetSize(48,24);
+   
+   
+   
+   alg7 = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
+   vert1->AttachBottom(alg7,false);
+   alg7->Visible(false);
+   gui::Vertical * vert7 = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));
+   alg7->SetChild(vert7);
+   alg7->Set("Diffusion Correlation");
+   alg7->Expand(false);
+   
+   gui::Horizontal * horiz9a = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   gui::Horizontal * horiz9b = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   gui::Horizontal * horiz9c = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   gui::Horizontal * horiz9d = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   vert7->AttachBottom(horiz9a,false);
+   vert7->AttachBottom(horiz9b,false);
+   vert7->AttachBottom(horiz9c,false);
+   vert7->AttachBottom(horiz9d,false);
+   
+   gui::Label * lab40 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab41 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab42 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab43 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab44 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab45 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab46 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab47 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab48 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab49 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab55 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab51 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab52 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab53 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   
+   lab40->Set(" Use Half X:");
+   lab41->Set(" Use Half Y:");
+   lab42->Set(" Use Corners:");
+   lab43->Set(" Half Height:");
+   lab44->Set(" Distance Mult:");
+   lab45->Set(" Diffusion Steps:");
+   lab46->Set(" Minima Cap:");
+   lab47->Set(" Base Distance Cap:");
+   lab48->Set(" Cap Mult:");
+   lab49->Set(" Cap Threshold:");
+   lab55->Set(" Disparity Range:");
+   lab51->Set(" Left-Right Check:");
+   lab52->Set(" Distance Difference Cap:");
+   lab53->Set(" Distance SD Mult:");
+
+   dcUseHalfX = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
+   dcUseHalfY = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
+   dcUseCorners = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
+   dcHalfHeight = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
+   dcDistMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   dcDiffSteps = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   dcMinimaLimit = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   dcBaseDistCap = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   dcDistCapMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   dcDistCapThreshold = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   dcDispRange = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   dcDoLR = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
+   dcDistCapDifference = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   dcDistSdMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   
+   horiz9a->AttachRight(lab40,false);
+   horiz9a->AttachRight(dcUseHalfX,false);
+   horiz9a->AttachRight(lab41,false);
+   horiz9a->AttachRight(dcUseHalfY,false);
+   horiz9a->AttachRight(lab42,false);
+   horiz9a->AttachRight(dcUseCorners,false);
+   horiz9a->AttachRight(lab43,false);
+   horiz9a->AttachRight(dcHalfHeight,false);
+   horiz9b->AttachRight(lab44,false);
+   horiz9b->AttachRight(dcDistMult,false);
+   horiz9b->AttachRight(lab45,false);
+   horiz9b->AttachRight(dcDiffSteps,false);
+   horiz9b->AttachRight(lab46,false);
+   horiz9b->AttachRight(dcMinimaLimit,false);
+   horiz9c->AttachRight(lab47,false);
+   horiz9c->AttachRight(dcBaseDistCap,false);
+   horiz9c->AttachRight(lab48,false);
+   horiz9c->AttachRight(dcDistCapMult,false);
+   horiz9c->AttachRight(lab49,false);
+   horiz9c->AttachRight(dcDistCapThreshold,false);
+   horiz9c->AttachRight(lab55,false);
+   horiz9c->AttachRight(dcDispRange,false);
+   horiz9d->AttachRight(lab51,false);
+   horiz9d->AttachRight(dcDoLR,false);
+   horiz9d->AttachRight(lab52,false);
+   horiz9d->AttachRight(dcDistCapDifference,false);
+   horiz9d->AttachRight(lab53,false);
+   horiz9d->AttachRight(dcDistSdMult,false);      
+   
+   dcUseHalfX->SetState(true);
+   dcUseHalfY->SetState(true);
+   dcUseCorners->SetState(true);
+   dcHalfHeight->SetState(true);
+   dcDistMult->Set("0.1"); dcDistMult->SetSize(48,24);
+   dcDiffSteps->Set("5"); dcDiffSteps->SetSize(48,24);
+   dcMinimaLimit->Set("8"); dcMinimaLimit->SetSize(48,24);
+   dcBaseDistCap->Set("4.0"); dcBaseDistCap->SetSize(48,24);
+   dcDistCapMult->Set("2.0"); dcDistCapMult->SetSize(48,24);
+   dcDistCapThreshold->Set("0.5"); dcDistCapThreshold->SetSize(48,24);
+   dcDispRange->Set("2"); dcDispRange->SetSize(48,24);
+   dcDoLR ->SetState(true);
+   dcDistCapDifference->Set("0.25"); dcDistCapDifference->SetSize(48,24);
+   dcDistSdMult->Set("0.1"); dcDistSdMult->SetSize(48,24);
 
 
 
@@ -746,14 +854,17 @@ void Stereopsis::ChangeAlg(gui::Base * obj,gui::Event * event)
   case 0:
    alg5->Visible(true);
    alg6->Visible(false);
+   alg7->Visible(false);
   break;
   case 1:
    alg5->Visible(false);
    alg6->Visible(true);
+   alg7->Visible(false);
   break;
   case 2:
    alg5->Visible(false);
    alg6->Visible(false);
+   alg7->Visible(true);
   break;
  }
 }
@@ -915,7 +1026,25 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
      dcs->SetImages(leftLuv,rightLuv);
      dcs->SetMasks(leftMask,rightMask);
      
-     // Need to do parameter stuff *************************************************
+     bit useHalfX = dcUseHalfX->Ticked();
+     bit useHalfY = dcUseHalfY->Ticked();
+     bit useCorners = dcUseCorners->Ticked();
+     bit halfHeight = dcHalfHeight->Ticked();
+     real32 distMult = dcDistMult->GetReal(0.1);
+     nat32 diffSteps = dcDiffSteps->GetInt(5);
+     nat32 minimaLimit = dcMinimaLimit->GetInt(8);
+     real32 baseDistCap = dcBaseDistCap->GetReal(4.0);
+     real32 distCapMult = dcDistCapMult->GetReal(2.0);
+     real32 distCapThreshold = dcDistCapThreshold->GetReal(0.5);
+     nat32 dispRange = dcDispRange->GetInt(2);
+     bit doLR = dcDoLR->Ticked();
+     real32 distCapDifference = dcDistCapDifference->GetReal(0.25);
+     real32 distSdMult = dcDistSdMult->GetReal(0.1);
+     
+     dcs->SetPyramid(useHalfX,useHalfY,useCorners,halfHeight);
+     dcs->SetDiff(distMult,diffSteps);
+     dcs->SetCorr(minimaLimit,baseDistCap,distCapMult,distCapThreshold,dispRange);
+     dcs->SetRefine(doLR,distCapDifference,distSdMult);
      
      dcs->Run(prog);
     }

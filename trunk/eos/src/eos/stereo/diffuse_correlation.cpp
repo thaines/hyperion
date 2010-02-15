@@ -376,10 +376,11 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
   while(true)
   {
    prog->Report(step++,steps);
-   nat32 step2 = 0,steps2 = matches[l+1].Size()+1;
-   prog->Report(step2++,steps2);
    // Move to the level we need to proccess...
     l -= 1;
+    nat32 step2 = 0,steps2 = matches[l+1].Size()+1;
+    prog->Push();
+    prog->Report(step2++,steps2);
     
    // Get the images, setup the diffusion weights...
     const bs::LuvRangeImage & leftImg = left->Level(l);
@@ -390,6 +391,7 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
     
    // Iterate every match in the above layer...
     int32 prevY = -1; // Dummy value, so we always reset for the first entry.
+    if (matches[l+1].Size()==0) break; // So we don't crash if the parameters are too fussy.
     ds::SortList<Match>::Cursor targ = matches[l+1].FrontPtr();
     while (!targ.Bad())
     {
@@ -468,6 +470,7 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
      // To the next...   
       ++targ;
     }
+    prog->Pop();
     
    // Break if we have just done the full resolution level...
     if (l==0) break;
@@ -485,6 +488,7 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
    ds::ArrayDel<ds::PriorityQueue<Disp> > minimaRight(right->Level(0).Width() * right->Level(0).Height());
 
    prog->Push();
+   if (matches[0].Size()!=0)
    {
     ds::SortList<Match>::Cursor targ = matches[0].FrontPtr();
     nat32 step2 = 0, steps2 = matches[0].Size();
@@ -604,7 +608,7 @@ void DiffusionCorrelationImage::Run(time::Progress * prog)
     prog->Push();
     for (nat32 y=0;y<left->Level(0).Height();y++)
     {
-    prog->Report(y,left->Level(0).Height());
+     prog->Report(y,left->Level(0).Height());
      for (nat32 x=0;x<left->Level(0).Width();x++)
      {
       nat32 c = y*left->Level(0).Width() + x;
@@ -721,7 +725,8 @@ real32 DiffusionCorrelationImage::ScoreRight(nat32 x,nat32 y,nat32 i,int32 offse
 //------------------------------------------------------------------------------
 DiffCorrStereo::DiffCorrStereo()
 :useHalfX(true),useHalfY(true),useCorners(true),halfHeight(true),
-distMult(0.1),minimaLimit(8),baseDistCap(4.0),distCapMult(2.0),distCapThreshold(0.5),dispRange(2),diffSteps(5)
+distMult(0.1),minimaLimit(8),baseDistCap(4.0),distCapMult(2.0),distCapThreshold(0.5),dispRange(2),diffSteps(5),
+doLR(true),distCapDifference(0.25),distSdMult(0.1)
 {}
 
 DiffCorrStereo::~DiffCorrStereo()

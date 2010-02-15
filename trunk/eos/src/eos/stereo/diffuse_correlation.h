@@ -341,6 +341,7 @@ class EOS_CLASS DiffCorrStereo : public DSI
   /// how much below the other minima the best minima has to be to be considered
   /// authorative and distSdMult is a multiplier of correlation score before -ln
   /// is applied to get a probability to which a Gaussian is fitted.
+  /// Default to true, 0.25, 0.1.
    void SetRefine(bit doLR,real32 distCapDifference,real32 distSdMult);
 
 
