@@ -254,7 +254,7 @@ void LightDir::Run(time::Progress * prog)
     for (nat32 l=0;l<lc.Size();l++)
     {
      prog->Report(l,lc.Size());
-     segCost[l] = SegLightCost(lc[l].dir,recDepth, pixel,offset[s],segSize, 
+     segCost[l] = SegLightCost(lc[l].dir,recDepth,pixel,offset[s],segSize, 
                               tAux,tWork);
     }
     prog->Pop();

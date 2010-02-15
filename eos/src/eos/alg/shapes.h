@@ -34,7 +34,7 @@ struct EOS_CLASS Icosahedron
 };
 
 //------------------------------------------------------------------------------
-/// A triangulation of a sphere that produces an even distribution of vertices.
+/// A triangulation of a sphere that produces an even-ish distribution of vertices.
 /// An icosahedron subdivided into smaller triangles which are remaped back onto
 /// a sphere. A method of specifying a geodesic dome. Refered to here as an 
 /// icosphere, in accordance with Blender (blender.org) termanology. You specify

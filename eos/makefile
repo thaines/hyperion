@@ -161,7 +161,7 @@ OBJS_OS		= $(OBJ)/os_cameras.o $(OBJ)/os_gphoto2_funcs.o $(OBJ)/os_console.o $(O
 OBJS_MT		= $(OBJ)/mt_threads.o $(OBJ)/mt_locks.o
 OBJS_SUR	= $(OBJ)/sur_mesh.o $(OBJ)/sur_mesh_iter.o $(OBJ)/sur_mesh_sup.o $(OBJ)/sur_catmull_clark.o $(OBJ)/sur_intersection.o $(OBJ)/sur_subdivide.o $(OBJ)/sur_simplify.o
 OBJS_SFS	= $(OBJ)/sfs_worthington.o $(OBJ)/sfs_lambertian_fit.o $(OBJ)/sfs_lambertian_segs.o $(OBJ)/sfs_lambertian_pp.o $(OBJ)/sfs_lambertian_hough.o $(OBJ)/sfs_lambertian_segment.o $(OBJ)/sfs_sfsao_gd.o $(OBJ)/sfs_sfs_bp.o $(OBJ)/sfs_zheng.o $(OBJ)/sfs_lee.o $(OBJ)/sfs_albedo_est.o
-OBJS_FIT	= $(OBJ)/fit_disp_fish.o $(OBJ)/fit_disp_norm.o $(OBJ)/fit_light_dir.o
+OBJS_FIT	= $(OBJ)/fit_disp_fish.o $(OBJ)/fit_disp_norm.o $(OBJ)/fit_light_dir.o $(OBJ)/fit_sphere_sample.o
 OBJS            = $(OBJS_BASIC) $(OBJS_MEMORY) $(OBJS_IO) $(OBJS_LOG) $(OBJS_BS) $(OBJS_DS) $(OBJS_MATH) $(OBJS_TIME) $(OBJS_DATA) $(OBJS_STR) $(OBJS_FILE) $(OBJS_SVT) $(OBJS_ALG) $(OBJS_FILTER) $(OBJS_STEREO) $(OBJS_MYA) $(OBJS_REND) $(OBJS_CAM) $(OBJS_GUI) $(OBJS_INF) $(OBJS_OS) $(OBJS_MT) $(OBJS_SUR) $(OBJS_SFS) $(OBJS_FIT)
 
 
@@ -938,6 +938,9 @@ $(OBJ)/fit_disp_norm.o: $(DIRS) $(SRC)/eos/fit/disp_norm.h $(SRC)/eos/fit/disp_n
 
 $(OBJ)/fit_light_dir.o: $(DIRS) $(SRC)/eos/fit/light_dir.h $(SRC)/eos/fit/light_dir.cpp
 	$(C) -o $(OBJ)/fit_light_dir.o $(SRC)/eos/fit/light_dir.cpp
+
+$(OBJ)/fit_sphere_sample.o: $(DIRS) $(SRC)/eos/fit/sphere_sample.h $(SRC)/eos/fit/sphere_sample.cpp
+	$(C) -o $(OBJ)/fit_sphere_sample.o $(SRC)/eos/fit/sphere_sample.cpp
 
 
 
