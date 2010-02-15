@@ -133,42 +133,109 @@ EOS_FUNC nat32 PointEllipsoidDir(const math::Vect<3> & ell,const math::Vect<3> &
   poly[0] = a2*b4*c4*x2 + a4*b2*c4*y2 + a4*b4*c2*z2 - a4*b4*c4;
   
   
- // Solve for all roots...
-  math::Vect<6,math::Complex<real32> > roots;
-  nat32 rootCount = 0;
+ // Adjust behaviour of algorithm depending on whether the point to be 
+ // perpendicular to is inside or outside the ellipsoid.
+ // If inside we have to do a full root solving as all 6 roots could be 
+ // possible, if its outside however then there can be only two answers and
+ // these are the closest and furthest points on the iterations, i.e. 
+ // convergence to them is easily done by two Newton itertions.
+ // This approach is far more stable than allways finding all roots, as that
+ // case can cause problems for finding the roots by eigenvalues...
+  if ((math::Sqr(x/a) + math::Sqr(y/b) + math::Sqr(z/c))<1.0)
   {
-   math::Mat<6,6> temp;
-   rootCount = math::RobustPolyRoot(poly,roots,temp,tol,limit);
-  }
-  
-  LogDebug("rootCount = " << rootCount);
-  
- 
- // Turn the roots into locations on the ellipsoid, as possible - complex and 
- // dodgy roots are possible afterall...
-  nat32 ret = 0;
-  for (nat32 i=0;i<rootCount;i++)
-  {
-   // Calculate location based on real component alone...
-    out[ret][0] = (a2*x)/(roots[i].x + a2);
-    out[ret][1] = (b2*y)/(roots[i].x + b2);
-    out[ret][2] = (c2*z)/(roots[i].x + c2);
-    
-   // Keep if its on the ellipsoid, accounting for numerical error...
-    real32 one = math::Sqrt(math::Sqr(out[ret][0]/a) + 
-                            math::Sqr(out[ret][1]/b) + 
-                            math::Sqr(out[ret][2]/c));
-    LogDebug("{i,one,pos}" << LogDiv() << i << LogDiv() << one << LogDiv() 
-             << out[ret] << LogDiv() << roots[i]);
-    if (math::Abs(one-1.0)<10.0*math::Sqrt(tol))
+   // Inside - solve via eigen method for all 6 roots...
+   // Solve for all roots...
+    math::Vect<6,math::Complex<real32> > roots;
+    nat32 rootCount = 0;
     {
-     out[ret] *= scaler; // Convert back to the input coordinate system.
-     ++ret;
+     math::Mat<6,6> temp;
+     rootCount = math::RobustPolyRoot(poly,roots,temp,tol,limit);
     }
+ 
+   // Turn the roots into locations on the ellipsoid, as possible - complex and 
+   // dodgy roots are possible afterall...
+    nat32 ret = 0;
+    for (nat32 i=0;i<rootCount;i++)
+    {
+     // Calculate location based on real component alone...
+      out[ret][0] = (a2*x)/(roots[i].x + a2);
+      out[ret][1] = (b2*y)/(roots[i].x + b2);
+      out[ret][2] = (c2*z)/(roots[i].x + c2);
+    
+     // Keep if its on the ellipsoid, accounting for numerical error...
+      real32 one = math::Sqrt(math::Sqr(out[ret][0]/a) + 
+                              math::Sqr(out[ret][1]/b) + 
+                              math::Sqr(out[ret][2]/c));
+      if (math::Abs(one-1.0)<10.0*math::Sqrt(tol))
+      {
+       out[ret] *= scaler; // Convert back to the input coordinate system.
+       ++ret;
+      }
+    }
+    if (ret!=0) return ret;
   }
+  // Else has been dropped, and return adjusted, so it falls back to below if no points found, so it at least gives something.
+  {
+   // Outside - solve via two Newton iterations...
+   
+   // Find the closest point...
+   // Calculate the starting position for newton iterations, done such that we will always 
+   // converge to the closest solution...
+   // Don't have to consider the case of being inside the ellipsoid as thats handled above.
+    real32 alpha = math::Sqrt(x2+y2+z2); // * math::Max(a,b,c); - due to scaler will always be 1.
 
+   // Use newton iterations to find alpha...  
+    for (nat32 i=0;i<limit;i++)
+    {
+     // Calculate the function and its differential...
+      real32 f = (((((poly[6]*alpha + poly[5])*alpha + poly[4])*alpha + poly[3])*alpha + poly[2])*alpha + poly[1])*alpha + poly[0];
+      real32 df = ((((6.0*poly[6]*alpha + 5.0*poly[5])*alpha + 4.0*poly[4])*alpha + 3.0*poly[3])*alpha + 2.0*poly[2])*alpha + poly[1];
+   
+     // Update...
+      real32 offset = f/df;
+      alpha -= offset;
 
- return ret;
+     // Break if offset was small enough...
+      if (math::Abs(offset)<tol) break;    
+    }
+
+   // From the final alpha calculate the output coordinate, and remove the scaler affect...
+    out[0][0] = (a2*x)/(alpha + a2);
+    out[0][1] = (b2*y)/(alpha + b2);
+    out[0][2] = (c2*z)/(alpha + c2);
+    out[0] *= scaler;
+  
+
+   // Find the furthest point...
+   // Calculate the starting position for newton iterations, done such that we will always 
+   // converge to the closest solution...
+   // Don't have to consider the case of being inside the ellipsoid as thats handled above.
+    alpha = -math::Sqrt(x2+y2+z2) - 1.0; // - math::Max(a,b,c); - due to scaler will always be 1.
+
+   // Use newton iterations to find alpha...  
+    for (nat32 i=0;i<limit;i++)
+    {
+     // Calculate the function and its differential...
+      real32 f = (((((poly[6]*alpha + poly[5])*alpha + poly[4])*alpha + poly[3])*alpha + poly[2])*alpha + poly[1])*alpha + poly[0];
+      real32 df = ((((6.0*poly[6]*alpha + 5.0*poly[5])*alpha + 4.0*poly[4])*alpha + 3.0*poly[3])*alpha + 2.0*poly[2])*alpha + poly[1];
+   
+     // Update...
+      real32 offset = f/df;
+      alpha -= offset;
+
+     // Break if offset was small enough...
+      if (math::Abs(offset)<tol) break;    
+    }
+
+   // From the final alpha calculate the output coordinate, and remove the scaler affect...
+    out[1][0] = (a2*x)/(alpha + a2);
+    out[1][1] = (b2*y)/(alpha + b2);
+    out[1][2] = (c2*z)/(alpha + c2);
+    out[1] *= scaler;
+  
+  
+   return 2;
+  }
 }
 //------------------------------------------------------------------------------
  };

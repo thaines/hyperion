@@ -704,8 +704,8 @@ void NeedleFromFB::Run(time::Progress * prog)
    for (nat32 x=0;x<in.Width();x++)
    {
     prog->Report(x,in.Width());
-    math::Vect<3> vect[2];
-    nat32 num = in.Get(x,y).Maximums(vect);
+    math::Vect<3> vect[6];
+    nat32 num = in.Get(x,y).Critical(vect);
     switch(num)
     {
      case 0:
@@ -719,6 +719,41 @@ void NeedleFromFB::Run(time::Progress * prog)
      case 2:
       dirs.Get(x,y)[0] = vect[0];
       dirs.Get(x,y)[1] = vect[1];
+     break;
+     default:
+     {
+      real32 cost[6];
+      for (nat32 i=0;i<num;i++) cost[i] = in.Get(x,y).Cost(vect[i]);
+      
+      nat32 ind[2];
+      if (cost[0]<cost[1])
+      {
+       ind[0] = 0; ind[1] = 1;
+      }
+      else
+      {
+       ind[0] = 1; ind[1] = 0;
+      }
+      
+      for (nat32 i=2;i<num;i++)
+      {
+       if (cost[i]<cost[ind[1]])
+       {
+        if (cost[i]<cost[ind[0]])
+        {
+         ind[1] = ind[0];
+         ind[0] = i;
+        }
+        else
+        {
+         ind[1] = i;
+        }
+       }
+      }
+      
+      dirs.Get(x,y)[0] = vect[ind[0]];
+      dirs.Get(x,y)[1] = vect[ind[1]];
+     }
      break;
     }
    }

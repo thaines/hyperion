@@ -344,6 +344,13 @@ class EOS_CLASS FisherBingham
   /// approximation, that is insanly hard and rather slow to calculate.
   /// Divide the results of UnnormProb to get normalised answers.
    real32 NormDiv() const;
+  
+  /// Returns the cost for a given normalised vector.
+  /// Has an arbitary offset, i.e. unnormalised. Can be negative.
+   real32 Cost(const Vect<3,real32> & rhs) const
+   {
+    return rhs * fisher + VectMultVect(rhs,bingham,rhs);
+   }
 
 
   /// Outputs the direction with the greatest probability density function value.

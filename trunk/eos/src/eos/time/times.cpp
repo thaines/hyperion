@@ -92,27 +92,27 @@ EOS_FUNC nat8 Timezone()
 //------------------------------------------------------------------------------
 EOS_FUNC cstrconst MonthStr(Month m)
 {
- const cstr strs[12] = {"January","Febuary","March","April","May","June",
-                        "July","August","September","October","November","December"};	
+ const char * strs[12] = {"January","Febuary","March","April","May","June",
+                          "July","August","September","October","November","December"};	
  return strs[m];
 }
 
 EOS_FUNC cstrconst MonthStrShort(Month m)
 {
- const cstr strs[12] = {"Jan","Feb","Mar","Apr","May","Jun",
-                        "Jul","Aug","Sep","Oct","Nov","Dec"};
+ const char * strs[12] = {"Jan","Feb","Mar","Apr","May","Jun",
+                          "Jul","Aug","Sep","Oct","Nov","Dec"};
  return strs[m];
 }
 
 EOS_FUNC cstrconst DayStr(Day d)
 {
- const cstr strs[7] = {"Sunday","Monday","Tuesday","Wednessday","Thursday","Friday","Saturday"};	
+ const char * strs[7] = {"Sunday","Monday","Tuesday","Wednessday","Thursday","Friday","Saturday"};	
  return strs[d];
 }
 
 EOS_FUNC cstrconst DayStrShort(Day d)
 {
- const cstr strs[7] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};	
+ const char * strs[7] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat"};	
  return strs[d];
 }
 
