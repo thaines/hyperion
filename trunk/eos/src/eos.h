@@ -303,5 +303,7 @@
 #include "eos/sfs/lee.h"
 #include "eos/sfs/albedo_est.h"
 
+#include "eos/fit/disp_fish.h"
+
 //------------------------------------------------------------------------------
 #endif
