@@ -1,0 +1,30 @@
+# Eos build...
+eos/obj/
+eos/bin/
+eos/out.txt
+
+
+# Eos docs...
+eos/doc/
+
+
+# Ares build...
+ares/obj/
+ares/bin/
+ares/out.txt
+
+
+# Cyclops documentation stuff...
+docs/cyclops/cyclops.aux
+docs/cyclops/cyclops.log
+docs/cyclops/cyclops.pdf
+docs/cyclops/cyclops.toc
+
+
+# Distribution stuff...
+dist/cyclops/
+dist/cyclops.tar.gz
+
+dist/redist/
+dist/redist.tar.gz
+
