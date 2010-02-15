@@ -42,6 +42,12 @@ class DispClean
   gui::EditBox * smoothSource;
   gui::EditBox * smoothSmooth;
   gui::EditBox * smoothIters;
+  
+  gui::EditBox * noiseSD;
+  gui::EditBox * noiseBiasTopLeft;
+  gui::EditBox * noiseBiasTopRight;
+  gui::EditBox * noiseBiasBottomLeft;
+  gui::EditBox * noiseBiasBottomRight;
 
 
   svt::Var * var;
@@ -60,6 +66,7 @@ class DispClean
   void LoadDisp(gui::Base * obj,gui::Event * event);
   void RemoveSpikes(gui::Base * obj,gui::Event * event);
   void Smooth(gui::Base * obj,gui::Event * event);
+  void Noise(gui::Base * obj,gui::Event * event);
   void SaveDisp(gui::Base * obj,gui::Event * event);
 
   void RenderDisp();
