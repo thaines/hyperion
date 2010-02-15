@@ -27,8 +27,33 @@ int main(int argc,char ** argv)
  }
  
  con << "Found " << exif.TagCount() << " exif tags\n";
+
+ if (exif.HasMake())
+    con << "Make = " << exif.GetMake() << "\n";
+
+ if (exif.HasModel())
+    con << "Model = " << exif.GetModel() << "\n";
+
+ if (exif.HasDateTime())
+    con << "Date/time = " << exif.GetDateTime() << "\n";
  
- if (exif.HasShutterTime()) con << "Shutter time = " << exif.ShutterTime() << "s (1/" << (1.0/exif.ShutterTime()) << "s)\n";
+ if (exif.HasExposureTime())
+    con << "Exposure time = " << exif.GetExposureTime() << "s (1/" << (1.0/exif.GetExposureTime()) << "s)\n";
+ 
+ if (exif.HasFStop())
+    con << "F-Stop = " << exif.GetFStop() << "\n";
+
+ if (exif.HasISO())
+    con << "ISO = " << exif.GetISO() << "\n";
+    
+ if (exif.HasFocalLength())
+    con << "Focal Length = " << exif.GetFocalLength() << "mm\n";
+
+ if (exif.HasFlash())
+ {
+  if (exif.GetFlash()) con << "Flash was used\n";
+                  else con << "Flash was not used\n";
+ }
 
  return 0;
 }
