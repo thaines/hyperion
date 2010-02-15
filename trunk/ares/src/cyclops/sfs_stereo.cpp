@@ -107,6 +107,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    viewSelect->Append("Input Needle Map");
    viewSelect->Append("Input Disparity");
    viewSelect->Append("Input Disparity Dirs");
+   viewSelect->Append("Input Disparity SD");
    viewSelect->Append("Output Disparity");
    viewSelect->Append("Output Disparity Dirs");
    viewSelect->Set(1);
@@ -658,7 +659,40 @@ void StereoSfS::Update()
      }
    }
    break;
-   case 3: // Output disparity
+   case 3: // Input disparity sd...
+   {
+    // Find maximum...
+     real32 maxSd = 0.1;
+     for (nat32 y=0;y<dispSd.Size(1);y++)
+     {
+      for (nat32 x=0;x<dispSd.Size(0);x++)
+      {
+       if ((!mask.Valid())||(mask.Get(x,y)))
+       {
+        maxSd = math::Max(maxSd,dispSd.Get(x,y));
+       }
+      }
+     }
+    
+    // Render...
+     for (nat32 y=0;y<dispSd.Size(1);y++)
+     {
+      for (nat32 x=0;x<dispSd.Size(0);x++)
+      {
+       if ((!mask.Valid())||(mask.Get(x,y)))
+       {
+        real32 v = dispSd.Get(x,y)/maxSd;
+        image.Get(x,y) = bs::ColourRGB(v,v,v);
+       }
+       else
+       {
+        image.Get(x,y) = bs::ColourRGB(0.0,0.0,1.0);
+       }
+      }
+     }
+   }
+   break;
+   case 4: // Output disparity
    {
     if (dispNew.Valid())
     {
@@ -696,7 +730,7 @@ void StereoSfS::Update()
     }
    }
    break;
-   case 4: // Output disparity dirs
+   case 5: // Output disparity dirs
    {
     if (dispNew.Valid())
     {
