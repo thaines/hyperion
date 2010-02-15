@@ -29,7 +29,7 @@ result(null<svt::Var*>())
   win = static_cast<gui::Window*>(cyclops.Fact().Make("Window"));
   win->SetTitle("Stereopsis");
   cyclops.App().Attach(win);
-  win->SetSize(leftImage.Size(0)+rightImage.Size(0)+24,math::Max(leftImage.Size(1),rightImage.Size(1))+96);
+  win->SetSize(leftImage.Size(0)+rightImage.Size(0)+48,math::Max(leftImage.Size(1),rightImage.Size(1))+128);
 
    gui::Vertical * vert1 = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));
    win->SetChild(vert1);
@@ -61,30 +61,45 @@ result(null<svt::Var*>())
    but4->SetChild(lab4); lab4->Set("Save Disparity...");
    horiz1->AttachRight(but4,false);
 
-
+   
+   gui::Horizontal * horiz6 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   vert1->AttachBottom(horiz6,false);
+   
    gui::Label * lab5 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab5->Set(" Alg:");
-   horiz1->AttachRight(lab5,false);
+   horiz6->AttachRight(lab5,false);
 
    whichAlg = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
    whichAlg->Append("Hierarchical DP");
    whichAlg->Append("Hierarchical BP");
    //whichAlg->Append("Hierarchical CBP");
    whichAlg->Set(1);
-   horiz1->AttachRight(whichAlg,false);
-
+   horiz6->AttachRight(whichAlg,false);
 
    gui::Label * lab5b = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab5b->Set(" Post:");
-   horiz1->AttachRight(lab5b,false);
+   horiz6->AttachRight(lab5b,false);
 
    whichPost = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
    whichPost->Append("None");
    whichPost->Append("Smoothing");
    whichPost->Append("Seg & Plane Fit");
    whichPost->Set(1);
-   horiz1->AttachRight(whichPost,false);
+   horiz6->AttachRight(whichPost,false);
+   
+   gui::Label * lab5c = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab5c->Set(" Aug Gaussian:");
+   horiz6->AttachRight(lab5c,false);
+   
+   augGaussian = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
+   horiz6->AttachRight(augGaussian,false);
 
+   gui::Label * lab5d = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab5d->Set(" Aug Fisher:");
+   horiz6->AttachRight(lab5d,false);
+   
+   augFisher = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
+   horiz6->AttachRight(augFisher,false);
 
 
    alg5 = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
@@ -342,6 +357,47 @@ result(null<svt::Var*>())
 
 
 
+   augG = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
+   vert1->AttachBottom(augG,false);
+   augG->Visible(false);
+   gui::Horizontal * horiz7 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   augG->SetChild(horiz7);
+   augG->Set("Gaussian Augmentation Parameters");
+   augG->Expand(false);
+   
+   gui::Label * lab28 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab28->Set(" Range:");
+   gaussianRange = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   gaussianRange->Set("5");
+   
+   horiz7->AttachRight(lab28,false);
+   horiz7->AttachRight(gaussianRange,false);
+   
+   
+
+   augF = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
+   vert1->AttachBottom(augF,false);
+   augF->Visible(false);
+   gui::Horizontal * horiz8 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   augF->SetChild(horiz8);
+   augF->Set("Fisher Augmentation Parameters");
+   augF->Expand(true);
+      
+   gui::Button * but5 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
+   gui::Label * lab30 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   but5->SetChild(lab30); lab30->Set("Load Calibration...");
+   horiz8->AttachRight(but5,false);
+
+   gui::Label * lab29 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab29->Set(" Range:");
+   fisherRange = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   fisherRange->Set("4");
+   
+   horiz8->AttachRight(lab29,false);
+   horiz8->AttachRight(fisherRange,false);
+
+
+
    gui::Horizontal * horiz2 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
    vert1->AttachBottom(horiz2);
 
@@ -367,11 +423,14 @@ result(null<svt::Var*>())
 
   whichAlg->OnChange(MakeCB(this,&Stereopsis::ChangeAlg));
   whichPost->OnChange(MakeCB(this,&Stereopsis::ChangePost));
+  augGaussian->OnChange(MakeCB(this,&Stereopsis::SwitchGaussian));
+  augFisher->OnChange(MakeCB(this,&Stereopsis::SwitchFisher));
 
   but1->OnClick(MakeCB(this,&Stereopsis::LoadLeft));
   but2->OnClick(MakeCB(this,&Stereopsis::LoadRight));
   but3->OnClick(MakeCB(this,&Stereopsis::Run));
   but4->OnClick(MakeCB(this,&Stereopsis::SaveSVT));
+  but5->OnClick(MakeCB(this,&Stereopsis::LoadCalibration));
 }
 
 Stereopsis::~Stereopsis()
@@ -542,6 +601,18 @@ void Stereopsis::LoadRight(gui::Base * obj,gui::Event * event)
  }
 }
 
+void Stereopsis::LoadCalibration(gui::Base * obj,gui::Event * event)
+{
+ str::String fn;
+ if (cyclops.App().LoadFileDialog("Load Camera Calibration","*.pcc",fn))
+ {
+  if (pair.Load(fn)==false)
+  {
+   cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load pcc file");
+  }
+ }
+}
+
 void Stereopsis::ChangeAlg(gui::Base * obj,gui::Event * event)
 {
  switch (whichAlg->Get())
@@ -579,6 +650,16 @@ void Stereopsis::ChangePost(gui::Base * obj,gui::Event * event)
  }
 }
 
+void Stereopsis::SwitchGaussian(gui::Base * obj,gui::Event * event)
+{
+ augG->Visible(augGaussian->Ticked());
+}
+
+void Stereopsis::SwitchFisher(gui::Base * obj,gui::Event * event)
+{
+ augF->Visible(augFisher->Ticked());
+}
+
 void Stereopsis::Run(gui::Base * obj,gui::Event * event)
 {
  if ((leftImg==null<svt::Var*>())||(rightImg==null<svt::Var*>()))
@@ -606,17 +687,25 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
 
 
   // Create the result to extract into...
+   bit aGaussian = augGaussian->Ticked();
+   bit aFisher = augFisher->Ticked();
+  
    delete result;
    result = new svt::Var(cyclops.Core());
    result->Setup2D(leftImg->Size(0),leftImg->Size(1));
    real32 dispIni = 0.0;
    bit maskIni = true;
+   bs::Vert fishIni(0.0,0.0,0.0);
    result->Add("disp",dispIni);
    result->Add("mask",maskIni);
+   if (aGaussian) result->Add("sd",dispIni);
+   if (aFisher) result->Add("fish",fishIni);
    result->Commit(false);
 
    svt::Field<real32> disp(result,"disp");
    svt::Field<bit> mask(result,"mask");
+   svt::Field<real32> sd(result,"sd");
+   svt::Field<bs::Vert> fish(result,"fish");
 
 
   // Prep progress bar...
@@ -625,18 +714,22 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    nat32 steps = 0;
    switch (whichAlg->Get())
    {
-    case 0: steps += 1; break;
-    case 1: steps += 1; break;
+    case 0: steps += 1; break; // Dynamic Programming
+    case 1: steps += 1; break; // Belief Propagation
    }
    switch (whichPost->Get())
    {
-    case 1: steps += 1; break;
-    case 2: steps += 2; break;
+    case 1: steps += 1; break; // Smoothing.
+    case 2: steps += 2; break; // Plane fit + Seg
    }
+   
+   if (aGaussian) steps += 1;
+   if (aFisher) steps += 1;
 
 
   // Run the algorithm...
    prog->Report(step++,steps);
+   stereo::DSC * dsc = null<stereo::DSC*>();
    stereo::DSI * dsi = null<stereo::DSI*>();
 
    svt::Field<bs::ColourLuv> leftLuv(leftImg,"luv");
@@ -653,8 +746,8 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
 
      sdsi->Set(occCost->GetReal(1.0),vertCost->GetReal(0.0),
               vertMult->GetReal(0.33),errLim->GetInt(1));
-     stereo::HalfBoundLuvDSC dsc(leftLuv,rightLuv,1.0,matchLim->GetReal(10.0));
-     sdsi->Set(&dsc);
+     dsc = new stereo::HalfBoundLuvDSC(leftLuv,rightLuv,1.0,matchLim->GetReal(10.0));
+     sdsi->Set(dsc);
      sdsi->Set(leftMask,rightMask);
 
      sdsi->Run(prog);
@@ -670,8 +763,8 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
      real32 occCostMult = (bpOccCostLow->GetReal(8.0)-occCostBase) / costCap;
 
      sdsi->Set(occCostBase,occCostMult,bpOccLimMult->GetReal(2.0),bpIters->GetInt(6),bpOutput->GetInt(1));
-     stereo::SqrBoundLuvDSC dsc(leftLuv,rightLuv,1.0,bpMatchLim->GetReal(36.0));
-     sdsi->Set(&dsc);
+     dsc = new stereo::SqrBoundLuvDSC(leftLuv,rightLuv,1.0,bpMatchLim->GetReal(36.0));
+     sdsi->Set(dsc);
      stereo::LuvDSC dscOcc(leftLuv,rightLuv,1.0,costCap);
      sdsi->SetOcc(&dscOcc);
      sdsi->Set(leftMask,rightMask);
@@ -789,7 +882,24 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     }
     break;
    }
+   
+   
+  // If needed augment with standard deviations...
+   if (aGaussian)
+   {
+    // ***************************************************************************
+   }
+  
 
+  // If needed augment with Fisher distributions...
+   if (aFisher)
+   {
+    // ***************************************************************************
+   }
+
+
+  // Clean up...
+   delete dsc;
    delete dsi;
    cyclops.EndProg();
 

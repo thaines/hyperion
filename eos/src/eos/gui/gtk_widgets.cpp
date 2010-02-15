@@ -1141,8 +1141,11 @@ TickBoxGtk::~TickBoxGtk()
 {
  if (Parent()) parent->Detach(this);
 
- child->SetParent(null<Base*>());
- child->Release();
+ if (child)
+ {
+  child->SetParent(null<Base*>());
+  child->Release();
+ }
 
  gtk_widget_unref(but);
 }
@@ -1231,8 +1234,11 @@ ButtonGtk::~ButtonGtk()
 {
  if (Parent()) parent->Detach(this);
 
- child->SetParent(null<Base*>());
- child->Release();
+ if (child)
+ {
+  child->SetParent(null<Base*>());
+  child->Release();
+ }
 
  gtk_widget_unref(but);
 }
