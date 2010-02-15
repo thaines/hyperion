@@ -14,7 +14,7 @@ EOS_FUNC void GetVersion(Version & out)
 
 EOS_FUNC cstrconst GetCopyright()
 {
- return "Copyright 2005-2006 Tom Haines";
+ return "Copyright 2005-2008 Tom Haines";
 }
 
 EOS_FUNC cstrconst GetBuild()
@@ -46,17 +46,11 @@ EOS_FUNC Os GetOs()
 
 EOS_FUNC Chipset GetChipset()
 {
- #ifdef EOS_X86
+ #ifdef EOS_64BIT
+ return x86_64;
+ #else
  return x86;
  #endif
- 
- #ifdef EOS_X86_64
- return x86_64;
- #endif
- 
- #ifdef EOS_POWER
- return power;
- #endif  
 }
 
 EOS_FUNC bit WithAsm()

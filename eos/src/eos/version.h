@@ -86,7 +86,7 @@ enum Os {win32,lin};
 
 /// \enum Chipset {x86,x86_64,power}
 /// Indicates the chipset the system has been compiled for.
-enum Chipset {x86,x86_64,power};
+enum Chipset {x86,x86_64};
 
 //------------------------------------------------------------------------------
 /// Returns true if it is a debug build, false otherwise.
@@ -106,17 +106,6 @@ EOS_FUNC Chipset GetChipset();
 /// Indicates if eos was compiled with assembler optimisations.
 /// \return true if compiled with assembler optimisations, false if without such optimisations.
 EOS_FUNC bit WithAsm();
-
-//------------------------------------------------------------------------------
-// Tempory section, to throw errors if attempts are made to compile with
-// (currently) unsuported options...
-#ifdef EOS_X86_64
-#error X86_64 compilation option not yet suported
-#endif
-
-#ifdef EOS_POWER
-#error POWER compilation option not yet suported
-#endif
 
 //------------------------------------------------------------------------------
 };

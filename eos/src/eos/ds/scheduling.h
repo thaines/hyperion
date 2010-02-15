@@ -13,6 +13,7 @@
 
 #include "eos/mem/alloc.h"
 #include "eos/mem/safety.h"
+#include "eos/mem/preempt.h"
 
 namespace eos
 {
@@ -55,11 +56,11 @@ class EOS_CLASS SchedulerCode
    Vert * to;
    Edge * next;
    
-   #ifdef EOS_64
+   #ifdef EOS_64BIT
    void * operator new (size_t) {return eos::mem::pre16.Malloc<Edge>();}
    void operator delete (void * ptr) {eos::mem::pre16.Free(static_cast<Edge*>(ptr));}   
    #endif
-   #ifdef EOS_32
+   #ifdef EOS_32BIT
    void * operator new (size_t) {return eos::mem::pre8.Malloc<Edge>();}
    void operator delete (void * ptr) {eos::mem::pre8.Free(static_cast<Edge*>(ptr));}
    #endif
