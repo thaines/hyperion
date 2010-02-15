@@ -180,8 +180,8 @@ nat32 ArrayCode::SearchLargest(nat32 elementSize,bit (*LessThan)(void * lhs,void
  if (left+1>=right) return left;
  
  nat32 center = (left + right)/2;
- if (LessThan(Item(elementSize,center),target)) return SearchLargest(elementSize,LessThan,center+1,right-1,target);
- else if (LessThan(target,Item(elementSize,center))) return SearchLargest(elementSize,LessThan,left+1,center-1,target);
+ if (LessThan(Item(elementSize,center),target)) return SearchLargest(elementSize,LessThan,center,right,target);
+ else if (LessThan(target,Item(elementSize,center))) return SearchLargest(elementSize,LessThan,left,center,target);
  else return center;
 }
 

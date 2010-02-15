@@ -438,7 +438,7 @@ class EOS_CLASS FisherAngProb
 
 //------------------------------------------------------------------------------
 /// An improved version of SfS_BP_Nice2, has a more sophisticated smoothing term
-/// and more adaptive use of the cone constraint.
+/// and a vaugly adaptive use of the cone constraint.
 class EOS_CLASS SfS_BP_Nice3
 {
  public:
@@ -468,7 +468,7 @@ class EOS_CLASS SfS_BP_Nice3
   /// on-cone positions with one then rotated around the direction to the light
   /// source by the angle base + mult*ca where ca is the cloest angle between 
   /// the two. Th final concentration calculated via this method is calmped.
-   void SetSmooth(real32 chance = 0.75,real32 base = 2.0,real32 mult = 1.0,real32 minK = 1.0,real32 maxK = 8.0);
+   void SetSmooth(real32 chance = 0.02,real32 base = 2.0,real32 mult = 0.5,real32 minK = 0.1,real32 maxK = 8.0);
    
   /// Sets the cone constraint parameters - simply a linearly interpolated set 
   /// of concentrations depending on the angle with the light source.

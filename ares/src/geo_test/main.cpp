@@ -111,6 +111,30 @@ int main()
  // Testing of concentration from probability within an angle class...
  // (The geometrical link is really getting stretched here.)
   sfs::FisherAngProb fap;
+  fap.Make(0.02,0.1,8.0,120,1800,&con.BeginProg());
+  con.EndProg();
+  
+  con << "  0 degrees = " << fap.Concentration(0.0 * math::pi/180.0) << "\n";
+  con << "  1 degrees = " << fap.Concentration(1.0 * math::pi/180.0) << "\n";
+  con << "  2 degrees = " << fap.Concentration(2.0 * math::pi/180.0) << "\n";
+  con << "  3 degrees = " << fap.Concentration(3.0 * math::pi/180.0) << "\n";
+  con << "  4 degrees = " << fap.Concentration(4.0 * math::pi/180.0) << "\n";
+  con << "  5 degrees = " << fap.Concentration(5.0 * math::pi/180.0) << "\n";
+  con << "  6 degrees = " << fap.Concentration(6.0 * math::pi/180.0) << "\n";
+  con << "  7 degrees = " << fap.Concentration(7.0 * math::pi/180.0) << "\n";
+  con << "  8 degrees = " << fap.Concentration(8.0 * math::pi/180.0) << "\n";
+  con << "  9 degrees = " << fap.Concentration(9.0 * math::pi/180.0) << "\n";        
+  con << " 10 degrees = " << fap.Concentration(10.0 * math::pi/180.0) << "\n";
+  con << " 20 degrees = " << fap.Concentration(20.0 * math::pi/180.0) << "\n";
+  con << " 30 degrees = " << fap.Concentration(30.0 * math::pi/180.0) << "\n";
+  con << " 40 degrees = " << fap.Concentration(40.0 * math::pi/180.0) << "\n";
+  con << " 50 degrees = " << fap.Concentration(50.0 * math::pi/180.0) << "\n";
+  con << " 60 degrees = " << fap.Concentration(60.0 * math::pi/180.0) << "\n";
+  con << " 70 degrees = " << fap.Concentration(70.0 * math::pi/180.0) << "\n";
+  con << " 80 degrees = " << fap.Concentration(80.0 * math::pi/180.0) << "\n";
+  con << " 90 degrees = " << fap.Concentration(90.0 * math::pi/180.0) << "\n";
+  con << "120 degree = " << fap.Concentration(120.0 * math::pi/180.0) << "\n";
+  con << "150 degree = " << fap.Concentration(150.0 * math::pi/180.0) << "\n";
  
  con.WaitSize(1);
  return 0;
