@@ -82,6 +82,10 @@ class EOS_CLASS SubDivSphere
   /// all triangles.
    nat32 IndC(Tri tri) const {return tris[tri].vertInd[2];}
    
+  /// Gets the vertex associated with the given index returned by an Ind method.
+  /// Note that these are contiguous - you can go from 0..VertCount() to get 'em all.
+   const bs::Normal & Vert(nat32 ind) const {return verts[ind];}
+   
   /// Returns the vertex at node A.
    const bs::Normal & A(Tri tri) const {return verts[tris[tri].vertInd[0]];}
 
