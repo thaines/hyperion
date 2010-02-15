@@ -82,6 +82,14 @@ class EOS_CLASS IntegrateBP
 
   /// Sets how many iterations it does, defaults to 100.
    void SetIters(nat32 iter);
+   
+  /// Sets zero meaning of the data every n iterations, with n==0 switching off
+  /// the zero meaning. The mean is weighted by inverse variance.
+  /// This only makes sense if all data provided is relative, so the answer can
+  /// arbitarilly select any base line, and so is usually switched off.
+  /// Defaults to off accordingly. (n==0)
+  /// (Not convinced this works/is a good idea.)
+   void SetZeroMeaning(nat32 n);
 
 
   /// Runs the algorithm, reports progress.
@@ -118,6 +126,7 @@ class EOS_CLASS IntegrateBP
  private:
   // Input...
    nat32 iters;
+   nat32 zeroM;
 
    struct Pixel
    {
@@ -147,6 +156,9 @@ class EOS_CLASS IntegrateBP
 
   // Output...
    ds::Array2D<math::Gauss1D> out;
+   
+  // Helper method - zero means the runtime array, weighting by inverse variance...
+   void WeightedZeroMean(ds::ArrayDel< ds::Array<Node> > & data);
 };
 
 //------------------------------------------------------------------------------

@@ -10,7 +10,7 @@ namespace eos
  {
 //------------------------------------------------------------------------------
 IntegrateBP::IntegrateBP(nat32 width,nat32 height)
-:iters(100)
+:iters(100),zeroM(0)
 {
  Reset(width,height);
 }
@@ -77,6 +77,11 @@ void IntegrateBP::SetRel(nat32 x,nat32 y,nat32 dir,real32 m,real32 z,real32 invS
 void IntegrateBP::SetIters(nat32 i)
 {
  iters = i;
+}
+
+void IntegrateBP::SetZeroMeaning(nat32 n)
+{
+ zeroM = n;
 }
 
 void IntegrateBP::Run(time::Progress * prog)
@@ -252,7 +257,13 @@ void IntegrateBP::Run(time::Progress * prog)
      }
     }
    }
+   
+   // Zero mean if needed...
+    if ((zeroM!=0)&&(((i+1)%zeroM)==0)) WeightedZeroMean(data);
   }
+  
+ // Once done zero mean again if needed...
+  if (zeroM!=0) WeightedZeroMean(data);
 
 
  // Extract the results...
@@ -322,6 +333,46 @@ void IntegrateBP::GetDeviation(svt::Field<real32> & o) const
    o.Get(x,y) = StandardDeviation(x,y);
   }
  }
+}
+
+void IntegrateBP::WeightedZeroMean(ds::ArrayDel< ds::Array<Node> > & data)
+{
+ // First calculate the mean, incrimentally - we (conveniantly) weight each by the inverse of variance...
+  real32 mean = 0.0;
+  real32 weight = 0.0;
+  
+  for (nat32 y=0;y<data.Size();y++)
+  {
+   for (nat32 x=0;x<data[0].Size();x++)
+   {
+    if (!in[y][x].lock)
+    {
+     math::Gauss1D est = data[y][x].exp;
+     for (nat32 i=0;i<4;i++) est *= data[y][x].msg[i];
+     
+     if (!math::IsZero(est.InvCoVar()))
+     {
+      weight += est.InvCoVar();
+      mean   += (est.InvCoVarMean() - mean*est.InvCoVar()) / weight;
+     }
+    }
+   }
+  }
+
+
+ // Now offset everything by subtracting the calculated mean...
+  for (nat32 y=0;y<data.Size();y++)
+  {
+   for (nat32 x=0;x<data[0].Size();x++)
+   {
+    data[y][x].exp.InvCoVarMean() -= mean * data[y][x].exp.InvCoVar();
+   
+    for (nat32 i=0;i<4;i++)
+    {
+     data[y][x].msg[i].InvCoVarMean() -= mean * data[y][x].msg[i].InvCoVar();
+    }
+   }
+  }
 }
 
 //------------------------------------------------------------------------------

@@ -178,7 +178,8 @@ void Integration::SaveMesh(gui::Base * obj,gui::Event * event)
    // Setup the integration object...  
     inf::IntegrateBP ibp(needle.Size(0),needle.Size(1));
     ibp.SetVal(needle.Size(0)/2,needle.Size(1)/2,0.0,100.0);
-    ibp.SetIters(needle.Size(0)+needle.Size(1));
+    //ibp.SetZeroMeaning(8); // Doesn't want to work :-(
+    ibp.SetIters(2*(needle.Size(0)+needle.Size(1)));
    
    // Fill in the data from the needle map...
     for (nat32 y=0;y<needle.Size(1);y++)
