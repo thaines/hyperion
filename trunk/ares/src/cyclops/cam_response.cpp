@@ -94,7 +94,7 @@ irrVar(null<svt::Var*>()),imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 
    lab5->Set("  Exposure (seconds)");
    lab6->Set(" Exposure (1/seconds)");
-   lab7->Set(" Degrees");
+   lab7->Set(" Max Exponent");
    
    exposure->Set("1.0");
    exposureInv->Set("1.0");
@@ -316,16 +316,87 @@ void CamResponse::Add(gui::Base * obj,gui::Event * event)
 
 
  // Update the view...
-  if (viewSelect->Get()!=0) Update(); 
+  if (viewSelect->Get()!=0) Update();
+
+
+ // Also need to update the number of samples avaliable...
+  str::String s;
+  s << "Samples = " << samples.Size();
+  info->Set(s);
 }
 
 void CamResponse::Run(gui::Base * obj,gui::Event * event)
 {
-  // ****************************************************************************
+ // Count the usable samples...
+  nat32 samps = 0;
+  for (nat32 i=0;i<samples.Size();i++)
+  {
+   real32 val = (samples[i].colour.r+samples[i].colour.g+samples[i].colour.b)/3.0;
+   if ((val>0.05)&&(val<0.95)) samps += 1;
+  }
+  if (samps==0) {result->Set("Needs data"); return;}
+  
+ 
+ // Work out how many degrees we will be using...
+  nat32 maxExp = degrees->GetInt(5);
+  maxExp = math::Min(maxExp,samps-1);
+  if (maxExp<2) {result->Set("Not enough data"); return;}
 
+
+ // Construct the matrices...
+  math::Matrix<real32> a(samps,maxExp);
+  math::Vector<real32> b(samps);
+  nat32 s = 0;
+  for (nat32 i=0;i<samples.Size();i++)
+  {
+   real32 val = (samples[i].colour.r+samples[i].colour.g+samples[i].colour.b)/3.0;
+   if ((val>0.05)&&(val<0.95))
+   {
+    real32 x = 1.0;
+    for (nat32 j=0;j<maxExp;j++)
+    {
+     x *= val;
+     a[s][j] = x;
+    }
+    
+    b[s] = samples[i].expTime;
+   
+    s += 1;
+   }
+  }
+
+
+ // Solve...
+  math::Vector<real32> ans(maxExp);
+  math::Matrix<real32> temp(maxExp,maxExp);
+  if (math::SolveLeastSquares(a,b,ans,temp)==false) {result->Set("Failed to solve equation - try less degrees"); return;}
+
+
+ // Scale such that it goes through the point (1,1)...
+  real32 at1 = 0.0;
+  for (nat32 i=0;i<ans.Size();i++) at1 += ans[i];
+  ans /= at1;
+  expNorm = 1.0/at1;
+
+
+ // Store in crf variable...
+  crf.SetPolyNC(ans);
 
  // Update the view...
   if (viewSelect->Get()!=0) Update();
+  
+ // Update the result with the polynomial...
+ {
+  str::String s;
+  s << "y =";
+  for (nat32 i=0;i<ans.Size();i++)
+  {
+   if ((i==0)||(ans[i]<0.0)) s << " ";
+                        else s << " +";
+   s << ans[i] << "*x^" << (i+1);
+  }
+  result->Set(s);
+ }
 }
 
 void CamResponse::ChangeView(gui::Base * obj,gui::Event * event)
@@ -486,10 +557,16 @@ void CamResponse::Update()
 
 
   // Render the crf...
+   int32 lastHeight = 0;
    for (nat32 x=0;x<width;x++)
    {
-    int32 y = int32(math::Round(real32(height)*crf(x/real32(width))));
-    if ((y>=0)&&(y<int32(height))) image.Get(x,y) = bs::ColourRGB(0.0,0.0,0.0);
+    int32 yt = int32(math::Round(real32(height)*crf(x/real32(width))));
+    if (lastHeight>yt) lastHeight = yt;
+    for (int32 y=lastHeight;y<=yt;y++)
+    {
+     if ((y>=0)&&(y<int32(height))) image.Get(x,y) = bs::ColourRGB(0.0,0.0,0.0);
+    }
+    lastHeight = yt+1;
    }
  }
 
@@ -503,11 +580,6 @@ void CamResponse::Update()
  // Redraw...
   canvas->SetSize(img.Size(0),img.Size(1));
   canvas->Redraw();
-  
- // Also need to update the number of samples avaliable...
-  str::String s;
-  s << "Samples = " << samples.Size();
-  info->Set(s);
 }
 
 void CamResponse::RenderLine(const math::Vect<2,real32> & a,const math::Vect<2,real32> & b,const bs::ColourRGB & col)

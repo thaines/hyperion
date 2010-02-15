@@ -13,6 +13,7 @@
 #include "eos/ds/arrays.h"
 #include "eos/ds/lists.h"
 #include "eos/bs/dom.h"
+#include "eos/math/vectors.h"
 
 namespace eos
 {
@@ -63,6 +64,15 @@ class EOS_CLASS Func
 
   /// Returns true on success.
    bit Save(const str::String & fn,bit overwrite = false) const;
+   
+   
+  /// Sets it to the polynomial specified by the given vector.
+  /// poly[n] is the x^n term.
+   void SetPoly(const Vector<real32> & poly);
+   
+  /// Sets it to the polynomial specified by the given vector, but with no constant.
+  /// poly[n] is the x^(n+1) term.
+   void SetPolyNC(const Vector<real32> & poly);
 
 
   /// &nbsp;
