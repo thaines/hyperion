@@ -179,7 +179,7 @@ class EOS_CLASS Array : public ArrayCode
   /// sorting functor as then given to this method. Will return the index of an entry
   /// matching the dummy on success or -1 if not found.
    template <typename SO>
-   int32 Search(const T & dummy)
+   int32 Search(const T & dummy) const
    {
     struct Func
     {
@@ -194,7 +194,7 @@ class EOS_CLASS Array : public ArrayCode
   /// This finds an item under the assumption the array is allready sorted, by the
   /// objects less than operator. Will return the index of an entry matching the
   /// dummy on success or -1 if not found.
-   int32 SearchNorm(const T & dummy)
+   int32 SearchNorm(const T & dummy) const
    {
     return Search< SortOp<T> >(dummy);
    }
@@ -204,7 +204,7 @@ class EOS_CLASS Array : public ArrayCode
   /// than it then it returns the first item. Useful when its the position returned that
   /// matters, not the data at the other end, for finding where data fits in a set.
    template <typename SO>
-   int32 SearchLargest(const T & dummy)
+   int32 SearchLargest(const T & dummy) const
    {
     struct Func
     {
@@ -221,7 +221,7 @@ class EOS_CLASS Array : public ArrayCode
   /// than it then it returns the first item. Useful when its the position returned that
   /// matters, not the data at the other end, for finding where data fits in a set.
   /// This version uses the objects < operator.
-   int32 SearchLargestNorm(const T & dummy)
+   int32 SearchLargestNorm(const T & dummy) const
    {
     return SearchLargest< SortOp<T> >(dummy);
    }

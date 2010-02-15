@@ -1087,5 +1087,93 @@ cstrconst SfS_BP_Nice2::TypeString() const
 }
 
 //------------------------------------------------------------------------------
+FisherAngProb::FisherAngProb()
+{}
+
+FisherAngProb::~FisherAngProb()
+{}
+
+void FisherAngProb::Make(real32 prob,real32 minK,real32 maxK,nat32 tableSize,nat32 samples,time::Progress * prog)
+{
+ prog->Push();
+ 
+ // Resize output table, create working array...
+  lut.Size(tableSize);
+  ds::Array<real32> val(samples);
+  
+ // Iterate the lut, filling in each entry via numerical integration...
+  for (nat32 i=0;i<lut.Size();i++)
+  {
+   prog->Report(i,lut.Size());
+   
+   // Calculate the value of k for his entry...
+    real32 k = (maxK-minK)*(real32(i)/real32(lut.Size()-1)) + minK;
+    
+   // Iterate and fill in the samples table over the 0..pi range...
+   // (Get a sum at the same time.)
+    real32 mult = 0.5*k/math::Sinh(k);
+    real32 sum = 0.0;
+    for (nat32 j=0;j<val.Size();j++)
+    {
+     real32 a = math::pi * (real32(j)+0.5)/real32(val.Size());
+     val[j] = mult * math::Exp(k*math::Cos(a)) * math::Sin(a);
+     sum += val[j];
+    }
+   
+   // Find the point where the probability is passed, interpolate to find the relevant angle...
+    real32 total = 0.0;
+    real32 targTot = sum * prob;
+    nat32 hp = 0;
+    for (;hp<val.Size();hp++)
+    {
+     total += val[hp];
+     if (total>targTot) break;
+    }
+    
+    real32 ang;
+    if (hp!=0)
+    {
+     real32 base = math::pi * (real32(hp)-0.5)/real32(val.Size());
+     real32 t = (targTot-total+val[hp])/val[hp];
+     ang = math::Min(base + (math::pi/real32(val.Size())) * t,math::pi);
+    }
+    else
+    {
+     ang = (0.5*math::pi/real32(val.Size())) * (targTot/total);
+    }
+   
+   // Store the angle and concentration in the lut...
+    lut[i].k = k;
+    lut[i].ang = ang;
+  }
+  
+ // Sort the lut by angle, ready for use...
+  lut.SortNorm();
+ 
+ prog->Pop();
+}
+
+real32 FisherAngProb::Concentration(real32 ang) const
+{
+ Sample dummy;
+ dummy.ang = ang;
+ nat32 index = lut.SearchLargestNorm(dummy);
+ if (index==(lut.Size()-1)) return lut[index].k;
+ if ((index==0)&&(lut[0].ang>ang)) return lut[0].k;
+ 
+ real32 t = (ang-lut[index].ang)/(lut[index+1].ang-lut[index].ang);
+ return lut[index].k + t * (lut[index+1].k-lut[index].k); // This will involve a negative.
+}
+
+cstrconst FisherAngProb::TypeString() const
+{
+ return "eos::sfs::FisherAngProb";
+}
+
+//------------------------------------------------------------------------------
+
+
+
+//------------------------------------------------------------------------------
  };
 };
