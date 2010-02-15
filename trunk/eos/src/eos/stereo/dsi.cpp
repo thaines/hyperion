@@ -2889,5 +2889,60 @@ void DSI::GetMask(svt::Field<bit> & out) const
 }
 
 //------------------------------------------------------------------------------
+DummyDSI::DummyDSI(const svt::Field<real32> & d,const svt::Field<bit> * m)
+{
+ disp = d;
+ if (m) mask = *m;
+}
+
+DummyDSI::~DummyDSI()
+{}
+
+nat32 DummyDSI::Width() const
+{
+ return disp.Size(0);
+}
+
+nat32 DummyDSI::Height() const
+{
+ return disp.Size(1);
+}
+
+nat32 DummyDSI::Size(nat32 x,nat32 y) const
+{
+ if (mask.Valid())
+ {
+  if (mask.Get(x,y)) return 1;
+                else return 0;
+ }
+ else return 1;
+}
+
+real32 DummyDSI::Disp(nat32 x,nat32 y,nat32 i) const
+{
+ return disp.Get(x,y);
+}
+
+real32 DummyDSI::Cost(nat32 x,nat32 y,nat32 i) const
+{
+ return 0.0;
+}
+
+real32 DummyDSI::Prob(nat32 x,nat32 y,nat32 i) const
+{
+ return 1.0;
+}
+
+real32 DummyDSI::DispWidth(nat32 x,nat32 y,nat32 i) const
+{
+ return 0.0;
+}
+
+cstrconst DummyDSI::TypeString() const
+{
+ return "eos::stereo::DummyDSI";
+}
+
+//------------------------------------------------------------------------------
  };
 };

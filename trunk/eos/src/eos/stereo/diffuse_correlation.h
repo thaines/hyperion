@@ -341,10 +341,9 @@ class EOS_CLASS DiffCorrStereo : public DSI
   /// Refinement parameters - if doLR it does a left right check,
   /// distCapDifference indicates the distance cap multiplier used to determine
   /// how much below the other minima the best minima has to be to be considered
-  /// authorative and distSdMult is a multiplier of correlation score before -ln
-  /// is applied to get a probability to which a Gaussian is fitted.
-  /// Default to true, 0.25, 0.1.
-   void SetRefine(bit doLR,real32 distCapDifference,real32 distSdMult);
+  /// authorative.
+  /// Default to true then 0.25.
+   void SetRefine(bit doLR,real32 distCapDifference);
 
 
   /// Runs the algorithm.
@@ -375,9 +374,6 @@ class EOS_CLASS DiffCorrStereo : public DSI
 
   /// &nbsp;
    void GetDisp(svt::Field<real32> & disp) const;
-
-  /// Extracts a map of standard deviations for each pixel.
-   void GetSd(svt::Field<real32> & sd) const;
 
   /// &nbsp;
    void GetMask(svt::Field<bit> & mask) const;
@@ -410,12 +406,10 @@ class EOS_CLASS DiffCorrStereo : public DSI
    
    bit doLR;
    real32 distCapDifference;
-   real32 distSdMult;
    
   
   // Out...
-   ds::Array2D<real32> disp;
-   ds::Array2D<real32> sd; // Negative sd values indicate masked eregions.
+   ds::Array2D<real32> disp; // Infinity means its masked.
 };
 
 //------------------------------------------------------------------------------
@@ -442,18 +436,21 @@ class EOS_CLASS DiffCorrRefine
   /// Sets the disparity map to refine.
    void SetDisparity(const svt::Field<real32> & disp);
 
+  /// Optional sets a mask for the disparity map to refine.
+   void SetDisparityMask(const svt::Field<bit> & dispMask);
+
 
   /// Sets luv range from image construction flags. All default to true.
    void SetFlags(bit useHalfX, bit useHalfY, bit useCorners);
    
   /// Sets diffusion parameters.
   /// The multiplier for distance when doing diffusion before the negative log
-  /// is taken, and the number of steps to take - default to 0.1 and 5
+  /// is taken, and the number of steps to take - default to 0.01 and 7
    void SetDiff(real32 distMult,nat32 diffSteps);
    
   /// Sets distance related stuff - the distance cap nad the distance difference
   /// required for a minima to be good enough compared to neighbours.
-  /// Default to 4.0 and 0.1
+  /// Default to 64.0 and 4.0
    void SetDist(real32 cap,real32 prune);
 
 
@@ -479,6 +476,7 @@ class EOS_CLASS DiffCorrRefine
    svt::Field<bit> leftMask;
    svt::Field<bit> rightMask;
    svt::Field<real32> disp;
+   svt::Field<bit> dispMask;
   
   // Parameters...
    bit useHalfX;

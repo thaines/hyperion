@@ -7,7 +7,7 @@
 Stereopsis::Stereopsis(Cyclops & cyc)
 :cyclops(cyc),win(null<gui::Window*>()),
 leftVar(null<svt::Var*>()),rightVar(null<svt::Var*>()),
-leftImg(null<svt::Var*>()),rightImg(null<svt::Var*>()),
+leftImg(null<svt::Var*>()),rightImg(null<svt::Var*>()),existing(null<svt::Var*>()),
 result(null<svt::Var*>()),segmentation(null<svt::Var*>())
 {
  // Create default images...
@@ -48,6 +48,14 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
 
    horiz1->AttachRight(but1,false);
    horiz1->AttachRight(but2,false);
+   
+   
+   but7 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
+   gui::Label * labBut7 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   
+   but7->SetChild(labBut7); labBut7->Set("Load Existing...");
+   horiz1->AttachRight(but7,false);
+   but7->Visible(false);
 
 
    gui::Button * but3 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
@@ -70,10 +78,11 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    horiz6->AttachRight(lab5,false);
 
    whichAlg = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
+   whichAlg->Append("Existing");
    whichAlg->Append("Hierarchical DP");
    whichAlg->Append("Hierarchical BP");
    whichAlg->Append("Diffusion Correlation");
-   whichAlg->Set(1);
+   whichAlg->Set(2);
    horiz6->AttachRight(whichAlg,false);
 
    gui::Label * lab5b = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
@@ -84,6 +93,7 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    whichPost->Append("None");
    whichPost->Append("Smoothing");
    whichPost->Append("Seg & Plane Fit");
+   whichPost->Append("Poly Diffusion");
    whichPost->Set(1);
    horiz6->AttachRight(whichPost,false);
    
@@ -244,7 +254,6 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    gui::Label * lab55 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab51 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab52 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab53 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    
    lab40->Set(" Use Half X:");
    lab41->Set(" Use Half Y:");
@@ -259,7 +268,6 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    lab55->Set(" Disparity Range:");
    lab51->Set(" Left-Right Check:");
    lab52->Set(" Distance Difference Cap:");
-   lab53->Set(" Distance SD Mult:");
 
    dcUseHalfX = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
    dcUseHalfY = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
@@ -274,7 +282,6 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    dcDispRange = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    dcDoLR = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
    dcDistCapDifference = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   dcDistSdMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    
    horiz9a->AttachRight(lab40,false);
    horiz9a->AttachRight(dcUseHalfX,false);
@@ -301,24 +308,21 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    horiz9d->AttachRight(lab51,false);
    horiz9d->AttachRight(dcDoLR,false);
    horiz9d->AttachRight(lab52,false);
-   horiz9d->AttachRight(dcDistCapDifference,false);
-   horiz9d->AttachRight(lab53,false);
-   horiz9d->AttachRight(dcDistSdMult,false);      
+   horiz9d->AttachRight(dcDistCapDifference,false);  
    
    dcUseHalfX->SetState(true);
    dcUseHalfY->SetState(true);
    dcUseCorners->SetState(true);
    dcHalfHeight->SetState(true);
-   dcDistMult->Set("0.1"); dcDistMult->SetSize(48,24);
-   dcDiffSteps->Set("3"); dcDiffSteps->SetSize(48,24);
+   dcDistMult->Set("0.01"); dcDistMult->SetSize(48,24);
+   dcDiffSteps->Set("5"); dcDiffSteps->SetSize(48,24);
    dcMinimaLimit->Set("2"); dcMinimaLimit->SetSize(48,24);
-   dcBaseDistCap->Set("50.0"); dcBaseDistCap->SetSize(48,24);
+   dcBaseDistCap->Set("64.0"); dcBaseDistCap->SetSize(48,24);
    dcDistCapMult->Set("1.414"); dcDistCapMult->SetSize(48,24);
-   dcDistCapThreshold->Set("0.5"); dcDistCapThreshold->SetSize(48,24);
+   dcDistCapThreshold->Set("0.4"); dcDistCapThreshold->SetSize(48,24);
    dcDispRange->Set("1"); dcDispRange->SetSize(48,24);
    dcDoLR ->SetState(true);
-   dcDistCapDifference->Set("0.1"); dcDistCapDifference->SetSize(48,24);
-   dcDistSdMult->Set("0.1"); dcDistSdMult->SetSize(48,24);
+   dcDistCapDifference->Set("0.2"); dcDistCapDifference->SetSize(48,24);
 
 
 
@@ -465,6 +469,68 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    segRad->Set("2"); segRad->SetSize(48,24);
    segMix->Set("0.3"); segMix->SetSize(48,24);
    segEdge->Set("0.9"); segEdge->SetSize(48,24);
+   
+   
+   
+   post4 = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
+   vert1->AttachBottom(post4,false);
+   post4->Visible(false);
+   gui::Vertical * vert10 = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));
+   post4->SetChild(vert10);
+   post4->Set("Polynomial Refinement with Diffusion");
+   post4->Expand(false);
+
+   gui::Horizontal * horiz10 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   gui::Horizontal * horiz11 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   vert10->AttachBottom(horiz10,false);
+   vert10->AttachBottom(horiz11,false);
+
+   gui::Label * lab60 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab61 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab62 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab63 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab64 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab65 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab66 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   
+   lab60->Set(" Use Half X:");
+   lab61->Set(" Use Half Y:");
+   lab62->Set(" Use Corners:");
+   lab63->Set(" Dist Mult:");
+   lab64->Set(" Diffusion Steps:");
+   lab65->Set(" Dist Cap:");
+   lab66->Set(" Prune:");
+   
+   polyUseHalfX = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
+   polyUseHalfY = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
+   polyUseCorners = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
+   polyDistMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   polyDiffSteps = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   polyDistCap = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   polyPrune = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   
+   horiz10->AttachRight(lab60,false);
+   horiz10->AttachRight(polyUseHalfX,false);
+   horiz10->AttachRight(lab61,false);
+   horiz10->AttachRight(polyUseHalfY,false);
+   horiz10->AttachRight(lab62,false);
+   horiz10->AttachRight(polyUseCorners,false);
+   horiz11->AttachRight(lab63,false);
+   horiz11->AttachRight(polyDistMult,false);
+   horiz11->AttachRight(lab64,false);
+   horiz11->AttachRight(polyDiffSteps,false);
+   horiz11->AttachRight(lab65,false);
+   horiz11->AttachRight(polyDistCap,false);
+   horiz11->AttachRight(lab66,false);
+   horiz11->AttachRight(polyPrune,false);
+   
+   polyUseHalfX->SetState(true);
+   polyUseHalfY->SetState(true);
+   polyUseCorners->SetState(true);
+   polyDistMult->Set("0.01"); polyDistMult->SetSize(48,24);
+   polyDiffSteps->Set("7"); polyDiffSteps->SetSize(48,24);
+   polyDistCap->Set("64.0"); polyDistCap->SetSize(48,24);
+   polyPrune->Set("0.25"); polyPrune->SetSize(48,24);
 
 
 
@@ -623,6 +689,7 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
   but4->OnClick(MakeCB(this,&Stereopsis::SaveSVT));
   but5->OnClick(MakeCB(this,&Stereopsis::LoadCalibration));
   but6->OnClick(MakeCB(this,&Stereopsis::LoadSeg));
+  but7->OnClick(MakeCB(this,&Stereopsis::LoadExisting));
 }
 
 Stereopsis::~Stereopsis()
@@ -632,6 +699,7 @@ Stereopsis::~Stereopsis()
  delete rightVar;
  delete leftImg;
  delete rightImg;
+ delete existing;
  delete result;
  delete segmentation;
 }
@@ -847,21 +915,68 @@ void Stereopsis::LoadSeg(gui::Base * obj,gui::Event * event)
  }
 }
 
+void Stereopsis::LoadExisting(gui::Base * obj,gui::Event * event)
+{
+ str::String fn;
+ if (cyclops.App().LoadFileDialog("Select Disparity","*.obf,*.dis",fn))
+ {
+  cstr filename = fn.ToStr();
+   svt::Node * floatNode = svt::Load(cyclops.Core(),filename);
+  mem::Free(filename);
+  
+  if (floatNode==null<svt::Node*>())
+  {
+   cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load disparity");
+   return;
+  }
+  
+  if (str::Compare(typestring(*floatNode),"eos::svt::Var")!=0)
+  {
+   cyclops.App().MessageDialog(gui::App::MsgErr,"File is the wrong structure for a disparity map");
+   delete floatNode;
+   return;
+  }
+  svt::Var * floatVar = static_cast<svt::Var*>(floatNode);
+
+  nat32 dispInd;
+  if ((floatVar->Dims()!=2)||
+      (floatVar->GetIndex(cyclops.TT()("disp"),dispInd)==false)||
+      (floatVar->FieldType(dispInd)!=cyclops.TT()("eos::real32")))
+  {
+   cyclops.App().MessageDialog(gui::App::MsgErr,"File is the wrong format for a disparity map");
+   delete floatVar;
+   return;
+  }
+  
+  delete existing;
+  existing = floatVar;
+ }
+}
+
 void Stereopsis::ChangeAlg(gui::Base * obj,gui::Event * event)
 {
  switch (whichAlg->Get())
  {
   case 0:
-   alg5->Visible(true);
+   but7->Visible(true);
+   alg5->Visible(false);
    alg6->Visible(false);
    alg7->Visible(false);
   break;
   case 1:
+   but7->Visible(false);
+   alg5->Visible(true);
+   alg6->Visible(false);
+   alg7->Visible(false);
+  break;
+  case 2:
+   but7->Visible(false);
    alg5->Visible(false);
    alg6->Visible(true);
    alg7->Visible(false);
   break;
-  case 2:
+  case 3:
+   but7->Visible(false);
    alg5->Visible(false);
    alg6->Visible(false);
    alg7->Visible(true);
@@ -877,16 +992,25 @@ void Stereopsis::ChangePost(gui::Base * obj,gui::Event * event)
    post2->Visible(false);
    post3a->Visible(false);
    post3b->Visible(false);
+   post4->Visible(false);
   break;
   case 1:
    post2->Visible(true);
    post3a->Visible(false);
    post3b->Visible(false);
+   post4->Visible(false);
   break;
   case 2:
    post2->Visible(false);
    post3a->Visible(true);
    post3b->Visible(true);
+   post4->Visible(false);
+  break;
+  case 3:
+   post2->Visible(false);
+   post3a->Visible(false);
+   post3b->Visible(false);
+   post4->Visible(true);  
   break;
  }
  
@@ -933,7 +1057,6 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    bit aGaussian = augGaussian->Ticked();
    bit aFisher = augFisher->Ticked();
    if (aFisher) aGaussian = true; // Need Gaussian as input - might as well force it as storage is cheap.
-   if (whichAlg->Get()==2) aGaussian = true; // Algorithm generates it anyway.
   
    delete result;
    result = new svt::Var(cyclops.Core());
@@ -959,14 +1082,16 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    nat32 steps = 0;
    switch (whichAlg->Get())
    {
-    case 0: steps += 1; break; // Dynamic Programming
-    case 1: steps += 1; break; // Belief Propagation
-    case 2: steps += 1; break; // Diffusion Correlation
+    case 0: break; // Existing
+    case 1: steps += 1; break; // Dynamic Programming
+    case 2: steps += 1; break; // Belief Propagation
+    case 3: steps += 1; break; // Diffusion Correlation
    }
    switch (whichPost->Get())
    {
     case 1: steps += 2; break; // Smoothing. (Has sd fitting step.)
     case 2: steps += 1; break; // Plane fit + Seg
+    case 3: steps += 1; break; // Poly fitting
    }
    
    if (aGaussian) steps += 1;
@@ -974,7 +1099,6 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
 
 
   // Run the algorithm...
-   prog->Report(step++,steps);
    stereo::DSC * dsc = null<stereo::DSC*>();
    stereo::DSI * dsi = null<stereo::DSI*>();
 
@@ -985,8 +1109,19 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
 
    switch (whichAlg->Get())
    {
-    case 0: // Hierachical DP...
+    case 0: // Existing...
+    {     
+     // Create a dsi to expose the existing disparity map correctly...
+      svt::Field<real32> dispEx(existing,"disp");
+      svt::Field<bit> maskEx(existing,"mask");
+     
+      dsi = new stereo::DummyDSI(dispEx,&maskEx);
+    }
+    break;
+    case 1: // Hierachical DP...
     {
+     prog->Report(step++,steps);
+     
      stereo::SparseDSI2 * sdsi = new stereo::SparseDSI2();
      dsi = sdsi;
 
@@ -999,8 +1134,10 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
      sdsi->Run(prog);
     }
     break;
-    case 1: // Hierachical BP...
+    case 2: // Hierachical BP...
     {
+     prog->Report(step++,steps);
+     
      stereo::HEBP * sdsi = new stereo::HEBP();
      dsi = sdsi;
 
@@ -1018,8 +1155,10 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
      sdsi->Run(prog);
     }
     break;
-    case 2: // Diffusion correlation
+    case 3: // Diffusion correlation
     {
+     prog->Report(step++,steps);
+     
      stereo::DiffCorrStereo * dcs = new stereo::DiffCorrStereo();
      dsi = dcs;
      
@@ -1039,12 +1178,11 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
      nat32 dispRange = dcDispRange->GetInt(2);
      bit doLR = dcDoLR->Ticked();
      real32 distCapDifference = dcDistCapDifference->GetReal(0.25);
-     real32 distSdMult = dcDistSdMult->GetReal(0.1);
      
      dcs->SetPyramid(useHalfX,useHalfY,useCorners,halfHeight);
      dcs->SetDiff(distMult,diffSteps);
      dcs->SetCorr(minimaLimit,baseDistCap,distCapMult,distCapThreshold,dispRange);
-     dcs->SetRefine(doLR,distCapDifference,distSdMult);
+     dcs->SetRefine(doLR,distCapDifference);
      
      dcs->Run(prog);
     }
@@ -1192,34 +1330,82 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
       mask.CopyFrom(leftMask);
     }
     break;
+    case 3: // Polynomial fitting...
+    {
+     prog->Report(step++,steps);
+
+     // First run the selection of best code, but drop any where there is more than 1 match...
+      for (nat32 y=0;y<disp.Size(1);y++)
+      {
+       for (nat32 x=0;x<disp.Size(0);x++)
+       {
+        if (dsi->Size(x,y)==1)
+        {
+         real32 bestCost = dsi->Cost(x,y,0);
+         disp.Get(x,y) = dsi->Disp(x,y,0);
+         for (nat32 i=1;i<dsi->Size(x,y);i++)
+         {
+          if (dsi->Cost(x,y,i)<bestCost)
+          {
+           bestCost = dsi->Cost(x,y,i);
+           disp.Get(x,y) = dsi->Disp(x,y,i);
+          }
+         }
+         mask.Get(x,y) = true;
+        }
+        else
+        {
+         disp.Get(x,y) = 0.0;
+         mask.Get(x,y) = false;
+        }
+       }
+      }
+      
+     // Now do the refinement...
+      bit useHalfX = polyUseHalfX->Ticked();
+      bit useHalfY = polyUseHalfY->Ticked();
+      bit useCorners = polyUseCorners->Ticked();
+      real32 distMult = polyDistMult->GetReal(0.01);
+      nat32 diffSteps = polyDiffSteps->GetInt(7);
+      real32 distCap = polyDistCap->GetReal(64.0);
+      real32 prune = polyPrune->GetReal(0.25);
+  
+      stereo::DiffCorrRefine dcr;
+      dcr.SetImages(leftLuv,rightLuv);
+      dcr.SetMasks(leftMask,rightMask);
+      dcr.SetDisparity(disp);
+      dcr.SetDisparityMask(mask);
+      dcr.SetFlags(useHalfX,useHalfY,useCorners);
+      dcr.SetDiff(distMult,diffSteps);
+      dcr.SetDist(distCap,prune);
+      
+      dcr.Run(prog);
+      
+      dcr.GetDisp(disp);
+      dcr.GetMask(mask);
+    }
+    break;
    }
    
    
   // If needed augment with standard deviations...
    if (aGaussian)
    {
-    if ((whichAlg->Get()!=2)||(whichPost->Get()!=0))
-    {
-     prog->Report(step++,steps);
+    prog->Report(step++,steps);
     
-     stereo::LuvDSC luvDSC(leftLuv,rightLuv);
+    stereo::LuvDSC luvDSC(leftLuv,rightLuv);
     
-     fit::DispNorm dispNorm;
-     dispNorm.Set(disp,luvDSC);
-     dispNorm.SetMask(leftMask);
-     dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
-     dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
-     dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
-     dispNorm.SetMaxIters(gaussianIters->GetInt(1000));
+    fit::DispNorm dispNorm;
+    dispNorm.Set(disp,luvDSC);
+    dispNorm.SetMask(leftMask);
+    dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
+    dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
+    dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
+    dispNorm.SetMaxIters(gaussianIters->GetInt(1000));
     
-     dispNorm.Run(prog);
+    dispNorm.Run(prog);
     
-     dispNorm.Get(sd);
-    }
-    else
-    {
-     ((stereo::DiffCorrStereo*)dsi)->GetSd(sd);
-    }
+    dispNorm.Get(sd);
    }
   
 

@@ -1130,6 +1130,57 @@ class EOS_CLASS DSI : public Deletable
 };
 
 //------------------------------------------------------------------------------
+/// Simply dummy DIS that passes through a dsi field of disparities, including
+/// support for a mask.
+class EOS_CLASS DummyDSI : public DSI
+{
+ public:
+  /// &nbsp;
+   DummyDSI(const svt::Field<real32> & disp,const svt::Field<bit> * mask = null<svt::Field<bit>*>());
+
+  /// &nbsp;
+   ~DummyDSI();
+
+
+  /// Returns the width of the image.
+   nat32 Width() const;
+
+  /// Returns the height of the image.
+   nat32 Height() const;
+
+
+  /// Returns how many disparitys are assigned to a given pixel.
+   nat32 Size(nat32 x,nat32 y) const;
+
+  /// Allows you to access the multiple disparities assigned to an indexed pixel.
+   real32 Disp(nat32 x,nat32 y,nat32 i) const;
+
+  /// Allows you to obtain the cost of a given disparity. By default implimented
+  /// as the -ln(Prob(...)), whilst prob is implimented visa-versa - i.e. you *must*
+  /// impliment at least one of them.
+   real32 Cost(nat32 x,nat32 y,nat32 i) const;
+
+  /// Allows you to obtain the probability of a given disparity, not necesarily
+  /// normalied. By default implimented as e^(-Cost(...)), whilst Cost is
+  /// implimented visa-versa - i.e. you *must* impliment at least one of them.
+   real32 Prob(nat32 x,nat32 y,nat32 i) const;
+
+  /// Returns the +/- value for a disparity, i.e. take any returned disparity to
+  /// in fact cover the range of that disparity +/- this value.
+  /// Mostly returns 0, but some disparity matching tools work continuously, and
+  /// hence work with regions.
+   real32 DispWidth(nat32 x,nat32 y,nat32 i) const;
+
+
+  /// &nbsp;
+   cstrconst TypeString() const;
+
+ private:
+  svt::Field<real32> disp;
+  svt::Field<bit> mask;
+};
+
+//------------------------------------------------------------------------------
  };
 };
 #endif

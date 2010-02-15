@@ -756,7 +756,7 @@ real32 DiffusionCorrelationImage::ScoreRight(nat32 x,nat32 y,nat32 i,int32 offse
 DiffCorrStereo::DiffCorrStereo()
 :useHalfX(true),useHalfY(true),useCorners(true),halfHeight(true),
 distMult(0.1),minimaLimit(8),baseDistCap(4.0),distCapMult(2.0),distCapThreshold(0.5),dispRange(2),diffSteps(5),
-doLR(true),distCapDifference(0.25),distSdMult(0.1)
+doLR(true),distCapDifference(0.25)
 {}
 
 DiffCorrStereo::~DiffCorrStereo()
@@ -797,11 +797,10 @@ void DiffCorrStereo::SetCorr(nat32 ml,real32 bdc,real32 dcm,real32 dct,nat32 dr)
  dispRange = dr;
 }
 
-void DiffCorrStereo::SetRefine(bit lr,real32 dcd,real32 dsm)
+void DiffCorrStereo::SetRefine(bit lr,real32 dcd)
 {
  doLR = lr;
  distCapDifference = dcd;
- distSdMult = dsm;
 }
 
 void DiffCorrStereo::Run(time::Progress * prog)
@@ -842,7 +841,6 @@ void DiffCorrStereo::Run(time::Progress * prog)
   
   prog->Push();
   disp.Resize(left.Size(0),left.Size(1));
-  sd.Resize(left.Size(0),left.Size(1));
   for (nat32 y=0;y<disp.Height();y++)
   {
    prog->Report(y,disp.Height());
@@ -852,8 +850,7 @@ void DiffCorrStereo::Run(time::Progress * prog)
     // negative standard deviation, otherwise refine the disparity and assign
     // a standard deviation...
      // Set it to masked values, so we can just continue on it failing a test...
-      disp.Get(x,y) = 0.0;
-      sd.Get(x,y) = -1.0;
+      disp.Get(x,y) = math::Infinity<real32>();
       
      // Check it actually has a minima to consider...
       if (dci.CountLeft(x,y)==0) {noMatches++; continue;}
@@ -893,9 +890,6 @@ void DiffCorrStereo::Run(time::Progress * prog)
       
       real32 dOS = (p-r)/(2.0*(p+r) - 4.0*q);
       disp.Get(x,y) = real32(dci.DisparityLeft(x,y,0)) + dOS;
-     
-     // Finally, calculate a standard deviation, based on nearby matches...
-      sd.Get(x,y) = 1.0; // Code me! ********************************************
    }
   }
   
@@ -920,8 +914,8 @@ nat32 DiffCorrStereo::Height() const
    
 nat32 DiffCorrStereo::Size(nat32 x, nat32 y) const
 {
- if (sd.Get(x,y)>0.0) return 1;
-                 else return 0;
+ if (math::IsFinite(disp.Get(x,y))) return 1;
+                               else return 0;
 }
    
 real32 DiffCorrStereo::Disp(nat32 x, nat32 y, nat32 i) const
@@ -950,16 +944,9 @@ void DiffCorrStereo::GetDisp(svt::Field<real32> & d) const
  {
   for (nat32 x=0;x<disp.Width();x++)
   {
-   d.Get(x,y) = disp.Get(x,y);
+   if (math::IsFinite(disp.Get(x,y))) d.Get(x,y) = disp.Get(x,y);
+                                 else d.Get(x,y) = 0.0;
   }
- }
-}
-
-void DiffCorrStereo::GetSd(svt::Field<real32> & s) const
-{
- for (nat32 y=0;y<sd.Height();y++)
- {
-  for (nat32 x=0;x<sd.Width();x++) s.Get(x,y) = sd.Get(x,y);
  }
 }
 
@@ -969,7 +956,7 @@ void DiffCorrStereo::GetMask(svt::Field<bit> & m) const
  {
   for (nat32 x=0;x<disp.Width();x++)
   {
-   m.Get(x,y) = sd.Get(x,y)>0.0;
+   m.Get(x,y) = math::IsFinite(disp.Get(x,y));
   }
  }
 }
@@ -982,7 +969,7 @@ cstrconst DiffCorrStereo::TypeString() const
 //------------------------------------------------------------------------------
 DiffCorrRefine::DiffCorrRefine()
 :useHalfX(true),useHalfY(true),useCorners(true),
-distMult(0.1),diffSteps(5),cap(4.0),prune(0.1)
+distMult(0.01),diffSteps(7),cap(64.0),prune(4.0)
 {}
 
 DiffCorrRefine::~DiffCorrRefine()
@@ -1003,6 +990,11 @@ void DiffCorrRefine::SetMasks(const svt::Field<bit> & l,const svt::Field<bit> & 
 void DiffCorrRefine::SetDisparity(const svt::Field<real32> & d)
 {
  disp = d;
+}
+
+void DiffCorrRefine::SetDisparityMask(const svt::Field<bit> & dm)
+{
+ dispMask = dm;
 }
 
 void DiffCorrRefine::SetFlags(bit x, bit y, bit c)
@@ -1073,9 +1065,12 @@ void DiffCorrRefine::Run(time::Progress * prog)
     dc.Setup(dist,cap,l,ls,r,rs);
     for (int32 x=0;x<int32(out.Width());x++)
     {
+     // Make it bad, so we can continue if we give up and obey the mask...
+      out.Get(x,y) = math::Infinity<real32>();
+      if (dispMask.Valid()&&(dispMask.Get(x,y)==false)) continue;
+      
      // Get the discrete x value for the other image, rounding if needed...
       int32 x2 = x + int32(math::Round(disp.Get(x,y)));
-      out.Get(x,y) = math::Infinity<real32>();
       
      // Check the masking is safe - we throw away values that have bad masking...
       if ((l.ValidExt(x   ,y)==false)||
