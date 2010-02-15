@@ -178,7 +178,6 @@ void LightAmb::Run(time::Progress * prog)
  // being optimised, one set of parameters for each pixel. The pixels are
  // arranged by segment, with a supporting structure to get all pixels for a 
  // given segment...
-  ds::Array<PixelAux> pixel(seg.Size(0)*seg.Size(1));
   ds::Array<nat32> pixelOffset(segCount+1);
   {
    // First work out the size of each segment...
@@ -199,10 +198,13 @@ void LightAmb::Run(time::Progress * prog)
     pixelOffset[0] = 0;
     for (nat32 i=0;i<segCount;i++)
     {
-     pixelOffset[i+1] = pixelOffset[i] + segSize[i];
+     if (cor[i]>segPruneThresh) pixelOffset[i+1] = pixelOffset[i] + segSize[i];
+                           else pixelOffset[i+1] = pixelOffset[i];
      segSize[i] = 0;
     }
- 
+    ds::Array<PixelAux> pixel(pixelOffset[segCount]);
+
+
    // And finally fill in the pixel buffer...
     for (nat32 y=0;y<seg.Size(1);y++)
     {
@@ -258,14 +260,96 @@ real32 LightAmb::Cost(real32 amb,real32 alb,const ds::Array<PixelAux> & pixel,na
  return out;
 }
 
-void LightAmb::CostRange(real32 lowAmb,real32 highAmb,
-                         real32 lowAlb,real32 highAlb,
-                         real32 & outLow,real32 & outHigh,
-                         const ds::Array<PixelAux> & pixel,nat32 start,nat32 size)
+void LightAmb::CostRangeAlb(real32 amb,real32 lowAlb,real32 highAlb,
+                            real32 & outLow,real32 & outHigh,
+                            const ds::Array<PixelAux> & pixel,nat32 start,nat32 size)
 {
- LogTime("eos::fit::LightAmb::CostRange");
+ LogTime("eos::fit::LightAmb::CostRangeAlb");
  
- // ***************************************
+ outLow = 0.0;
+ outHigh = 0.0; 
+ 
+ for (nat32 i=0;i<size;i++)
+ {
+  PixelAux & pix = pixel[start+i];
+ 
+  real32 lowR = (pix.irr/highAlb) - amb;
+  real32 highR = (pix.irr/lowAlb) - amb;
+  
+  // Calculate the cost for lowR and the cost for highR...
+   // low...
+    real32 lowC = (lowR<0.0)?(pix.t + lowAlbErr*(highAlb*amb - pix.irr)):
+                  ((lowR>1.0)?(pix.s + lowAlbErr*(pix.irr - highAlb*(1.0+amb))):
+                  (pix.s*lowR + pix.t*math::Sqrt(1.0 - math::Sqr(lowR))));
+
+   // high...
+    real32 highC = (highR<0.0)?(pix.t + lowAlbErr*(lowAlb*amb - pix.irr)):
+                   ((highR>1.0)?(pix.s + lowAlbErr*(pix.irr - lowAlb*(1.0+amb))):
+                   (pix.s*highR + pix.t*math::Sqrt(1.0 - math::Sqr(highR))));
+   
+  // If the minima is inside the range then we use the minimum, otherwise we use
+  // the two bounds already calculated...
+   if ((highR<pix.minR)||(lowR>pix.minR))
+   {
+    outLow += math::Min(lowC,highC);
+   }
+   else outLow += pix.minC;
+   
+  // Maximum cost...
+   outHigh += math::Max(lowC,highC);
+ }
+}
+
+void LightAmb::CostRangeAmb(real32 lowAmb,real32 highAmb,real32 alb,
+                            real32 & outLow,real32 & outHigh,
+                            const ds::Array<PixelAux> & pixel,nat32 start,nat32 size)
+{
+ LogTime("eos::fit::LightAmb::CostRangeAmb");
+ 
+ 
+ 
+ 
+}
+
+void LightAmb::CostDualRange(real32 lowAmb,real32 highAmb,
+                             real32 lowAlb,real32 highAlb,
+                             real32 & outLow,real32 & outHigh,
+                             const ds::Array<PixelAux> & pixel,nat32 start,nat32 size)
+{
+ LogTime("eos::fit::LightAmb::CostDualRange");
+ 
+ outLow = 0.0;
+ outHigh = 0.0; 
+ 
+ for (nat32 i=0;i<size;i++)
+ {
+  PixelAux & pix = pixel[start+i];
+ 
+  real32 lowR = (pix.irr/highAlb) - highAmb;
+  real32 highR = (pix.irr/lowAlb) - lowAmb;
+  
+  // Calculate the cost for lowR and the cost for highR...
+   // low...
+    real32 lowC = (lowR<0.0)?(pix.t + lowAlbErr*(highAlb*highAmb - pix.irr)):
+                  ((lowR>1.0)?(pix.s + lowAlbErr*(pix.irr - highAlb*(1.0+highAmb))):
+                  (pix.s*lowR + pix.t*math::Sqrt(1.0 - math::Sqr(lowR))));
+
+   // high...
+    real32 highC = (highR<0.0)?(pix.t + lowAlbErr*(lowAlb*lowAmb - pix.irr)):
+                   ((highR>1.0)?(pix.s + lowAlbErr*(pix.irr - lowAlb*(1.0+lowAmb))):
+                   (pix.s*highR + pix.t*math::Sqrt(1.0 - math::Sqr(highR))));
+   
+  // If the minima is inside the range then we use the minimum, otherwise we use
+  // the two bounds already calculated...
+   if ((highR<pix.minR)||(lowR>pix.minR))
+   {
+    outLow += math::Min(lowC,highC);
+   }
+   else outLow += pix.minC;
+   
+  // Maximum cost...
+   outHigh += math::Max(lowC,highC);
+ }
 } 
 
 //------------------------------------------------------------------------------
