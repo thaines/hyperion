@@ -1,6 +1,9 @@
 Work Bag:
 ---------
 
+Add gaussian augmentation to steropsis
+Add fisher augmentation to stereopsis
+Update stereopsis smoothing to use gaussian fitting and edge preserving - i.e. make it useful.
 
 
 

@@ -69,7 +69,7 @@ void DispFish::Run(time::Progress * prog)
       int32 d = base + int32(s);
       
       pair.Triangulate(x,y,d,p.pos);      
-      p.cost = dsc->Cost(x,int32(x)+d,y);
+      p.cost = dsc->Cost(x,math::Clamp<int32>(int32(x)+d,0,disp.Size(0)-1),y);
       p.weight = math::Max(1.0 - distMult*math::Abs(real32(d)-bd),0.0);
       
       minCost = math::Min(minCost,p.cost);

@@ -77,8 +77,8 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
    //whichAlg->Append("Zheng & Chellappa");
    whichAlg->Append("Lee & Kuo");
    whichAlg->Append("Worthington & Hancock");
-   whichAlg->Append("Unpublished 1");
-   whichAlg->Append("Unpublished 2");
+   whichAlg->Append("Haines & Wilson 1");
+   whichAlg->Append("Haines & Wilson 2");
    whichAlg->Set(3);
    lab6->Set("Albedo:");
    albedo->Set("1.0");
