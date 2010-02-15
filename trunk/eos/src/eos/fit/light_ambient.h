@@ -150,7 +150,11 @@ class EOS_CLASS LightAmb
      real32 b;
      real32 min; // r value of its minimum.
     }; // Function is a*r + b*sqrt(1-r^2), where r is the variable.
-    
+   
+   // Method that is given a single point in the sampling space - returns the 
+   // cost for that point (For a specific segment.)...
+    real32 Cost(real32 amb,real32 alb,const ds::Array<Pixel> & pixel,nat32 start,nat32 size);
+   
    // Method that is given an ambient and albedo range and outputs a cost
    // range for the minimum cost of a segment...
    // (Needs a whole host of data.)

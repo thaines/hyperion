@@ -132,7 +132,7 @@ void LightAmb::Run(time::Progress * prog)
      }
     }
 
-   // Now calculate the 0..1 value for every segment, as calcaulted from correlation...
+   // Now calculate the 0..1 value for every segment, as calculated from correlation...
     cor.Size(segCount);
     for (nat32 s=0;s<segCount;s++)
     {
@@ -230,13 +230,45 @@ void LightAmb::Run(time::Progress * prog)
   }
 
 
- //
+ // 
 
  
  prog->Pop();
 }
 
 //------------------------------------------------------------------------------
+real32 LightAmb::Cost(real32 amb,real32 alb,const ds::Array<Pixel> & pixel,nat32 start,nat32 size)
+{
+ LogTime("eos::fit::LightAmb::Cost");
+ 
+ real32 out = 0.0;
+ 
+ // Iterate all the pixels and sum...
+  for (nat32 i=0;i<size;i++)
+  {
+   Pixel & targ = pixel[start+i];
+   
+   real32 r = (targ.irr - amb)/alb;
+   if (r<0.0)
+   {
+    out += targ.b + lowAlbErr * (amb - targ.irr);
+   }
+   else
+   {
+    if (r>1.0)
+    {
+     out += targ.a + lowAlbErr * (targ.irr - amb - alb);
+    }
+    else
+    {
+     out += targ.a*r + targ.b*math::Sqrt(1.0-math::Sqr(r));
+    }
+   }
+  }
+ 
+ return out;
+}
+
 void LightAmb::CostRange(real32 lowAmb,real32 highAmb,
                          real32 lowAlb,real32 highAlb,
                          real32 & outLow,real32 & outHigh,
