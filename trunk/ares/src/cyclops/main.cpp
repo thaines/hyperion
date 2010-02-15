@@ -255,10 +255,11 @@ Cyclops::Cyclops()
 
   vert7->AttachBottom(but15,false);
   vert7->AttachBottom(but32,false);
-
-  vert8->AttachBottom(but17,false);
-  vert8->AttachBottom(but36,false);
-  vert8->AttachBottom(but29,false);
+  vert7->AttachBottom(but17,false);
+  vert7->AttachBottom(but36,false);
+  vert7->AttachBottom(but29,false);
+  
+  vert8->AttachBottom(but42,false);
 
   vert9->AttachBottom(but25,false);
   vert9->AttachBottom(but14,false);
@@ -266,9 +267,8 @@ Cyclops::Cyclops()
   vert9->AttachBottom(but41,false);
 
   vert10->AttachBottom(but35,false);
-  vert10->AttachBottom(but27,false);  
-
-  vert11->AttachBottom(but42,false);
+  vert10->AttachBottom(but27,false);
+  
   vert11->AttachBottom(but38,false);
   vert11->AttachBottom(but39,false);
   vert11->AttachBottom(but37,false);
