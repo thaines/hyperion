@@ -9,8 +9,11 @@
 
 #include "eos/types.h"
 #include "eos/math/stats_dir.h"
+#include "eos/time/progress.h"
 #include "eos/bs/geo3d.h"
 #include "eos/ds/priority_queues.h"
+#include "eos/svt/field.h"
+
 
 namespace eos
 {
@@ -25,6 +28,46 @@ class EOS_CLASS LightDir
    
   /// &nbsp;
    ~LightDir();
+   
+   
+  /// Sets the 3 non-optional inputs - the segmentation, the irradiance and the
+  /// surface orientation Fisher distributions.
+   void SetData(svt::Field<nat32> seg,svt::Field<real32> irr,svt::Field<math::Fisher> dir);
+   
+  /// Sets the albedo range to consider, noting that we presume a light source
+  /// of strength 1 with no falloff. Defaults to 0.001 to 3.0
+   void SetAlbRange(real32 min,real32 max);
+   
+  /// Sets the maximum cost per segment, relative to the minimum cost of that 
+  /// segment - used to cap influence so no one segment biases things too strongly.
+  /// Defaults to 1.0
+   void SetSegCap(real32 maxCost);
+   
+  /// Sets the number of subdivision of the alg::HemiOfNorm class used to 
+  /// generate light source directions to sample.
+  /// Defaults to 4.
+   void SetSampleSubdiv(nat32 subdiv);
+  
+  /// Sets the recursionn depth when finding the optimal albedo value via a 
+  /// recursive search. Defaults to 8.
+   void SetRecursion(nat32 depth);
+  
+  
+  /// &nbsp;
+   void Run(time::Progress * prog = null<time::Progress*>());
+
+
+  /// Returns the calculated optimal light source direction.
+   const bs::Normal & BestLightDir() const;
+   
+  /// Returns the number of driections sampled.
+   nat32 SampleSize() const;
+   
+  /// Returns the direction for sample i.
+   const bs::Normal & SampleDir(nat32 i) const;
+
+  /// Returns the cost for sample i.
+   real32 SampleCost(nat32 i) const;
 
 
   /// &nbsp;
@@ -36,6 +79,8 @@ class EOS_CLASS LightDir
    real32 minAlbedo;
    real32 maxAlbedo;
    real32 maxSegCost;
+   nat32 subdiv;
+   nat32 recDepth;
    
   // Input...
    svt::Field<nat32> seg;
@@ -44,6 +89,13 @@ class EOS_CLASS LightDir
   
   // Output...
    bs::Normal bestLightDir;
+   
+   struct LightCost
+   {
+    bs::Normal dir;
+    real32 cost;
+   };
+   ds::Array<LightCost> lc; // Cost for each light source direction - for diagnostics really.
 
 
   // Runtime...
