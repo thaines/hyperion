@@ -105,7 +105,12 @@ mode(Edit),selected(null<Match*>())
    vert5->AttachBottom(but5);
    vert5->AttachBottom(autoAlg);
    autoAlg->Set(0);
-
+   
+   gui::Label * lab10 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Button * but9 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
+   but9->SetChild(lab10); lab10->Set("AR");
+   horiz1->AttachRight(but9,false);
+   
 
    ml = static_cast<gui::Multiline*>(cyclops.Fact().Make("Multiline"));
    horiz1->AttachRight(ml,false);
@@ -175,6 +180,7 @@ mode(Edit),selected(null<Match*>())
   but6->OnClick(MakeCB(this,&Fundamental::Calculate));
   but7->OnClick(MakeCB(this,&Fundamental::TrustNoMatch));
   but8->OnClick(MakeCB(this,&Fundamental::SavePair));
+  but9->OnClick(MakeCB(this,&Fundamental::AlreadyRectified));
 }
 
 Fundamental::~Fundamental()
@@ -842,6 +848,22 @@ void Fundamental::TrustNoMatch(gui::Base * obj,gui::Event * event)
  }
  left->Redraw();
  right->Redraw();
+}
+
+void Fundamental::AlreadyRectified(gui::Base * obj,gui::Event * event)
+{
+ math::Zero(pair.fun);
+ pair.fun[1][2] = -0.5*math::Sqrt(2.0);
+ pair.fun[2][1] = 0.5*math::Sqrt(2.0);
+ 
+ str::String s;
+  s << "[" << (real32)pair.fun[0][0] << "," << (real32)pair.fun[0][1] << "," << (real32)pair.fun[0][2] << "]\n";
+  s << "[" << (real32)pair.fun[1][0] << "," << (real32)pair.fun[1][1] << "," << (real32)pair.fun[1][2] << "]\n";
+  s << "[" << (real32)pair.fun[2][0] << "," << (real32)pair.fun[2][1] << "," << (real32)pair.fun[2][2] << "]";
+ ml->Empty();
+ ml->Append(s);
+ 
+ inst->Set("Assumed to already be rectified.");
 }
 
 void Fundamental::SavePair(gui::Base * obj,gui::Event * event)

@@ -68,6 +68,7 @@ class Fundamental
   void DelMatch(gui::Base * obj,gui::Event * event);
   void Calculate(gui::Base * obj,gui::Event * event);
   void TrustNoMatch(gui::Base * obj,gui::Event * event);
+  void AlreadyRectified(gui::Base * obj,gui::Event * event);
 
   void SavePair(gui::Base * obj,gui::Event * event);
 
