@@ -29,6 +29,17 @@ class AlbedoEst
   gui::Label * results;
 
   ds::Array<real32> albedo;
+  
+  struct WeightEst
+  {
+   real32 estimate;
+   real32 weight;
+   
+   bit operator < (const WeightEst & rhs) const
+   {
+    return estimate < rhs.estimate;
+   }
+  };
 
 
   math::Func crf;

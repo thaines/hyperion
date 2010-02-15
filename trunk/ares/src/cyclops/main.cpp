@@ -869,7 +869,155 @@ void Cyclops::StartAlbedoEst(gui::Base * obj,gui::Event * event)
 
 void Cyclops::DisparitySdAugment(gui::Base * obj,gui::Event * event)
 {
- // ******************************************
+ // Load the disparity map...
+  svt::Var * dispVar = null<svt::Var*>();
+  {
+   str::String fn;
+   svt::Node * dispNode = null<svt::Node*>();
+   if (App().LoadFileDialog("Select Disparity File","*.obf,*.dis",fn))
+   {
+    // Load svt, verify it is a disparity map...
+     cstr filename = fn.ToStr();
+     dispNode = svt::Load(Core(),filename);
+     mem::Free(filename);
+   }
+   
+   if (dispNode==null<svt::Node*>())
+   {
+    App().MessageDialog(gui::App::MsgErr,"Failed to load file.");
+    return;
+   }
+
+   if (str::Compare(typestring(*dispNode),"eos::svt::Var")!=0)
+   {
+    App().MessageDialog(gui::App::MsgErr,"File is the wrong structure for a disparity map");
+    delete dispNode;
+    return;
+   }
+   dispVar = static_cast<svt::Var*>(dispNode);
+
+   nat32 dispInd;
+   if ((dispVar->Dims()!=2)||
+       (dispVar->GetIndex(TT()("disp"),dispInd)==false)||
+       (dispVar->FieldType(dispInd)!=TT()("eos::real32")))
+   {
+    App().MessageDialog(gui::App::MsgErr,"File is the wrong format for a disparity map");
+    delete dispVar;
+    return;
+   }
+  }
+
+
+ // Load the left image...
+  svt::Var * leftImg = null<svt::Var*>();
+  {
+   str::String fn;  
+   if (App().LoadFileDialog("Select Left Image","*.bmp,*.jpg,*.png,*.tif",fn))
+   {
+    // Load image into memory...
+     cstr filename = fn.ToStr();
+     leftImg = filter::LoadImageRGB(Core(),filename);
+     mem::Free(filename);
+   }
+   
+   if (leftImg==null<svt::Var*>())
+   {
+    App().MessageDialog(gui::App::MsgErr,"Failed to load image");
+    delete dispVar;
+    return;
+   }
+  }
+ 
+ // Load the right image...
+  svt::Var * rightImg = null<svt::Var*>();
+  {
+   str::String fn;  
+   if (App().LoadFileDialog("Select Right Image","*.bmp,*.jpg,*.png,*.tif",fn))
+   {
+    // Load image...
+     cstr filename = fn.ToStr();
+     rightImg = filter::LoadImageRGB(Core(),filename);
+     mem::Free(filename);
+   }
+   
+   if (rightImg==null<svt::Var*>())
+   {
+    App().MessageDialog(gui::App::MsgErr,"Failed to load image");
+    delete dispVar;
+    delete leftImg;
+    return;
+   }
+  }
+
+
+ // Setup the DSC...
+  if (!leftImg->Exists("luv"))
+  {
+   bs::ColourLuv luvIni(0.0,0.0,0.0);
+   leftImg->Add("luv",luvIni);
+   leftImg->Commit();
+   filter::RGBtoLuv(leftImg);
+  }
+  svt::Field<bs::ColourLuv> leftLuv(leftImg,"luv");
+
+  if (!rightImg->Exists("luv"))
+  {
+   bs::ColourLuv luvIni(0.0,0.0,0.0);
+   rightImg->Add("luv",luvIni);
+   rightImg->Commit();
+   filter::RGBtoLuv(rightImg);
+  }
+  svt::Field<bs::ColourLuv> rightLuv(rightImg,"luv");
+  
+  stereo::LuvDSC luvDSC(leftLuv,rightLuv);
+
+ 
+ // Augment disparity with sd as needed...
+  if (!dispVar->Exists("luv"))
+  {
+   real32 dispIni = 0.0;
+   dispVar->Add("sd",dispIni);
+   dispVar->Commit(false);
+  }
+
+  svt::Field<real32> disp(dispVar,"disp");
+  svt::Field<bit> mask(dispVar,"mask");
+  svt::Field<real32> sd(dispVar,"sd");
+
+ 
+ // Calculate the sd...
+  fit::DispNorm dispNorm;
+  dispNorm.Set(disp,luvDSC);
+  dispNorm.SetMask(mask);
+  dispNorm.SetRange(20,2.0);
+  dispNorm.SetClampK(2.5,10.0);
+  dispNorm.SetClamp(0.1,10.0);
+  dispNorm.SetMaxIters(1000);
+    
+  dispNorm.Run();
+    
+  dispNorm.Get(sd);
+
+
+ // Save the disparity map...
+  {
+   str::String fn;
+   if (App().SaveFileDialog("Save Disparity Map",fn))
+   {
+    if (!fn.EndsWith(".dis")) fn << ".dis";
+    cstr ts = fn.ToStr();
+    if (!svt::Save(ts,dispVar,true))
+    {
+     App().MessageDialog(gui::App::MsgErr,"Error saving .dis file.");
+    }
+    mem::Free(ts);
+   }
+  }
+ 
+ // Clean up...
+  delete leftImg;
+  delete rightImg;
+  delete dispVar;
 }
 
 //------------------------------------------------------------------------------

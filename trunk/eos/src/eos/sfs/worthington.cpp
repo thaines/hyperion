@@ -82,17 +82,17 @@ void Worthington::Run(time::Progress * prog)
   for (nat32 i=0;i<needle.Size(0);i++)
   {
    mask.Get(i,0) = false;
-   needle.Get(i,0) = bs::Normal(0.0,0.0,0.0);
+   needle.Get(i,0) = bs::Normal(0.0,0.0,1.0);
    mask.Get(i,needle.Size(1)-1) = false;    
-   needle.Get(i,needle.Size(1)-1) = bs::Normal(0.0,0.0,0.0);    
+   needle.Get(i,needle.Size(1)-1) = bs::Normal(0.0,0.0,1.0);    
   }
   
   for (nat32 i=1;i<needle.Size(1)-1;i++)
   {
    mask.Get(0,i) = false;
-   needle.Get(0,i) = bs::Normal(0.0,0.0,0.0);
+   needle.Get(0,i) = bs::Normal(0.0,0.0,1.0);
    mask.Get(needle.Size(0)-1,i) = false;    
-   needle.Get(needle.Size(0)-1,i) = bs::Normal(0.0,0.0,0.0);    
+   needle.Get(needle.Size(0)-1,i) = bs::Normal(0.0,0.0,1.0);    
   }
 
 
@@ -103,10 +103,11 @@ void Worthington::Run(time::Progress * prog)
    {
     if (mask.Get(x,y))
     {
-     if (image.Get(x,y)>0.0)
+     if (!math::IsZero(image.Get(x,y)))
      {
       // Work out the angle of the cone from the image colour and albedo map...
        real32 normR = math::Min(image.Get(x,y)/albedo.Get(x,y),real32(1.0));
+       if (!math::IsFinite(normR)) normR = 1.0;
        real32 coneAng = math::InvCos(normR);
       
       // Make a normal perpendicular to the plane in which the gradiant angle and [0,0,1]^T are in...
@@ -118,7 +119,7 @@ void Worthington::Run(time::Progress * prog)
        bs::Normal grad(dx,dy,0.0);
        if (math::IsZero(grad.Length()))
        {
-        // Fallback - just choose a direction at random and hope it gets fixed latter...
+        // Fallback - just choose a direction at 'random' and hope it gets fixed latter...
          grad = toLight;
          grad[0] = -grad[0];
          grad[1] = -grad[1];
@@ -136,7 +137,7 @@ void Worthington::Run(time::Progress * prog)
      else
      {
       mask.Get(x,y) = false;
-      needle.Get(x,y) = bs::Normal(0.0,0.0,0.0);      
+      needle.Get(x,y) = bs::Normal(0.0,0.0,1.0);      
      }
     }
    }
@@ -202,7 +203,7 @@ void Worthington::Run(time::Progress * prog)
          //sigma = math::Max(sigma,real32(0.0001));
          real32 pis = math::pi/sigma;
          
-        // Calculate the differentials, dx and dy, and there 2-norms...
+        // Calculate the differentials, dx and dy, and their 2-norms...
          bs::Normal dx = needle.Get(x+1,y); dx -= needle.Get(x-1,y); dx *= 0.5;
          bs::Normal dy = needle.Get(x,y+1); dy -= needle.Get(x,y-1); dy *= 0.5;
          
@@ -289,6 +290,7 @@ void Worthington::Run(time::Progress * prog)
       {
        // Work out the angle of the cone from the image colour and albedo map...
         real32 normR = math::Min(image.Get(x,y)/albedo.Get(x,y),real32(1.0));
+        if (!math::IsFinite(normR)) normR = 1.0;
         real32 coneAng = math::InvCos(normR);
         
        // Work out the axis of rotation and the relevent angle...
@@ -313,7 +315,7 @@ void Worthington::Run(time::Progress * prog)
   {
    for (nat32 x=0;x<needle.Size(0);x++)
    {
-    if (mask.Get(x,y)) needle.Get(x,y).Normalise();  
+    if (mask.Get(x,y)) needle.Get(x,y).Normalise();
    }
   }
 
