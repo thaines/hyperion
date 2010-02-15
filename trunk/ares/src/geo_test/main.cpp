@@ -15,7 +15,7 @@ int main()
 
 
  // Define an ellipsoid by its axis lengths...
-  math::Vect<3> ell;
+ /* math::Vect<3> ell;
   ell[0] = rand.Real(0.1,3.0);
   ell[1] = rand.Real(0.1,3.0);
   ell[2] = rand.Real(0.1,3.0);
@@ -38,12 +38,13 @@ int main()
   {
    con << i << ": " << out[i] << "\n";
   }
-  con << "\n";
+  con << "\n";*/
   
   
   
- // Test NaN handling...
-  real32 nan = math::Sqrt(-1.0);
+ // Test NaN handling, nope, this isn't geometrical at all, but it sure as 
+ // hell affects my geometrical algorithms...
+  /*real32 nan = math::Sqrt(-1.0);
   con << "nan = " << nan << "\n";
 
   con << " isNan = " << math::IsNan(nan) << "\n";
@@ -83,7 +84,7 @@ int main()
 
   con << " isNan = " << math::IsNan(normal64) << "\n";
   con << " isInf = " << math::IsInf(normal64) << "\n";
-  con << " isFinite = " << math::IsFinite(normal64) << "\n";  
+  con << " isFinite = " << math::IsFinite(normal64) << "\n"; */ 
 
  // Lets get brute force...
  /*{
@@ -104,6 +105,12 @@ int main()
    val++;
   } while (val!=0);
  }*/
+
+
+
+ // Testing of concentration from probability within an angle class...
+ // (The geometrical link is really getting stretched here.)
+  sfs::FisherAngProb fap;
  
  con.WaitSize(1);
  return 0;
