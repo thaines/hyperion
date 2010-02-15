@@ -10,6 +10,7 @@
 #include "eos/types.h"
 #include "eos/bs/geo3d.h"
 #include "eos/ds/arrays_resize.h"
+#include "eos/math/mat_ops.h"
 
 namespace eos
 {
@@ -42,6 +43,12 @@ class EOS_CLASS SubDivSphere
   /// \param ind 0..19 please.
    Tri GetRoot(nat32 ind) const {return ind;}
 
+  /// Returns the number of triangles currently in use.
+   nat32 TriCount() const {return tris.Size();}
+   
+  /// Returns the number of vertices currently in use.
+   nat32 VertCount() const {return verts.Size();}
+
 
   /// Returns true if the given handle is a root triangle - this indicates
   /// that it has no parent.
@@ -52,15 +59,15 @@ class EOS_CLASS SubDivSphere
 
   /// Returns true if the triangle at the same subdivision level connected to 
   /// edge a exists.
-   bit HasA(Tri tri) const {return tris[tri].adj[0]!=nat32(-1);}
+   bit HasAdjA(Tri tri) const {return tris[tri].adj[0]!=nat32(-1);}
   
   /// Returns true if the triangle at the same subdivision level connected to 
   /// edge b exists.
-   bit HasB(Tri tri) const {return tris[tri].adj[1]!=nat32(-1);}
+   bit HasAdjB(Tri tri) const {return tris[tri].adj[1]!=nat32(-1);}
 
   /// Returns true if the triangle at the same subdivision level connected to 
   /// edge c exists.
-   bit HasC(Tri tri) const {return tris[tri].adj[2]!=nat32(-1);}
+   bit HasAdjC(Tri tri) const {return tris[tri].adj[2]!=nat32(-1);}
 
 
   /// Returns a unique increasing integer for the vertex at node A, shared by
@@ -87,11 +94,88 @@ class EOS_CLASS SubDivSphere
 
   /// Returns the parent triangle for a given triangle - do not call on root 
   /// triangles.
-   Tri Parent(Tri tri) {return tris[tri].parent;}
+   Tri Parent(Tri tri) const {return tris[tri].parent;}
+
+
+  /// Returns the middle child triangle of a given triangle, only call if the 
+  /// given triangle has children.
+   Tri GetM(Tri tri) const {return tris[tri].child;}
+   
+  /// Returns the child triangle sharing vertex A of a given triangle, only
+  /// call if the given triangle has children.
+   Tri GetA(Tri tri) const {return tris[tris[tri].child].adj[0];}
+
+  /// Returns the child triangle sharing vertex B of a given triangle, only
+  /// call if the given triangle has children.
+   Tri GetB(Tri tri) const {return tris[tris[tri].child].adj[1];}
+
+  /// Returns the child triangle sharing vertex C of a given triangle, only
+  /// call if the given triangle has children.
+   Tri GetC(Tri tri) const {return tris[tris[tri].child].adj[2];}
+
+  /// Returns the middle child triangle of a given triangle.
+  /// Will create it if it doesn't exist.
+   Tri MakeM(Tri tri) {SubDivide(tri); return tris[tri].child;}
+   
+  /// Returns the child triangle sharing vertex A of a given triangle.
+  /// Will create it if it doesn't exist.
+   Tri MakeA(Tri tri) {SubDivide(tri); return tris[tris[tri].child].adj[0];}
+
+  /// Returns the child triangle sharing vertex B of a given triangle.
+  /// Will create it if it doesn't exist.
+   Tri MakeB(Tri tri) {SubDivide(tri); return tris[tris[tri].child].adj[1];}
+
+  /// Returns the child triangle sharing vertex C of a given triangle.
+  /// Will create it if it doesn't exist.
+   Tri MakeC(Tri tri) {SubDivide(tri); return tris[tris[tri].child].adj[2];}
    
    
+  /// Returns the given triangles adjacent triangle connected to edge A.
+  /// Only call if HasAdjA returns true.
+   Tri AdjA(Tri tri) const {return tris[tri].adj[0];}
+
+  /// Returns the given triangles adjacent triangle connected to edge B.
+  /// Only call if HasAdjB returns true.
+   Tri AdjB(Tri tri) const {return tris[tri].adj[1];}
+
+  /// Returns the given triangles adjacent triangle connected to edge C.
+  /// Only call if HasAdjC returns true.
+   Tri AdjC(Tri tri) const {return tris[tri].adj[2];}
+
+  /// Returns the given triangles adjacent triangle connected to edge A.
+  /// Will create it if it doesn't exist.
+   Tri MakeAdjA(Tri tri) {MakeExist(tri,0); return tris[tri].adj[0];}
+
+  /// Returns the given triangles adjacent triangle connected to edge B.
+  /// Will create it if it doesn't exist.
+   Tri MakeAdjB(Tri tri) {MakeExist(tri,1); return tris[tri].adj[1];}
+
+  /// Returns the given triangles adjacent triangle connected to edge C.
+  /// Will create it if it doesn't exist.
+   Tri MakeAdjC(Tri tri) {MakeExist(tri,2); return tris[tri].adj[2];}
+
+
+  /// Returns the smallest triangle which collides with the given direction.
+  /// Does not require that the given direction be normalised.
+   Tri Collide(const bs::Normal & dir) const;
    
-   
+  /// Given a triangle and a direction outputs unnormalised trilinear coordinates
+  /// for that direction in the triangle - will handle directions outside the
+  /// triangle but note that its done in 3D space rather than on the surface of
+  /// the sphere, so thats rather dubious.
+  /// The values given are actual distances to edge planes - the user can
+  /// normalise if need be.
+  /// In use with collide allows for linear interpolation of any value to any
+  /// given direction.
+   void Trilinear(Tri tri,const bs::Normal & dir,real32 & a,real32 & b,real32 & c) const;
+  
+  
+  /// Given a triangle and an index indicating 0 for a, 1 for b and 2 for c this
+  /// arranges for that adjacent triangle at the triangles level to exist if it
+  /// doesn't already. Simply recursivly calls itself with subdivide calls until
+  /// its down to the correct level.
+   void MakeExist(Tri tri,nat32 adj);
+  
   /// Given a triangle this subdivides that triangle into 4 smaller triangles,
   /// does nothing if the triangle has already been subdivided.
    void SubDivide(Tri tri);
@@ -113,10 +197,10 @@ class EOS_CLASS SubDivSphere
   // can be passed out to the user. -1 is used as the 'null pointer'.
    struct Triangle
    {
-    nat32 parent; // -1 for the 20 top level ones.
-    nat32 child; // Points to the middle triangle alone - the others are then adjacent to it. -1 if at bottom.
+    Tri parent; // -1 for the 20 top level ones.
+    Tri child; // Points to the middle triangle alone - the others are then adjacent to it. -1 if at bottom.
     
-    nat32 adj[3]; // Adjacent triangles, can be -1.
+    Tri adj[3]; // Adjacent triangles, can be -1.
     nat32 vertInd[3]; // Indices for the vertices of the triangle, always correct.
    }; // 8 32 bit numbers - 32 bytes.
   
@@ -125,6 +209,23 @@ class EOS_CLASS SubDivSphere
    
   // Shared storage of vertices, indexed from Triangles...
    ds::ArrayResize<bs::Normal> verts;
+   
+  
+  // Helper functions used by the collision/interpolation code...
+   real32 UnnormDist(const bs::Normal & dir,const bs::Normal & a,const bs::Normal & b) const
+   {
+    bs::Normal perp;
+    math::CrossProduct(a,b,perp);
+    return perp*dir;
+   }
+   
+   real32 NormDist(const bs::Normal & dir,const bs::Normal & a,const bs::Normal & b) const
+   {
+    bs::Normal perp;
+    math::CrossProduct(a,b,perp);
+    perp.Normalise();
+    return perp*dir;
+   }
 };
 
 //------------------------------------------------------------------------------
