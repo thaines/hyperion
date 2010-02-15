@@ -233,6 +233,7 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
    tAux[i].lowAlbCost = -k*dot;
   }
 
+
   
  // Before doing the actual work queue stuff we do a single depth first greedy search -
  // this will usually raise the bar for processing other jobs high enough to avoid a load
@@ -337,14 +338,17 @@ real32 LightDir::SegLightCost(const bs::Normal & lightDir,nat32 recDepth,
 real32 LightDir::CalcCost(real32 albedo,ds::Array<LightDir::PixelAux> & tAux,nat32 length)
 {
  LogTime("eos::fit::LightDir::CalcCost");
+ 
  real32 ret = 0.0;
  real32 lowRet = 0.0;
  real32 sqrAlb = math::Sqr(albedo);
+ 
  for (nat32 i=0;i<length;i++)
  {
-  if (sqrAlb>tAux[i].irrSqr) ret += tAux[i].mult*math::Sqrt(sqrAlb - tAux[i].irrSqr) + tAux[i].c;
-                        else lowRet += tAux[i].lowAlbCost + lowAlbErr*math::Sqr(tAux[i].irr - albedo);
+  if (albedo>tAux[i].irr) ret += tAux[i].mult*math::Sqrt(sqrAlb - tAux[i].irrSqr) + tAux[i].c;
+                     else lowRet += tAux[i].lowAlbCost + lowAlbErr*math::Sqr(tAux[i].irr - albedo);
  }
+ 
  return ret/albedo + lowRet;
 }
 
