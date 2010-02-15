@@ -219,26 +219,42 @@ void CompNeedle::Update()
      {
       bs::Normal truth(truthImage.Get(x,y).r*2.0-1.0,truthImage.Get(x,y).g*2.0-1.0,truthImage.Get(x,y).b);
       bs::Normal guess(guessImage.Get(x,y).r*2.0-1.0,guessImage.Get(x,y).g*2.0-1.0,guessImage.Get(x,y).b);
-         
+      
       truth.Normalise();
       guess.Normalise();
-      real32 angle = math::InvCos(truth * guess);
-      angle *= 180.0/math::pi;
-      
-      if (angle<=capVal)
+
+      if (!math::IsFinite(truth.LengthSqr())||(!math::IsFinite(guess.LengthSqr())))
       {
-       // Inlier...
-        inlierSum += 1.0;
-        inlierErrSum += angle;
+       if (math::IsFinite(truth.LengthSqr())) outlierSum += 1.0;
+       image.Get(x,y) = bs::ColRGB(0,255,255);
       }
       else
       {
-       // Outlier...
-        outlierSum += 1.0;
-      }
+       real32 angle = math::InvCos(truth * guess);
+       if (math::IsFinite(angle))
+       {
+        angle *= 180.0/math::pi;
       
-      byte v = byte(math::Clamp(255.0*angle/capVal,0.0,255.0));
-      image.Get(x,y) = bs::ColRGB(v,v,v);  
+        if (angle<=capVal)
+        {
+         // Inlier...
+          inlierSum += 1.0;
+          inlierErrSum += angle;
+        }
+        else
+        {
+         // Outlier...
+          outlierSum += 1.0;
+        }
+      
+        byte v = byte(math::Clamp(255.0*angle/capVal,0.0,255.0));
+        image.Get(x,y) = bs::ColRGB(v,v,v);  
+       }
+       else
+       {
+        image.Get(x,y) = bs::ColRGB(255,0,255);
+       }
+      }
      }
     }
    }

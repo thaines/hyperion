@@ -281,7 +281,7 @@ TokenTable::Node * TokenTable::Node::Get(nat32 remainder,cstrconst s,nat32 & dep
  if (remainder==0)
  {
   nat32 d = 1;
-  Node * node = child[*str].Get(str+1,d);
+  Node * node = child[nat8(*str)].Get(str+1,d);
   node->str = str+d;
   node->num = num;
 
@@ -290,7 +290,7 @@ TokenTable::Node * TokenTable::Node::Get(nat32 remainder,cstrconst s,nat32 & dep
  }
 
  depth++;
- return child[*s].Get(remainder-1,s+1,depth);
+ return child[nat8(*s)].Get(remainder-1,s+1,depth);
 }
 
 TokenTable::Node * TokenTable::Node::Get(cstrconst s,nat32 & depth)
@@ -303,7 +303,7 @@ TokenTable::Node * TokenTable::Node::Get(cstrconst s,nat32 & depth)
  if (*s==0)
  {
   nat32 d = 1;
-  Node * node = child[*str].Get(str+1,d);
+  Node * node = child[nat8(*str)].Get(str+1,d);
   node->str = str+d;
   node->num = num;
 
@@ -312,7 +312,7 @@ TokenTable::Node * TokenTable::Node::Get(cstrconst s,nat32 & depth)
  }
 
  depth++;
- return child[*s].Get(s+1,depth);
+ return child[nat8(*s)].Get(s+1,depth);
 }
 
 TokenTable::Node * TokenTable::Node::Exists(cstrconst s)
@@ -321,7 +321,7 @@ TokenTable::Node * TokenTable::Node::Exists(cstrconst s)
  if (child==null<Node*>()) return null<Node*>();
  if (*s==0) return null<Node*>();
 
- return child[*s].Exists(s+1);
+ return child[nat8(*s)].Exists(s+1);
 }
 
 //------------------------------------------------------------------------------
