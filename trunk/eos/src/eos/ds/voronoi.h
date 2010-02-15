@@ -45,7 +45,7 @@ class EOS_CLASS Delaunay2DCode
    };
 
   // Triangle data structure...
-   struct Triangle // new-ed.
+   struct EOS_CLASS Triangle // new-ed.
    {
     void DelChildren();
 
@@ -365,25 +365,25 @@ class EOS_CLASS Delaunay2D : public Delaunay2DCode
    {return Pos(Delaunay2DCode::Nearest(x,y));}
 
 
-  /// Given a coordinate returns the Mid representing the triangle that it is 
+  /// Given a coordinate returns the Mid representing the triangle that it is
   /// in - you can then query the 3 Pos of the Mid to get the actual traingle,
   /// being aware that any or all of the Pos could be at infinity.
    Mid Triangle(const math::Vect<2,real32> & pos)
    {return Mid(root.FindTri(pos[0],pos[1]));}
 
-  /// Given a coordinate returns the Mid representing the triangle that it is 
+  /// Given a coordinate returns the Mid representing the triangle that it is
   /// in - you can then query the 3 Pos of the Mid to get the actual traingle,
   /// being aware that any or all of the Pos could be at infinity.
    Mid Triangle(const math::Vect<2,real64> & pos)
    {return Mid(root.FindTri(pos[0],pos[1]));}
 
-  /// Given a coordinate returns the Mid representing the triangle that it is 
+  /// Given a coordinate returns the Mid representing the triangle that it is
   /// in - you can then query the 3 Pos of the Mid to get the actual traingle,
   /// being aware that any or all of the Pos could be at infinity.
    Mid Triangle(real32 x,real32 y)
    {return Mid(root.FindTri(x,y));}
 
-  /// Given a coordinate returns the Mid representing the triangle that it is 
+  /// Given a coordinate returns the Mid representing the triangle that it is
   /// in - you can then query the 3 Pos of the Mid to get the actual traingle,
   /// being aware that any or all of the Pos could be at infinity.
    Mid Triangle(real64 x,real64 y)
