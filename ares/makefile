@@ -24,6 +24,9 @@ lin_relbug:
 lin_debug:
 	@make -j 2 PLATFORM=lin TYPE=debug all
 
+lin_line_count:
+	@make -j 2 PLATFORM=lin line_count
+
 win_release:
 	@mingw32-make -j 2 PLATFORM=win TYPE=release all
 
@@ -32,6 +35,9 @@ win_relbug:
 
 win_debug:
 	@mingw32-make -j 2 PLATFORM=win TYPE=debug all
+
+win_line_count:
+	@mingw32-make -j 2 PLATFORM=win line_count
 
 
 clean:
@@ -47,7 +53,7 @@ EXES_S2	= bleyer04 eos_test fg_test orient sur_test sur_stereo ds_test voronoi
 EXES_S3 = bp_stereo sur_bp_stereo text_to_svt bessel sfs_bp bp_test geo_test
 EXES_S4 = smes 
 
-all: $(EXES) prep_final line_count
+all: $(EXES) prep_final
 	@echo Done
 
 
@@ -898,9 +904,18 @@ prep_final: ${DIRS}
 	#-cp /usr/local/lib/libIL.so $(OUT) # For my x64 setup.
 	@echo Extra files copied in
 
-line_count: $(EXES) prep_final
+ifeq ($(PLATFORM),win)
+line_count:
 	@echo Line Count:
 	@find src -exec cat {} \; -name "*.h" -or -name "*.cpp" 2> /dev/null | grep -c ""
+endif
+
+ifeq ($(PLATFORM),lin)
+line_count:
+	@echo Line Count:
+	@find src -type f -and \( -name "*.h" -or -name "*.cpp" \) -print 2> /dev/null | xargs cat | wc -l
+endif
+
 
 
 
