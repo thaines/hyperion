@@ -72,7 +72,7 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    whichAlg = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
    whichAlg->Append("Hierarchical DP");
    whichAlg->Append("Hierarchical BP");
-   //whichAlg->Append("Diffusion Correlation");
+   whichAlg->Append("Diffusion Correlation");
    whichAlg->Set(1);
    horiz6->AttachRight(whichAlg,false);
 
@@ -312,12 +312,12 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    dcDistMult->Set("0.1"); dcDistMult->SetSize(48,24);
    dcDiffSteps->Set("3"); dcDiffSteps->SetSize(48,24);
    dcMinimaLimit->Set("2"); dcMinimaLimit->SetSize(48,24);
-   dcBaseDistCap->Set("10.0"); dcBaseDistCap->SetSize(48,24);
+   dcBaseDistCap->Set("50.0"); dcBaseDistCap->SetSize(48,24);
    dcDistCapMult->Set("1.414"); dcDistCapMult->SetSize(48,24);
-   dcDistCapThreshold->Set("0.1"); dcDistCapThreshold->SetSize(48,24);
+   dcDistCapThreshold->Set("0.5"); dcDistCapThreshold->SetSize(48,24);
    dcDispRange->Set("1"); dcDispRange->SetSize(48,24);
    dcDoLR ->SetState(true);
-   dcDistCapDifference->Set("0.01"); dcDistCapDifference->SetSize(48,24);
+   dcDistCapDifference->Set("0.1"); dcDistCapDifference->SetSize(48,24);
    dcDistSdMult->Set("0.1"); dcDistSdMult->SetSize(48,24);
 
 
