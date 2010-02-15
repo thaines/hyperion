@@ -27,11 +27,13 @@ class LightEst
   gui::EditBox * bfMinAlb;
   gui::EditBox * bfMaxAlb;
   gui::EditBox * bfMaxSegCost;
+  gui::EditBox * bfIrrErr;
   gui::EditBox * bfSampleSubdiv;
   gui::EditBox * bfAlbRecursion;
 
 
   gui::Label * lightDir;
+  gui::Label * lightDir2;
   bs::Normal lightD;
   
   struct Sample

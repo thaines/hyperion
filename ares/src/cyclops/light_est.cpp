@@ -65,8 +65,10 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    vert1->AttachBottom(horiz2,false);
 
    lightDir = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lightDir2 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lightDir->Set("Not yet run");
    vert1->AttachBottom(lightDir,false);
+   vert1->AttachBottom(lightDir2,false);
 
    gui::Button * but1 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but2 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
@@ -135,28 +137,33 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    gui::Label * lab9 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab10 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab11 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab12 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    
    bfMinAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfMaxAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfMaxSegCost = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   bfIrrErr = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfSampleSubdiv = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfAlbRecursion = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
 
-   lab7->Set("    Minimum Albedo");
+   lab7->Set("  Minimum Albedo");
    lab8->Set(" Maximum Albedo");
-   lab9->Set(" Maximum Segment Cost");
-   lab10->Set("   Sampling Subdivisions");
-   lab11->Set(" Albedo Recursion Depth");
+   lab9->Set(" Maximum Segment Cost PP");
+   lab10->Set("  Irradiance Error sd");
+   lab11->Set(" Sampling Subdivisions");
+   lab12->Set(" Albedo Recursion Depth");
    
    bfMinAlb->Set("0.001");
-   bfMaxAlb->Set("3.0");
-   bfMaxSegCost->Set("1.0");
+   bfMaxAlb->Set("1.5");
+   bfMaxSegCost->Set("0.1");
+   bfIrrErr->Set("0.0078");
    bfSampleSubdiv->Set("4");
    bfAlbRecursion->Set("8");
    
    bfMinAlb->SetSize(48,24);
    bfMaxAlb->SetSize(48,24);
    bfMaxSegCost->SetSize(48,24);
+   bfIrrErr->SetSize(64,24);
    bfSampleSubdiv->SetSize(48,24);
    bfAlbRecursion->SetSize(48,24);
    
@@ -168,8 +175,10 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    horiz3->AttachRight(bfMaxSegCost,false);
    
    horiz4->AttachRight(lab10,false);
-   horiz4->AttachRight(bfSampleSubdiv,false);
+   horiz4->AttachRight(bfIrrErr,false);
    horiz4->AttachRight(lab11,false);
+   horiz4->AttachRight(bfSampleSubdiv,false);
+   horiz4->AttachRight(lab12,false);
    horiz4->AttachRight(bfAlbRecursion,false);
 
 
@@ -372,6 +381,7 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
   real32 minAlb = bfMinAlb->GetReal(0.001);
   real32 maxAlb = bfMaxAlb->GetReal(3.0);
   real32 maxCost = bfMaxSegCost->GetReal(1.0);
+  real32 irrErr = bfIrrErr->GetReal(0.0078);
   nat32 subdiv = bfSampleSubdiv->GetInt(4);
   nat32 recursion = bfAlbRecursion->GetInt(8);
 
@@ -396,7 +406,8 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
   fit::LightDir ld;
   ld.SetData(seg,irradiance,fish);
   ld.SetAlbRange(minAlb,maxAlb);
-  ld.SetSegCap(maxCost);
+  ld.SetSegCapPP(maxCost);
+  ld.SetIrrErr(irrErr);
   ld.SetSampleSubdiv(subdiv);
   ld.SetRecursion(recursion);
 
@@ -427,9 +438,15 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
   
   
   str::String s;
-  s << lightD << " (" << ld.SampleSize() << " samples; highest albedo is " << maxAlbedo << ")";
+  s << lightD << " (" << ld.SampleSize() << " samples)";
   lightDir->Set(s);
   
+  str::String s2;
+  s2 << "Highest albedo is " << maxAlbedo << ", which is " << crf.Inverse(maxAlbedo)
+     << " in the uncorrected irradiance.";
+  lightDir2->Set(s2);
+
+
  // Update the view...
   Update();
 }
@@ -468,10 +485,13 @@ void LightEst::Update()
   {
    case 0: // Irradiance
    case 1: // Corrected Irradiance
+    width = irr.Size(0);
+    height = irr.Size(1);   
+   break;
    case 5: // Light Source Sphere
    case 6: // Cost Sphere
-    width = irr.Size(0);
-    height = irr.Size(1);
+    width = math::Max<nat32>(math::Min(irr.Size(0),irr.Size(1)),450);
+    height = width;
    break;
    case 2: // Segmentation
    case 7: // Albedo
@@ -595,9 +615,9 @@ void LightEst::Update()
    break;
    case 5: // Light Source Sphere
    {
-    real32 centX = irr.Size(0)/2.0;
-    real32 centY = irr.Size(1)/2.0;
-    real32 radius = math::Min(centX,centY)*0.9;
+    real32 centX = image.Size(0)/2.0;
+    real32 centY = image.Size(1)/2.0;
+    real32 radius = centX*0.9;
     
     for (nat32 y=0;y<image.Size(1);y++)
     {
@@ -642,9 +662,9 @@ void LightEst::Update()
      // Now iterate all the pixels, interpolating costs for those inside the 
      // sphere and rendering the Log10 of the costs...
       real32 max = 0.001;
-      real32 centX = irr.Size(0)/2.0;
-      real32 centY = irr.Size(1)/2.0;
-      real32 radius = math::Min(centX,centY)*0.9;   
+      real32 centX = image.Size(0)/2.0;
+      real32 centY = image.Size(1)/2.0;
+      real32 radius = centX*0.9;
      
       for (nat32 y=0;y<image.Size(1);y++)
       {
