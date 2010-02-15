@@ -7,7 +7,7 @@
 
 //------------------------------------------------------------------------------
 // Calculates a camera response function given a set of images of a white 
-//0 object where only the exposure time varies.
+// object where only the exposure time varies.
 class CamResponse
 {
  public:

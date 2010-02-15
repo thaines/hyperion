@@ -287,6 +287,19 @@ EOS_FUNC real32 FocalLength35mmDiag(real64 width,real64 height,
                                     const Radial * radial = null<Radial*>());
 
 //------------------------------------------------------------------------------
+/// Given a 35mm length this converts to an angle, for the horizontal.
+EOS_FUNC real32 FocalLengthToAngleHoriz(real32 length);
+
+/// Given a 35mm length this converts to an angle, for the vertical.
+EOS_FUNC real32 FocalLengthToAngleVert(real32 length);
+
+/// Given an angle this converts to a 35mm length, for the horizontal.
+EOS_FUNC real32 AngleToFocalLengthHoriz(real32 angle);
+
+/// Given an angle this converts to a 35mm length, for the vertical.
+EOS_FUNC real32 AngleToFocalLengthVert(real32 angle);
+
+//------------------------------------------------------------------------------
 /// This represents the extrinsic parameters of a camera, just a 3x4 matrix.
 /// No functionality provided, at least not at the moment, just for representation.
 class EOS_CLASS Extrinsic : public math::Mat<3,4,real64>
