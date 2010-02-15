@@ -30,7 +30,7 @@ class EOS_CLASS ArrayResizeCode
   
   nat32 Resize(nat32 elementSize,nat32 newSize,void (*Make)(void * ptr),void (*Term)(void * ptr));
   
-  byte * Item(nat32 elementSize,nat32 i);
+  byte * Item(nat32 elementSize,nat32 i) const;
   
   
   nat32 indexBlocking; // How much to increase the block index each time it overflows. The index never shrinks.
