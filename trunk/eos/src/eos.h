@@ -304,6 +304,7 @@
 #include "eos/sfs/albedo_est.h"
 
 #include "eos/fit/disp_fish.h"
+#include "eos/fit/disp_norm.h"
 
 //------------------------------------------------------------------------------
 #endif

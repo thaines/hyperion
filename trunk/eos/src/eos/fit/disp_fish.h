@@ -41,7 +41,7 @@ class EOS_CLASS DispFish
   /// Optional set a multiplier for the dsc costs, to emphasis differences.
    void Set(const svt::Field<real32> & disp,const stereo::DSC & dsc,real32 dscMult = 1.0);
    
-  /// Sets the mask, optional - will set masked areas to a ceoncentration of 0.
+  /// Sets the mask, optional - will set masked areas to a concentration of 0.
    void SetMask(const svt::Field<bit> & mask);
 
   /// Sets the parameters to convert to depth - a cam::CameraPair
