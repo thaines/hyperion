@@ -153,10 +153,37 @@ class EOS_CLASS LightAmb
     }; // C = s*r + t*sqrt(1-r^2), where r = I/a + A (I = irr, a = albedo, A = ambient.)
    
    
-   // Given a segments details and an ambient range this uses branch and bound
-   // to find the optimal albedo and associated cost for the segment...
-    
+   // Structure used by below two methods to find the optimum albedos.
+    struct AlbRange
+    {
+     real32 minAlbedo;
+     real32 maxAlbedo;
+     nat32 depth;
+     
+     real32 lowMinCost;
+     real32 highMinCost;
+     
+     bit operator < (const AlbRange & rhs) const {return lowMinCost < rhs.lowMinCost;}
+    };
    
+   // Given a segments details and an ambient range this uses branch and bound
+   // to find the range of possible optimal costs...
+   // (outHigh is tight, outLow can be lower than it could be tightened to, but
+   //  as used for simply choosing the order of analysis at the higher level 
+   //  this doesn't matter so much, well, some computation is wasted but a tight
+   //  bound would probably cost more.)
+    void SegCostRange(real32 lowAmb,real32 highAmb,
+                      real32 & outLow,real32 & outHigh,
+                      const ds::Array<PixelAux> & pixel,nat32 start,nat32 size,
+                      ds::PriorityQueue<AlbRange> & work);
+  
+   // Given a segments details and an ambient value this uses branch and bound
+   // to find the optimal cost, and associated albedo value...
+   // Returns the optimal cost, optinally sticks the albedo into a given pointer.
+    real32 SegCost(real32 amb,const ds::Array<PixelAux> & pixel,nat32 start,nat32 size,
+                   ds::PriorityQueue<AlbRange> & work,real32 * albedo = null<real32*>());
+
+
    // Method that is given a single point in the sampling space - returns the 
    // cost for that point (For a specific segment.)...
     real32 Cost(real32 amb,real32 alb,const ds::Array<PixelAux> & pixel,nat32 start,nat32 size);
