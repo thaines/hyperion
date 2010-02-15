@@ -936,5 +936,164 @@ cstrconst DiffCorrStereo::TypeString() const
 }
 
 //------------------------------------------------------------------------------
+DiffCorrRefine::DiffCorrRefine()
+:useHalfX(true),useHalfY(true),useCorners(true),
+distMult(0.1),diffSteps(5),cap(4.0),prune(0.1)
+{}
+
+DiffCorrRefine::~DiffCorrRefine()
+{}
+
+void DiffCorrRefine::SetImages(const svt::Field<bs::ColourLuv> & l,const svt::Field<bs::ColourLuv> & r)
+{
+ left = l;
+ right = r;
+}
+
+void DiffCorrRefine::SetMasks(const svt::Field<bit> & l,const svt::Field<bit> & r)
+{
+ leftMask = l;
+ rightMask = r;
+}
+
+void DiffCorrRefine::SetDisparity(const svt::Field<real32> & d)
+{
+ disp = d;
+}
+
+void DiffCorrRefine::SetFlags(bit x, bit y, bit c)
+{
+ useHalfX = x;
+ useHalfY = y;
+ useCorners = c;
+}
+
+void DiffCorrRefine::SetDiff(real32 dm,nat32 ds)
+{
+ distMult = dm;
+ diffSteps = ds;
+}
+
+void DiffCorrRefine::SetDist(real32 c,real32 p)
+{
+ cap = c;
+ prune = p;
+}
+
+void DiffCorrRefine::Run(time::Progress * prog)
+{
+ prog->Push();
+ 
+ // Distance object to use...
+  bs::BasicLRD dist;
+  
+ // Generate range images from the inputs...
+  prog->Report(0,disp.Size(1)+2);
+  bs::LuvRangeImage l;
+  l.Create(left,leftMask,useHalfX,useHalfY,useCorners);
+  
+  DiffusionWeight lw;
+  lw.Create(l,dist,distMult,prog);
+
+
+  prog->Report(1,disp.Size(1)+2);
+  bs::LuvRangeImage r;
+  r.Create(right,rightMask,useHalfX,useHalfY,useCorners);
+  
+  DiffusionWeight rw;
+  rw.Create(r,dist,distMult,prog);
+  
+  
+ // Iterate the disparity map and refine...
+  out.Resize(disp.Size(0),disp.Size(1));
+
+  RangeDiffusionSlice ls;
+  RangeDiffusionSlice rs;
+  DiffuseCorrelation dc;
+  
+  for (int32 y=0;y<int32(out.Height());y++)
+  {
+   prog->Report(2+y,disp.Size(1)+2);
+   prog->Push();
+   
+   // Create the diffusion maps for this scanline...
+    prog->Report(0,3);
+    ls.Create(y,diffSteps,l,lw,prog);
+    
+    prog->Report(1,3);
+    rs.Create(y,diffSteps,r,rw,prog);
+    
+
+   // Do the scanline...
+    prog->Report(2,3);
+    dc.Setup(dist,cap,l,ls,r,rs);
+    for (int32 x=0;x<int32(out.Width());x++)
+    {
+     // Get the discrete x value for the other image, rounding if needed...
+      int32 x2 = x + int32(math::Round(disp.Get(x,y)));
+      out.Get(x,y) = math::Infinity<real32>();
+      
+     // Check the masking is safe - we throw away values that have bad masking...
+      if ((l.ValidExt(x   ,y)==false)||
+          (l.ValidExt(x+1 ,y)==false)||
+          (l.ValidExt(x-1 ,y)==false)||
+          (r.ValidExt(x2  ,y)==false)||
+          (r.ValidExt(x2+1,y)==false)||
+          (r.ValidExt(x2-1,y)==false)) continue;
+     
+     // Get the 5 needed correlation values - the current pixel and offset 
+     // by 1 for each image...
+      real32 centre = dc.Cost(x,x2);
+      real32 negL = dc.Cost(x-1,x2);
+      real32 posL = dc.Cost(x+1,x2);
+      real32 negR = dc.Cost(x,x2-1);
+      real32 posR = dc.Cost(x,x2+1);
+     
+     // Verify that the pixel is sufficiently better than the rest...
+      if (((negL-centre)<prune)||
+          ((posL-centre)<prune)||
+          ((negR-centre)<prune)||
+          ((posR-centre)<prune)) continue;
+     
+     // Refine the disparity position and store it...
+      real32 p = 0.5*(negL+negR);
+      real32 q = centre;
+      real32 r = 0.5*(posL+posR);
+      
+      real32 dOS = (p-r)/(2.0*(p+r) - 4.0*q);
+      out.Get(x,y) = real32(x2-x) + dOS;
+    }
+
+   prog->Pop();
+  }
+    
+ 
+ prog->Pop();
+}
+
+void DiffCorrRefine::GetDisp(svt::Field<real32> & d) const
+{
+ for (nat32 y=0;y<out.Height();y++)
+ {
+  for (nat32 x=0;x<out.Width();x++)
+  {
+   if (math::IsFinite(out.Get(x,y))) d.Get(x,y) = out.Get(x,y);
+                                else d.Get(x,y) = 0.0;
+  }
+ }
+}
+
+void DiffCorrRefine::GetMask(svt::Field<bit> & mask) const
+{
+ for (nat32 y=0;y<out.Height();y++)
+ {
+  for (nat32 x=0;x<out.Width();x++)
+  {
+   mask.Get(x,y) = math::IsFinite(out.Get(x,y));
+  }
+ }
+}
+
+//------------------------------------------------------------------------------
  };
 };
