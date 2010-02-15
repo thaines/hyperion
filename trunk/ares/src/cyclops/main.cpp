@@ -39,6 +39,7 @@
 #include "cyclops/cam_response.h"
 #include "cyclops/intrinsic_est.h"
 #include "cyclops/ambient_est.h"
+#include "cyclops/sphere_fitter.h"
 
 //------------------------------------------------------------------------------
 // Code for cyclops class...
@@ -137,6 +138,7 @@ Cyclops::Cyclops()
   gui::Button * but45 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but46 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but47 = static_cast<gui::Button*>(guiFact.Make("Button"));
+  gui::Button * but48 = static_cast<gui::Button*>(guiFact.Make("Button"));
 
   gui::Label * lab1 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab2 = static_cast<gui::Label*>(guiFact.Make("Label"));
@@ -185,6 +187,7 @@ Cyclops::Cyclops()
   gui::Label * lab45 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab46 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab47 = static_cast<gui::Label*>(guiFact.Make("Label"));
+  gui::Label * lab48 = static_cast<gui::Label*>(guiFact.Make("Label"));
 
   but1->SetChild(lab1); lab1->Set("Intrinsic Calibration");
   but2->SetChild(lab2); lab2->Set("Protractor");
@@ -233,6 +236,7 @@ Cyclops::Cyclops()
   but45->SetChild(lab45); lab45->Set("Intrinsic To Camera");
   but46->SetChild(lab46); lab46->Set("Approximate Intrinsic");
   but47->SetChild(lab47); lab47->Set("Ambient Estimation");
+  but48->SetChild(lab48); lab48->Set("Sphere Fitter");
 
   vert0->AttachBottom(but19,false);
   vert0->AttachBottom(but21,false);
@@ -272,6 +276,7 @@ Cyclops::Cyclops()
   vert7->AttachBottom(but46,false);
   vert7->AttachBottom(but32,false);
   vert7->AttachBottom(but45,false);
+  vert7->AttachBottom(but48,false);
   
   vert8->AttachBottom(but44,false);
   vert8->AttachBottom(but42,false);
@@ -347,6 +352,7 @@ Cyclops::Cyclops()
   but45->OnClick(MakeCB(this,&Cyclops::StartIntrinsicToCamera));
   but46->OnClick(MakeCB(this,&Cyclops::StartIntrinsicEst));
   but47->OnClick(MakeCB(this,&Cyclops::StartAmbientEst));
+  but48->OnClick(MakeCB(this,&Cyclops::StartSphereFitter));
 
  // Enter the message pump...
   app->Go();
@@ -827,6 +833,11 @@ void Cyclops::StartIntrinsicEst(gui::Base * obj,gui::Event * event)
 void Cyclops::StartAmbientEst(gui::Base * obj,gui::Event * event)
 {
  new AmbientEst(*this);
+}
+
+void Cyclops::StartSphereFitter(gui::Base * obj,gui::Event * event)
+{
+ new SphereFitter(*this);
 }
 
 //------------------------------------------------------------------------------

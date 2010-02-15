@@ -197,6 +197,63 @@ void CameraFull::FromCC(const CameraCalibration & cc)
  dim = cc.dim;
 }
 
+void CameraFull::GetRay(real32 x,real32 y,bs::Ray & out,
+                        math::Vect<4,real64> * camCent,
+                        math::Mat<4,3,real64> * camInv,
+                        math::Vect<3,real64> * camDir)
+{
+ math::Vect<4,real64> camCentLocal;
+ if (camCent==null<math::Vect<4,real64>*>())
+ {
+  camera.Centre(camCentLocal);
+  camCentLocal /= camCentLocal[3];
+  camCent = &camCentLocal;
+ }
+ 
+ math::Mat<4,3,real64> camInvLocal;
+ if (camInv==null<math::Mat<4,3,real64>*>())
+ {
+  camera.GetInverse(camInvLocal);
+  camInvLocal /= math::FrobNorm(camInvLocal);
+  camInv = &camInvLocal;
+ }
+ 
+ math::Vect<3,real64> camDirLocal;
+ if (camDir==null<math::Vect<3,real64>*>())
+ {
+  camera.Dir(camDirLocal);
+  camDir = &camDirLocal;
+ }
+
+
+ for (nat32 i=0;i<3;i++) out.s[i] = (*camCent)[i];
+   
+ math::Vect<3,real64> point;
+ point[0] = x;
+ point[1] = y;
+ point[2] = 1.0;
+    
+ radial.UnDis(point,point);
+   
+ math::Vect<4,real64> coord;
+ math::MultVect(*camInv,point,coord);
+ if (math::IsZero(coord[3]))
+ {
+  for (nat32 j=0;j<3;j++) out.n[j] = coord[j];
+  out.n.Normalise();
+ }
+ else
+ {
+  coord /= coord[3];
+  for (nat32 j=0;j<3;j++) out.n[j] = coord[j] - out.s[j];
+  out.n.Normalise();
+ }
+ 
+ real32 dot = 0.0;
+ for (nat32 i=0;i<3;i++) dot += (*camDir)[i] * out.n[i];
+ if (dot < 0.0) out.n *= -1.0;
+}
+
 //------------------------------------------------------------------------------
 void CameraPair::SetDefault(real64 width,real64 height)
 {

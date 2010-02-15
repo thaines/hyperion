@@ -10,6 +10,7 @@
 /// intrinsic properties.
 
 #include "eos/types.h"
+#include "eos/math/mat_ops.h"
 #include "eos/cam/cameras.h"
 #include "eos/str/strings.h"
 #include "eos/bs/dom.h"
@@ -102,6 +103,14 @@ class EOS_CLASS CameraFull
   /// Fills it in from a CameraCalibration on the presumption that the camera 
   /// is in the default position.
    void FromCC(const CameraCalibration & cc);
+   
+  /// Given an image coordinate this calculates a ray - allows you to optional 
+  /// give it the results of camera.Centre(...), camera.GetInverse(...) and 
+  /// camera.Dir(...) to save repeated calculation if repeatedly called.
+   void GetRay(real32 x,real32 y,bs::Ray & out,
+               math::Vect<4,real64> * camCent = 0,
+               math::Mat<4,3,real64> * camInv = 0,
+               math::Vect<3,real64> * camDir = 0);
 
 
   /// &nbsp;
