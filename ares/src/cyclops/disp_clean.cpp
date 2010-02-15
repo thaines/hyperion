@@ -62,19 +62,23 @@ DispClean::DispClean(Cyclops & cyc)
    gui::Button * but2 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but3 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but4 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
+   gui::Button * but11 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Label * lab1 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab2 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab3 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab4 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab11 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
 
    but1->SetChild(lab1); lab1->Set("Load Disparity...");
    but2->SetChild(lab2); lab2->Set("Remove Spikes");
    but3->SetChild(lab3); lab3->Set("Smooth");
    but4->SetChild(lab4); lab4->Set("Save Disparity...");
+   but11->SetChild(lab11); lab11->Set("Add Noise");
 
    horiz1->AttachRight(but1,false);
    horiz1->AttachRight(but2,false);
    horiz1->AttachRight(but3,false);
+   horiz1->AttachRight(but11,false);
    horiz1->AttachRight(but4,false);
 
 
@@ -136,6 +140,51 @@ DispClean::DispClean(Cyclops & cyc)
    smoothSource->Set("2.0");
    smoothSmooth->Set("0.5");
    smoothIters->Set("250");
+   
+   
+   gui::Expander * expander3 = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
+   vert1->AttachBottom(expander3,false);
+   expander3->Set("Noise Parameters");
+   expander3->Expand(false);
+
+   gui::Horizontal * horiz4 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   expander3->SetChild(horiz4);
+
+   gui::Label * lab12 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab13 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab14 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab15 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab16 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+
+   lab12->Set("SD:");
+   lab13->Set("Top Left Bias:");
+   lab14->Set("Top Right Bias:");
+   lab15->Set("Bottom Left Bias:");
+   lab16->Set("Bottom Right Bias:");
+
+   noiseSD = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); noiseSD->SetSize(32,24);
+   noiseBiasTopLeft = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); noiseBiasTopLeft->SetSize(32,24);
+   noiseBiasTopRight = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); noiseBiasTopRight->SetSize(32,24);
+   noiseBiasBottomLeft = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); noiseBiasBottomLeft->SetSize(32,24);
+   noiseBiasBottomRight = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox")); noiseBiasBottomRight->SetSize(32,24);
+
+
+   horiz4->AttachRight(lab12,false);
+   horiz4->AttachRight(noiseSD,false);
+   horiz4->AttachRight(lab13,false);
+   horiz4->AttachRight(noiseBiasTopLeft,false);
+   horiz4->AttachRight(lab14,false);
+   horiz4->AttachRight(noiseBiasTopRight,false);
+   horiz4->AttachRight(lab15,false);
+   horiz4->AttachRight(noiseBiasBottomLeft,false);
+   horiz4->AttachRight(lab16,false);
+   horiz4->AttachRight(noiseBiasBottomRight,false);
+
+   noiseSD->Set("1.0");
+   noiseBiasTopLeft->Set("0.0");
+   noiseBiasTopRight->Set("0.0");
+   noiseBiasBottomLeft->Set("0.0");
+   noiseBiasBottomRight->Set("0.0");
 
 
    gui::Panel * panel = static_cast<gui::Panel*>(cyclops.Fact().Make("Panel"));
@@ -155,6 +204,7 @@ DispClean::DispClean(Cyclops & cyc)
   but2->OnClick(MakeCB(this,&DispClean::RemoveSpikes));
   but3->OnClick(MakeCB(this,&DispClean::Smooth));
   but4->OnClick(MakeCB(this,&DispClean::SaveDisp));
+  but11->OnClick(MakeCB(this,&DispClean::Noise));
 }
 
 DispClean::~DispClean()
@@ -373,6 +423,54 @@ void DispClean::Smooth(gui::Base * obj,gui::Event * event)
      if (userMask.Get(x,y)) disp.Get(x,y) = ibp.Expectation(x,y);
     }
    }
+
+
+ // Redraw...
+  RenderDisp();
+  canvas->Redraw();
+}
+
+void DispClean::Noise(gui::Base * obj,gui::Event * event)
+{
+ // Get parameters....
+  real32 sd = noiseSD->GetReal(1.0);
+  real32 biasTopLeft = noiseBiasTopLeft->GetReal(0.0);
+  real32 biasTopRight = noiseBiasTopRight->GetReal(0.0);
+  real32 biasBottomLeft = noiseBiasBottomLeft->GetReal(0.0);
+  real32 biasBottomRight = noiseBiasBottomRight->GetReal(0.0);
+
+ // Add the bias...
+  for (nat32 y=0;y<disp.Size(1);y++)
+  {
+   for (nat32 x=0;x<disp.Size(0);x++)
+   {
+    if (mask.Get(x,y)&&userMask.Get(x,y))
+    {
+     real32 tx = real32(x)/real32(disp.Size(0)-1);
+     real32 ty = real32(y)/real32(disp.Size(1)-1);
+     
+     real32 bottom = (1.0-tx)*biasBottomLeft + tx*biasBottomRight;
+     real32 top = (1.0-tx)*biasTopLeft + tx*biasTopRight;
+     real32 bias = (1.0-ty)*bottom + ty*top;
+      
+     disp.Get(x,y) += bias;
+    }
+   }
+  }
+ 
+ 
+ // Add the Gaussian noise...
+  data::Random rand;
+  for (nat32 y=0;y<disp.Size(1);y++)
+  {
+   for (nat32 x=0;x<disp.Size(0);x++)
+   {
+    if (mask.Get(x,y)&&userMask.Get(x,y))
+    {
+     disp.Get(x,y) += rand.Gaussian(sd);
+    }
+   }
+  }
 
 
  // Redraw...
