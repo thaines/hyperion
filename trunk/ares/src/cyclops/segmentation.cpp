@@ -117,9 +117,9 @@ inputVar(null<svt::Var*>()),imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>()
    
    kmgDim->Set("24");
    kmgMinSeg->Set("32");
-   kmgColMult->Set("2.0");
+   kmgColMult->Set("64.0");
    kmgSpatialMult->Set("1.0");
-   kmgMaxIters->Set("1000");
+   kmgMaxIters->Set("4000");
    
    kmgDim->SetSize(48,24);
    kmgMinSeg->SetSize(48,24);
