@@ -9,6 +9,7 @@
 
 #include "eos/types.h"
 #include "eos/bs/colours.h"
+#include "eos/ds/arrays.h"
 #include "eos/ds/arrays2d.h"
 #include "eos/time/progress.h"
 #include "eos/svt/field.h"
@@ -42,6 +43,10 @@ class EOS_CLASS MeanGridSeg
   /// used to initialise the k means algorithm.
    void SetSize(nat32 dim);
    
+  /// Sets the minimum segment size - segments smaller than this will bleed all
+  /// there pixels to surrounding segments. Defaults to 32.
+   void SetMinSeg(nat32 size);
+   
   /// Sets the relative costs of the 2 distances involved - colour and spatial distance.
   /// Defaults are 2 for colMult and 1 for spatialMult.
    void SetDist(real32 colMult,real32 spatialMult);
@@ -68,6 +73,7 @@ class EOS_CLASS MeanGridSeg
  private:
   // Parameters...
    nat32 dim;
+   nat32 minSize;   
    real32 colMult;
    real32 spatialMult;
    nat32 maxIters;
@@ -80,7 +86,28 @@ class EOS_CLASS MeanGridSeg
    ds::Array2D<nat32> out;
  
   // Runtime...
+   struct Mean
+   {
+    nat32 samples; // Number of samples involved.
+    real32 x,y;
+    real32 l,u,v;
+   };
    
+   void CalcMeans(const ds::Array2D<nat32> & seg,ds::Array<Mean> & mean);
+   nat32 UpdatePixels(const ds::Array2D<nat32> & oldSeg, ds::Array2D<nat32> & newSeg,
+                      const ds::Array<Mean> & mean); // Returns the number of changes.
+   
+   real32 DistSqr(const Mean & m,nat32 x,nat32 y) const
+   {
+    if (m.samples<minSize) return math::Infinity<real32>();
+   
+    real32 ret = spatialMult * (math::Sqr(m.x-real32(x)) + math::Sqr(m.y-real32(y)));
+    
+    const bs::ColourLuv & c = image.Get(x,y);
+    ret += colMult * (math::Sqr(c.l-m.l) + math::Sqr(c.u-m.u) + math::Sqr(c.v-m.v));
+    
+    return ret;
+   }
 };
 
 //------------------------------------------------------------------------------
