@@ -6,6 +6,9 @@ Work Bag:
 - Add calibrated/uncalibrated albedo output options.
 - Make sphere calibration system, with reflection direction calculation.
 
+- File info tool gives the wrong focal lengths for icd files in release build but not debug build. Also seems to be a similar issue with the triangulator - these might be 64 bit only.
+
+
 
 
 Cyclops/Conveniance Bag:
