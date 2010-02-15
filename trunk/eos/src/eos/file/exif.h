@@ -93,12 +93,54 @@ class EOS_CLASS Exif
     return real32(a)/real32(b);
    }
    
+
+  /// Returns true if camera make is avaliable.
+   bit HasMake() const {return GetName(0x010f)!=-1;}
    
-  /// Returns true if shutter time is avaliable.
-   bit HasShutterTime() const {return GetName(0x829a)!=-1;}
+  /// If HasMake then this returns it.
+   cstrconst GetMake() const {return GetStr(GetName(0x010f));}
+
+  /// Returns true if camera model is avaliable.
+   bit HasModel() const {return GetName(0x0110)!=-1;}
    
-  /// If HasShutterTime() is true you can call this to get it in seconds.
-   real32 ShutterTime() const {return GetUR(GetName(0x829a));}
+  /// If HasModel then this returns it.
+   cstrconst GetModel() const {return GetStr(GetName(0x0110));}
+
+  /// Returns true if the date time string of when the photo was taken is avaliable.
+   bit HasDateTime() const {return GetName(0x0132)!=-1;}
+   
+  /// If HasDateTime then this returns it.
+   cstrconst GetDateTime() const {return GetStr(GetName(0x0132));}
+
+  /// Returns true if exposure time is avaliable.
+   bit HasExposureTime() const {return GetName(0x829a)!=-1;}
+   
+  /// If HasExposureTime() is true you can call this to get it in seconds.
+   real32 GetExposureTime() const {return GetUR(GetName(0x829a));}
+
+  /// Returns true if F-Stop is avaliable.
+   bit HasFStop() const {return GetName(0x829d)!=-1;}
+   
+  /// If HasFStop() is true you can call this to get it.
+   real32 GetFStop() const {return GetUR(GetName(0x829d));}
+
+  /// Returns true if ISO is avaliable.
+   bit HasISO() const {return GetName(0x8827)!=-1;}
+   
+  /// If HasISO() is true you can call this to get it.
+   nat16 GetISO() const {return GetNat16(GetName(0x8827));}
+   
+  /// Returns true if Focal Length (Zoom) is avaliable.
+   bit HasFocalLength() const {return GetName(0x920a)!=-1;}
+   
+  /// If HasFocalLength() is true you can call this to get it, unit is milli-meter.
+   real32 GetFocalLength() const {return GetUR(GetName(0x920a));}
+   
+  /// Returns true if Flash usage is avaliable.
+   bit HasFlash() const {return GetName(0x8827)!=-1;}
+   
+  /// If HasFlash() is true you can call this to get it - false for no flash, true for flash.
+   bit GetFlash() const {return GetNat16(GetName(0x8827))==1;} 
 
 
   /// &nbsp;
