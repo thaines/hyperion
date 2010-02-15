@@ -134,7 +134,16 @@ bit LuvRangeImage::Valid(nat32 x,nat32 y) const
 {
  return mask.Get(x,y);
 }
-   
+
+bit LuvRangeImage::ValidExt(int32 x,int32 y) const
+{
+ if (x<0) return false;
+ if (y<0) return false;
+ if (x>=int32(data.Width())) return false;
+ if (y>=int32(data.Height())) return false;
+ return mask.Get(x,y);
+}
+
 const LuvRange & LuvRangeImage::Get(nat32 x,nat32 y) const
 {
  return data.Get(x,y);

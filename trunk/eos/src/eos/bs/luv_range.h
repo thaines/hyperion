@@ -182,6 +182,9 @@ class EOS_CLASS LuvRangeImage
    
   /// &nbsp;
    bit Valid(nat32 x,nat32 y) const;
+   
+  /// Extended version of valid - will handle out of bound values and return false for them.
+   bit ValidExt(int32 x,int32 y) const;
 
   /// &nbsp;
    const LuvRange & Get(nat32 x,nat32 y) const;
