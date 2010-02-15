@@ -97,13 +97,13 @@ void DispNorm::Run(time::Progress * prog)
       for (int32 d=minDisp;d<=maxDisp;d++)
       {
        real32 delta = math::Abs(real32(d) - mean);
-       if (delta*iSigma<sdCount)
+       if ((delta*iSigma<sdCount)&&(!math::IsZero(delta)))
        {
-        real32 weight = math::Sqr(1.0 - math::Sqr(delta*iSigma/sdCount));
+        real32 weight = (1.0 - math::Cube(1.0 - math::Sqr(delta*iSigma/sdCount)))/math::Sqr(delta*iSigma);
         weight *= buf[d-minDisp];
        
         newVar += weight * math::Sqr(delta);
-        newVarW += weight;
+        newVarW += 0.5*buf[d-minDisp];//weight;
        }
       }
      
