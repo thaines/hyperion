@@ -128,9 +128,8 @@ void LightDir::Run(time::Progress * prog)
    
    real32 minLightCost = math::Infinity<real32>();
    for (nat32 l=0;l<lc.Size();l++) minLightCost = math::Min(minLightCost,segCost[l]);
-   
-   minLightCost += maxSegCost;
-   for (nat32 l=0;l<lc.Size();l++) lc[l].cost += math::Min(segCost[l],minLightCost);
+
+   for (nat32 l=0;l<lc.Size();l++) lc[l].cost += math::Min(segCost[l]-minLightCost,maxSegCost);
   }
 
  
