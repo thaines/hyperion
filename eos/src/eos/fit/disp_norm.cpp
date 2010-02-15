@@ -19,6 +19,7 @@
 
 #include "eos/file/csv.h"
 #include "eos/file/stereo_helpers.h"
+#include "eos/math/gaussian_mix.h"
 
 namespace eos
 {
@@ -151,6 +152,115 @@ void DispNorm::Get(svt::Field<real32> & sd)
 }
 
 real32 DispNorm::GetSd(nat32 x,nat32 y)
+{
+ return out.Get(x,y);
+}
+
+//------------------------------------------------------------------------------
+LaplaceDispNorm::LaplaceDispNorm()
+:dsc(null<stereo::DSC*>()),dscMult(1.0),
+sd(7.0),sdMult(3.0),minSd(0.1),maxSd(16.0)
+{}
+
+LaplaceDispNorm::~LaplaceDispNorm()
+{}
+
+void LaplaceDispNorm::Set(const svt::Field<real32> & d,const stereo::DSC & ds,real32 dscM)
+{
+ disp = d;
+ dsc = &ds;
+ dscMult = dscM;
+}
+
+void LaplaceDispNorm::SetMask(const svt::Field<bit> & m)
+{
+ mask = m;
+}
+
+void LaplaceDispNorm::SetParam(real32 s,real32 mi,real32 ma,real32 sM)
+{
+ sd = s;
+ minSd = mi;
+ maxSd = ma;
+ sdMult = sM;
+}
+
+void LaplaceDispNorm::Run(time::Progress * prog)
+{
+ prog->Push();
+
+ out.Resize(disp.Size(0),disp.Size(1));
+ 
+ for (int32 y=0;y<int32(out.Height());y++)
+ {
+  prog->Report(y,out.Height());
+  prog->Push();
+  for (int32 x=0;x<int32(out.Width());x++)
+  {
+   prog->Report(x,out.Width());
+   
+   if (mask.Valid()&&(mask.Get(x,y)==false))
+   {
+    out.Get(x,y) = 0.0;
+   }
+   else
+   {
+    // Initialise the 3 dsc derived costs around and at the selected
+    // disparity. A divisor is needed for each...
+     real32 costNeg = 0.0, costNegDiv = 0.0;
+     real32 cost    = 0.0, costDiv = 0.0;
+     real32 costPos = 0.0, costPosDiv = 0.0;
+     
+    // Calculate the range of disparity values to consider...
+     real32 mean = disp.Get(x,y);
+     int32 minDisp = math::Clamp<int32>(int32(math::RoundDown(mean-1.0-sd*sdMult)),
+                                        -x,int32(dsc->WidthRight())-x);
+     int32 maxDisp = math::Clamp<int32>(int32(math::RoundUp(mean+1.0+sd*sdMult)),
+                                        -x,int32(dsc->WidthRight())-x);
+    
+    // Calculate the costs - Gaussian blur of the disparities for the
+    // given range...
+     for (int32 d=minDisp;d<=maxDisp;d++)
+     {
+      real32 c = dsc->Cost(x,x+d,y) * dscMult;
+      
+      real32 weightNeg = math::UnNormGaussian<real32>(sd,mean-1.0-real32(d));
+      real32 weight    = math::UnNormGaussian<real32>(sd,mean-real32(d));
+      real32 weightPos = math::UnNormGaussian<real32>(sd,mean+1.0-real32(d));
+      
+      costNeg += weightNeg*c; costNegDiv += weightNeg;
+      cost    += weight*c;    costDiv    += weight;
+      costPos += weightPos*c; costPosDiv += weightPos;
+     }
+
+    // Normalise the final cost, and use central differences to
+    // calculate the second differentials...
+     costNeg /= costNegDiv;
+     cost    /= costDiv;
+     costPos /= costPosDiv;
+     
+     real32 dd = costNeg + costPos - 2.0 * cost;
+
+    // Convert the second differential to a standard deviation, clamp it and store...
+     out.Get(x,y) = math::Sqrt(1.0/math::Clamp<real32>(dd,1.0/math::Sqr(maxSd),1.0/math::Sqr(minSd)));
+     if (!math::IsFinite(out.Get(x,y))) out.Get(x,y) = maxSd;
+   }
+  }
+  prog->Pop();
+ }
+
+ prog->Pop();
+}
+
+void LaplaceDispNorm::Get(svt::Field<real32> & sd)
+{
+ for (nat32 y=0;y<out.Height();y++)
+ {
+  for (nat32 x=0;x<out.Width();x++) sd.Get(x,y) = out.Get(x,y);
+ }
+}
+
+real32 LaplaceDispNorm::GetSd(nat32 x,nat32 y)
 {
  return out.Get(x,y);
 }

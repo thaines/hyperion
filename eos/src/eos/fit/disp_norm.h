@@ -105,9 +105,67 @@ class EOS_CLASS DispNorm
    
   // Output...
    ds::Array2D<real32> out;
+};
+
+//------------------------------------------------------------------------------
+/// Alternate version of DispNorm - uses Laplace's method/approximation of
+/// fitting a Gaussian to a distribution. Takes the disparity values for each
+/// pixel, applies a Gaussian blur and then uses central differences to
+/// calculate the second differential, from which standard deviation is
+/// calculated.
+class EOS_CLASS LaplaceDispNorm
+{
+ public:
+  /// &nbsp;
+   LaplaceDispNorm();
    
-  // Runtime...
+  /// &nbsp;
+   ~LaplaceDispNorm();
+
+
+  /// Sets the disparity map and DSC to be used. Must be called before run.
+  /// Optional set a multiplier for the dsc costs, to emphasis differences.
+   void Set(const svt::Field<real32> & disp,const stereo::DSC & dsc,real32 dscMult = 1.0);
+
+  /// Sets the mask, optional - will set masked areas to a standard deviation of 0.
+   void SetMask(const svt::Field<bit> & mask);
    
+  /// Sets the strength of the blur to apply, the range of sd values to clamp
+  /// the output to and the multiplier of the bluring sd to get the sampling
+  /// range.
+  /// Defaults are 7 for blur and as given for the rest.
+   void SetParam(real32 sd,real32 minSd = 0.1,real32 maxSd = 16.0,real32 sdMult = 3.0);
+
+
+  /// Runs the algorithm.
+   void Run(time::Progress * prog = null<time::Progress*>());
+
+
+  /// Extracts the results.
+   void Get(svt::Field<real32> & sd);
+   
+  /// Extracts a result.
+   real32 GetSd(nat32 x,nat32 y);
+
+
+  /// &nbsp;
+   inline cstrconst TypeString() const {return "eos::fit::LaplaceDispNorm";}
+
+
+ private:
+  // Input...
+   svt::Field<real32> disp;
+   svt::Field<bit> mask;
+   const stereo::DSC * dsc;
+   real32 dscMult;
+   
+   real32 sd; // SD of gaussian blur to apply.
+   real32 sdMult; // Multiplier of blur sd to get range of values to calculate.
+   real32 minSd; // Caps on output.
+   real32 maxSd; // "
+
+  // Output...
+   ds::Array2D<real32> out;
 };
 
 //------------------------------------------------------------------------------
