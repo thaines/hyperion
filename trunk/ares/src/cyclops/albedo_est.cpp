@@ -480,6 +480,13 @@ void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
        real32 dot = needle.Get(x,y) * toLight;
        estimate[pos].estimate = irradiance.Get(x,y) / dot;
        estimate[pos].weight = dot;
+       
+       if ((!math::IsFinite(estimate[pos].estimate))||(!math::IsFinite(estimate[pos].weight)))
+       {
+        estimate[pos].estimate = 0.0;
+        estimate[pos].weight = 0.0;
+       }
+       
        pos += 1;
       }
      }
