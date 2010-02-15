@@ -48,6 +48,9 @@ class EOS_CLASS DispFish
   /// i.e. the algorithm is O(width*height*(range*2+1)^3) - a very big number.
   /// Default is 3
    void SetRange(nat32 range);
+   
+  /// Sets the maximum allowed concentration. Defaults to 24.
+   void SetMax(real32 maxCon);
 
 
   /// Runs the algorithm.
@@ -71,6 +74,7 @@ class EOS_CLASS DispFish
    const stereo::DSC * dsc;
    cam::CameraPair pair;
    nat32 range;
+   real32 maxCon;
    
   // Output...
    ds::Array2D<bs::Vert> out;
@@ -81,7 +85,6 @@ class EOS_CLASS DispFish
     {
      bs::Vert pos;
      real32 cost;
-     real32 weight;
      
      static inline cstrconst TypeString() {return "eos::fit::DispFish::Pixel";}
     };
@@ -93,7 +96,7 @@ class EOS_CLASS DispFish
      real32 r;
      real32 weight;
      
-     bit operator < (const Rcont & rhs) const {return this->r<rhs.r;}
+     bit operator < (const Rcont & rhs) const {return this->r>rhs.r;} // Reversed.
     };
 };
 
