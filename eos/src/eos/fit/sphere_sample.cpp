@@ -8,7 +8,7 @@ namespace eos
  {
 //------------------------------------------------------------------------------
 SubDivSphere::SubDivSphere()
-:verts(12,12),tris(20,40)
+:tris(20,40),verts(12,12)
 {
  const real32 nc = math::Sqrt(math::Sqr(1.0+((1.0+math::Sqrt(5.0))/2.0)));
  const real32 innc = 1.0/nc;
@@ -100,12 +100,109 @@ SubDivSphere::SubDivSphere()
 SubDivSphere::~SubDivSphere()
 {}
 
+SubDivSphere::Tri SubDivSphere::Collide(const bs::Normal & dir) const
+{
+ // Helper arrays that tie in with the first 20 face - gives there x/y/z
+ // assignment as a quick way of excluding certain faces from collision
+ // detection.
+ // Each one consists of -1,0 and 1 values for each axis. 0 indicates the face
+ // has both directions, -1 only negative values of that axis, 1 only positive
+ // values of that axis.
+  static const int8 xMask[20] = {1,-1,-1, 1, 0, 0, 0, 0, 1, 1,-1,-1, 1,-1,-1, 1,-1,-1, 1, 1};
+  static const int8 yMask[20] = {0, 0, 0, 0, 1, 1,-1,-1, 1,-1,-1, 1, 1, 1,-1,-1, 1,-1,-1, 1};
+  static const int8 zMask[20] = {1, 1,-1,-1, 1,-1,-1, 1, 0, 0, 0, 0, 1, 1, 1, 1,-1,-1,-1,-1};
+
+
+ // Find the top level face that this direction collides with...
+  // Calculate the flags to use with the above data structure...
+   int8 dX = int8(math::Sign(dir[0]));
+   int8 dY = int8(math::Sign(dir[1]));
+   int8 dZ = int8(math::Sign(dir[2]));
+  
+  // Use flags to ignore most of the test faces, only checking against valid
+  // once. This code is designed to handle boundary cases so samples can't fall
+  // between the cracks...
+   Tri ret = nat32(-1);
+   real32 bestDist = math::Infinity<real32>();
+   for (nat32 i=0;i<20;i++)
+   {
+    // Test flags...
+     if (dX*xMask[i]<0) continue;
+     if (dY*yMask[i]<0) continue;
+     if (dZ*zMask[i]<0) continue;
+     
+    // Its a possible match - do a full check, but produce a distance that 
+    // should be zero on a match and select the smallest - this makes cracks a 
+    // non-issue (With early break out if all are positive)...
+     real32 distA = UnnormDist(dir,verts[tris[i].vertInd[1]],verts[tris[i].vertInd[2]]);
+     real32 distB = UnnormDist(dir,verts[tris[i].vertInd[2]],verts[tris[i].vertInd[0]]);
+     real32 distC = UnnormDist(dir,verts[tris[i].vertInd[3]],verts[tris[i].vertInd[1]]);
+     
+     if ((distA>0.0)&&(distB>0.0)&&(distC>0.0))
+     {
+      ret = i;
+      break;
+     }
+     else
+     {
+      real32 dist = math::Max<real32>(-distA,0.0) + 
+                    math::Max<real32>(-distB,0.0) + 
+                    math::Max<real32>(-distC,0.0);
+      if (dist<bestDist)
+      {
+       bestDist = dist;
+       ret = i;
+      }
+     }
+   }
+
+
+ // Recurse down until we reach a childless face...
+  while (tris[ret].child!=nat32(-1))
+  {
+   Tri c = tris[ret].child;
+   real32 distA = UnnormDist(dir,verts[tris[c].vertInd[1]],verts[tris[c].vertInd[2]]);
+   real32 distB = UnnormDist(dir,verts[tris[c].vertInd[2]],verts[tris[c].vertInd[0]]);
+   real32 distC = UnnormDist(dir,verts[tris[c].vertInd[3]],verts[tris[c].vertInd[1]]);
+   
+   if (distA<0.0) ret = tris[c].adj[0];
+   else
+   {
+    if (distB<0.0) ret = tris[c].adj[1];
+    else
+    {
+     if (distC<0.0) ret = tris[c].adj[2];
+               else ret = c;
+    }
+   }
+  }
+ 
+ 
+ return ret;
+}
+
+void SubDivSphere::Trilinear(Tri tri,const bs::Normal & dir,real32 & a,real32 & b,real32 & c) const
+{
+ a = NormDist(dir,verts[tris[tri].vertInd[1]],verts[tris[tri].vertInd[2]]);
+ b = NormDist(dir,verts[tris[tri].vertInd[2]],verts[tris[tri].vertInd[0]]);
+ c = NormDist(dir,verts[tris[tri].vertInd[3]],verts[tris[tri].vertInd[1]]);
+}
+
+void SubDivSphere::MakeExist(Tri tri,nat32 a)
+{
+ if (tris[tri].adj[a]!=nat32(-1)) return;
+ 
+ if (tris[tris[tri].parent].adj[a]==nat32(-1)) MakeExist(tris[tri].parent,a);
+ SubDivide(tris[tris[tri].parent].adj[a]);
+ 
+ log::Assert(tris[tri].adj[a]!=nat32(-1));
+}
 
 void SubDivSphere::SubDivide(Tri tri)
 {
  if (tris[tri].child==nat32(-1)) return;
 
- // First create the 4 relevant triangles - first entry is the middle...
+ // First create the 4 relevant triangles - first entry is the middle, then adj to A,B,C...
   nat32 base = tris.Size();
   tris.Size(tris.Size()+4);
   for (nat32 i=0;i<4;i++)
@@ -146,16 +243,60 @@ void SubDivSphere::SubDivide(Tri tri)
 
 
  // Fill in all the vertex indices for the 4 triangles...
+  for (nat32 i=0;i<3;i++) tris[base].vertInd[i] = midVert[i];
+
+  tris[base+1].vertInd[0] = tris[tri].vertInd[0];
+  tris[base+1].vertInd[1] = midVert[2];
+  tris[base+1].vertInd[2] = midVert[1];
   
- 
+  tris[base+2].vertInd[0] = midVert[2];
+  tris[base+2].vertInd[1] = tris[tri].vertInd[1];
+  tris[base+2].vertInd[2] = midVert[0];
+  
+  tris[base+3].vertInd[0] = midVert[1];
+  tris[base+3].vertInd[1] = midVert[0];
+  tris[base+3].vertInd[2] = tris[tri].vertInd[2];
+
+   
  // Stitch up the simple connections...
- 
- 
+  for (nat32 i=0;i<3;i++)
+  {
+   tris[base].adj[i] = base+1+i;
+   tris[base+1+i].adj[i] = base;
+  }
+
+
  // Now check the other connections and see if the partners exist and can be
  // connected to - this is the complicated bit...
-  
- 
- 
+  for (nat32 i=0;i<3;i++) // i is the edge of tri we are currently processing.
+  {
+   if ((tris[tri].adj[i]!=nat32(-1))&&(tris[tris[tri].adj[i]].child!=nat32(-1)))
+   {
+    // We have an adjacent subdivision - we need to link up...
+     Tri adj = tris[tri].adj[i];
+     nat32 adjI = (tris[adj].adj[0]==tri)?0:((tris[adj].adj[1]==tri)?1:2);
+
+     Tri thisU = tris[tris[tri].child].adj[(i+1)%3];
+     Tri thisV = tris[tris[tri].child].adj[(i+2)%3];
+     
+     Tri otherU = tris[tris[adj].child].adj[(adjI+1)%3];
+     Tri otherV = tris[tris[adj].child].adj[(adjI+2)%3];
+     
+     tris[thisU].adj[i] = otherV;
+     tris[thisV].adj[i] = otherU;
+
+     tris[otherU].adj[adjI] = thisV;
+     tris[otherV].adj[adjI] = thisU;    
+   }
+   else
+   {
+    // No subdivision - simply set 'em to be null pointers...
+     for (nat32 j=0;j<3;j++)
+     {
+      if (j!=i) tris[tris[tris[tri].child].adj[j]].adj[i] = nat32(-1);
+     }
+   }
+  }
 }
 
 //------------------------------------------------------------------------------
