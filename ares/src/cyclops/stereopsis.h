@@ -26,6 +26,8 @@ class Stereopsis
   gui::ComboBox * whichPost;
   gui::TickBox * augGaussian;
   gui::TickBox * augFisher;
+  
+  gui::Button * but7;
 
   gui::Expander * alg5;
   gui::Expander * alg6;
@@ -33,6 +35,7 @@ class Stereopsis
   gui::Expander * post2;
   gui::Expander * post3a;
   gui::Expander * post3b;
+  gui::Expander * post4;
   gui::Expander * augG;
   gui::Expander * augF;
 
@@ -63,7 +66,6 @@ class Stereopsis
   gui::EditBox * dcDispRange;
   gui::TickBox * dcDoLR;
   gui::EditBox * dcDistCapDifference;
-  gui::EditBox * dcDistSdMult;
 
   gui::EditBox * smoothStrength;
   gui::EditBox * smoothCutoff;
@@ -81,6 +83,14 @@ class Stereopsis
   gui::EditBox * segRad;
   gui::EditBox * segMix;
   gui::EditBox * segEdge;
+  
+  gui::TickBox * polyUseHalfX;
+  gui::TickBox * polyUseHalfY;
+  gui::TickBox * polyUseCorners;
+  gui::EditBox * polyDistMult;
+  gui::EditBox * polyDiffSteps;
+  gui::EditBox * polyDistCap;
+  gui::EditBox * polyPrune;
   
   gui::EditBox * gaussianRange;
   gui::EditBox * gaussianSdMult;
@@ -105,6 +115,7 @@ class Stereopsis
 
   svt::Var * leftImg;
   svt::Var * rightImg;
+  svt::Var * existing;
   svt::Var * result;
   
   svt::Var * segmentation;
@@ -119,6 +130,7 @@ class Stereopsis
 
   void LoadCalibration(gui::Base * obj,gui::Event * event);
   void LoadSeg(gui::Base * obj,gui::Event * event);
+  void LoadExisting(gui::Base * obj,gui::Event * event);
   
   void ChangeAlg(gui::Base * obj,gui::Event * event);
   void ChangePost(gui::Base * obj,gui::Event * event);

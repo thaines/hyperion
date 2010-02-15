@@ -85,7 +85,6 @@ class Cyclops
   void StartSphereFitter(gui::Base * obj,gui::Event * event);
   void StartStereoSfS(gui::Base * obj,gui::Event * event);
   void StartAlbedoEst(gui::Base * obj,gui::Event * event);
-  void DisparitySdAugment(gui::Base * obj,gui::Event * event);
 };
 
 //------------------------------------------------------------------------------
