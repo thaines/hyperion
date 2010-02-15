@@ -151,13 +151,17 @@ const LuvRange & LuvRangeImage::Get(nat32 x,nat32 y) const
 
 //------------------------------------------------------------------------------
 LuvRangePyramid::LuvRangePyramid()
+:halfWidth(false),halfHeight(false)
 {}
   
 LuvRangePyramid::~LuvRangePyramid()
 {}
    
-void LuvRangePyramid::Create(const svt::Field<bs::ColourLuv> & img, const svt::Field<bit> & mask, bit useHalfX, bit useHalfY, bit useCorners, bit halfWidth, bit halfHeight)
+void LuvRangePyramid::Create(const svt::Field<bs::ColourLuv> & img, const svt::Field<bit> & mask, bit useHalfX, bit useHalfY, bit useCorners, bit halfW, bit halfH)
 {
+ halfWidth = halfW;
+ halfHeight = halfH;
+ 
  // Calculate how many levels are required...
   nat32 levels = 1;
   {
@@ -197,8 +201,18 @@ nat32 LuvRangePyramid::Levels() const
 {
  return data.Size();
 }
-   
-const LuvRangeImage & LuvRangePyramid::Level(nat32 l)
+
+bit LuvRangePyramid::HalfWidth() const
+{
+ return halfWidth;
+}
+
+bit LuvRangePyramid::HalfHeight() const
+{
+ return halfHeight;
+}
+
+const LuvRangeImage & LuvRangePyramid::Level(nat32 l) const
 {
  return data[l];
 }

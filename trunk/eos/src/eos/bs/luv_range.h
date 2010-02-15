@@ -220,10 +220,17 @@ class EOS_CLASS LuvRangePyramid
   /// Returns how many levels exist.
    nat32 Levels() const;
    
+  /// Returns true if it halfed width during construction.
+   bit HalfWidth() const;
+
+  /// Returns true if it halfed height during construction.
+   bit HalfHeight() const;
+
+
   /// Returns the LuvRangeImage for the given level. Level 0 is the largest, 
   /// with each following level halfed inat  least one dimension. Image with the
   /// highest level will have dimension of 1 in all dimensions which were halfed.
-   const LuvRangeImage & Level(nat32 l);
+   const LuvRangeImage & Level(nat32 l) const;
 
 
   /// &nbsp;
@@ -231,6 +238,8 @@ class EOS_CLASS LuvRangePyramid
 
 
  private:
+  bit halfWidth;
+  bit halfHeight;
   ds::ArrayDel<LuvRangeImage> data;
 };
 
