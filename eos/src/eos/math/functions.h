@@ -264,6 +264,23 @@ inline T Factorial(T val)
  return ret;
 }
 
+/// Calculates the gamma function, for a given number of 0.5's, i.e. 
+/// GammaHalfs(2) is the gamma function of one GammaHalfs(3) of 1.5, etc.
+inline real32 GammaHalfs(nat32 halfs)
+{
+ real32 ret = 1.0;
+ while (halfs>2)
+ {
+  halfs -= 2;
+  ret *= 0.5*real32(halfs);
+ }
+ 
+ if (halfs==1) ret *= math::Sqrt(math::pi);
+ // if 2 then theres an implicit multiplication by 1.
+
+ return ret;
+}
+
 /// Calculates the length of a vector with the dimensions given,
 /// i.e. sqrt(x*x + y*y).
 template <typename T>

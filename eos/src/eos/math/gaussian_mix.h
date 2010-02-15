@@ -77,6 +77,14 @@ inline T Gaussian(T coVarDet,const Mat<S,S,T> & invCoVar,const Vect<S,T> & x)
 }
 
 //------------------------------------------------------------------------------
+/// This function returns x where P(X \in [0..x]) = p for the given probability
+/// for a chi-sqaure distribution function with dimension dims - that is it returns
+/// the mahalonobis distance required for the ellipsoid of a dims dimensional
+/// gaussian to contain the given probability.
+/// Simple, slow, but works well enough.
+EOS_FUNC real32 ChiSquareCulmInv(real32 prob,nat32 dims,real32 accuracy = 1e-4);
+
+//------------------------------------------------------------------------------
 /// This class represents a 1 dimensional gaussian, representing it as the 
 /// inverse of the variance multiplied by the mean and the inverse of the 
 /// variance.

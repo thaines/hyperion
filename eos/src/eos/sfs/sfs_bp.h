@@ -386,8 +386,8 @@ class EOS_CLASS SfS_BP_Nice2
 /// This class uses numerical integration to create a lookup table that gives 
 /// the concentration required for a Fisher distribution that has a given 
 /// probability of a sample from it being within a given angle of its direction.
-/// The probability is provided on construction, its then maps angles to 
-/// Fisher concentration. You also provide a concentratuion clamp - it will only
+/// The probability is provided on construction, it then maps angles to 
+/// Fisher concentration. You also provide a concentration clamp - it will only
 /// return values in that range. (That range is used to save construction time, 
 /// and should be relativly small.)
 class EOS_CLASS FisherAngProb
@@ -401,7 +401,7 @@ class EOS_CLASS FisherAngProb
  
   /// You must call this before attempting to get concentrations - this 
   /// constructs the lookup table and can take some time, hence the progress bar.
-  /// prob is the probability to calcaulte the table for.
+  /// prob is the probability to calculate the table for.
   /// minK and maxK set the concentration range to consider.
   /// tableSize is how many concentration values to sample in that range.
   /// samples is the number of samples to take over the 0..pi range for numerical integration.

@@ -1,0 +1,86 @@
+#ifndef EOS_FIT_DISP_NORM_FISH_H
+#define EOS_FIT_DISP_NORM_FISH_H
+//------------------------------------------------------------------------------
+// Copyright 2009 Tom Haines
+
+/// \file disp_norm_fish.h
+/// Provides the ability to fit a Fisher distribution to a needle map that has
+/// been augmented with Gaussian distributions.
+
+#include "eos/types.h"
+#include "eos/time/progress.h"
+#include "eos/svt/field.h"
+#include "eos/ds/arrays2d.h"
+#include "eos/bs/geo3d.h"
+#include "eos/cam/files.h"
+#include "eos/math/stats_dir.h"
+
+namespace eos
+{
+ namespace fit
+ {
+//------------------------------------------------------------------------------
+class EOS_CLASS DispNormFish
+{
+ public:
+  /// &nbsp;
+   DispNormFish();
+  
+  /// &nbsp;
+   ~DispNormFish();
+
+
+  /// Sets the disparity map and associated standard deviations - must be called
+  /// before Run(...).
+   void Set(const svt::Field<real32> & disp,const svt::Field<real32> & sd);
+
+  /// Sets the mask, optional - will set masked areas to a concentration of 0.
+   void SetMask(const svt::Field<bit> & mask);
+
+  /// Sets the parameters to convert to depth - a cam::CameraPair
+   void SetPair(const cam::CameraPair & pair);
+
+  /// Sets the probability weight to match - trys to make the region of the input
+  /// distribution of the given size have the same angular range as the same
+  /// region of the output Fisher distribution.
+  /// Defaults to 0.1
+   void SetRegion(real32 prob);
+   
+  /// Sets the range of concentration parameters it will consider -
+  /// defaults to 0.1 and 10.0
+   void SetRange(real32 minK,real32 maxK);
+   
+  
+  /// Runs the algorithm.
+   void Run(time::Progress * prog = null<time::Progress*>());
+
+
+  /// Extracts the results.
+   void Get(svt::Field<bs::Vert> & fish);
+
+  /// Extracts the results.
+   void Get(svt::Field<math::Fisher> & fish);
+
+
+  /// &nbsp;
+   inline cstrconst TypeString() const {return "eos::fit::DispNormFish";}
+
+
+ private:
+  // Input & parameter...
+   svt::Field<real32> disp;
+   svt::Field<real32> sd;
+   svt::Field<bit> mask;
+   cam::CameraPair pair;
+   real32 prob;
+   real32 minK;
+   real32 maxK;
+    
+  // Output...
+   ds::Array2D<bs::Vert> out;
+};
+
+//------------------------------------------------------------------------------
+ };
+};
+#endif
