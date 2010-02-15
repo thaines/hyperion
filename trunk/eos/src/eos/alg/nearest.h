@@ -35,8 +35,8 @@ EOS_FUNC void PointEllipsoid(const math::Vect<3> & ell,const math::Vect<3> & poi
 /// given point is in the centre in which case it returns no points to indicate 
 /// all points.
 /// By definition this will include the closest point on the ellipsoid to the
-/// Warning: Not convinced this actually works.
 /// given point.
+/// Warning: Not convinced this actually works.
 /// \param ell The ellipsoids scallers for each of the axes.
 /// \param point The point to for output points to point towards.
 /// \param out Output points.
