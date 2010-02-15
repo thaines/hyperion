@@ -88,11 +88,19 @@ void Bleyer04::SetSegmentExtra(nat32 rad,real32 mix,real32 edge)
  edgeLimit = edge;
 }
 
+void Bleyer04::SegmentOverride(const svt::Field<nat32> & segs)
+{
+ segOverride = segs;
+}
+
 void Bleyer04::Run(time::Progress * prog)
 {
  prog->Push();
- nat32 stepSum = 6;
- prog->Report(0,stepSum);
+ nat32 step = 0;
+ nat32 steps = 6;
+ if (dispOverride.Valid()) --steps;
+ if (segOverride.Valid()) --steps;
+ prog->Report(step++,steps);
 
  // Setup the output, in anticipation of getting that far...
   out = new svt::Var(left.GetVar()->GetCore());
@@ -143,8 +151,9 @@ void Bleyer04::Run(time::Progress * prog)
   filter::RGBtoLuv(right,rightLuv);
 
  // Now segment the left image...
+ if (!segOverride.Valid())
  {
-  prog->Report(1,stepSum);
+  prog->Report(step++,steps);
   filter::Synergism syn;
    syn.SetImage(leftL,leftLuv);
    syn.DiffWindow(windowSize);
@@ -159,11 +168,20 @@ void Bleyer04::Run(time::Progress * prog)
    segCount = syn.Segments();
    syn.GetSegments(segs);
  }
+ else
+ {
+  segs = segOverride;
+  segCount = 1;
+  for (nat32 y=0;y<segs.Size(1);y++)
+  {
+   for (nat32 x=0;x<segs.Size(0);x++) segCount = math::Max(segCount,segs.Get(x,y)+1);
+  }
+ }
 
  // Generate an initial disparity map for the left image, or copy in the override...
- prog->Report(2,stepSum);
  if (!dispOverride.Valid())
  {
+  prog->Report(step++,steps);
   SadSegStereo sadSeg;
    sadSeg.SetSegments(segCount,segs);
    sadSeg.AddField(leftR,rightR);
@@ -192,7 +210,7 @@ void Bleyer04::Run(time::Progress * prog)
 
 
  // Fit planes to each segment...
-  prog->Report(3,stepSum);
+  prog->Report(step++,steps);
   PlaneSeg planeSeg;
    planeSeg.SetDisparity(disp);
    planeSeg.SetValidity(mask);
@@ -201,7 +219,7 @@ void Bleyer04::Run(time::Progress * prog)
    planeSeg.MakePlanes();
 
  // Fit layers to sets of segments using mean shift...
-  prog->Report(4,stepSum);
+  prog->Report(step++,steps);
   LayerMaker layerMaker;
    layerMaker.Setup(out->GetCore(),planeSeg,planeRadius,prog);
 
@@ -218,12 +236,12 @@ void Bleyer04::Run(time::Progress * prog)
 
   for (nat32 i=0;i<maxIter;i++)
   {
-   prog->Report(5+i*3,stepSum);
+   prog->Report(step++,steps);
    if (layerSelect.Run(prog)==false) break;
-   stepSum += 3;
-   prog->Report(6+i*3,stepSum);
+   steps += 3;
+   prog->Report(step++,steps);
    layerMaker.Rebuild(planeSeg,prog);
-   prog->Report(7+i*3,stepSum);
+   prog->Report(step++,steps);
    layerMaker.LayerMerge(out->GetCore(),segs,planeSeg,planeRadius,prog);
   }
 

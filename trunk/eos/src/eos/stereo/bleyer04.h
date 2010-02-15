@@ -91,6 +91,9 @@ class EOS_CLASS Bleyer04
   /// bit. The window radius, the mix between the values provided and the border
   /// cutoff for a merge to happen. Default to 2, 0.3 and 0.9 respectivly.
    void SetSegmentExtra(nat32 rad,real32 mix,real32 edge);
+   
+  /// Overrides the mean shift segmentation by providing an alternate segmentation.
+   void SegmentOverride(const svt::Field<nat32> & segs);
 
 
   /// Runs the algorithm, takes a progress object so it can be monitored, which
@@ -132,6 +135,7 @@ class EOS_CLASS Bleyer04
 
    svt::Field<real32> dispOverride;
    svt::Field<bit> maskOverride;
+   svt::Field<nat32> segOverride;
 
    int32 minDisp;
    int32 maxDisp;
