@@ -392,14 +392,24 @@ result(null<svt::Var*>())
    lab29->Set(" Range:");
    fisherRange = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    fisherRange->Set("4");
+   fisherRange->SetSize(48,24);
+   
+   gui::Label * lab32 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab32->Set(" Min K:");
+   fisherMin = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   fisherMin->Set("1.0");
+   fisherMin->SetSize(48,24);
    
    gui::Label * lab31 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab31->Set(" Max K:");
    fisherMax = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    fisherMax->Set("24.0");
+   fisherMax->SetSize(48,24);
    
    horiz8->AttachRight(lab29,false);
    horiz8->AttachRight(fisherRange,false);
+   horiz8->AttachRight(lab32,false);
+   horiz8->AttachRight(fisherMin,false);
    horiz8->AttachRight(lab31,false);
    horiz8->AttachRight(fisherMax,false);
 
@@ -907,7 +917,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     dispFish.Set(disp,*dsc);
     dispFish.SetPair(pair);
     dispFish.SetRange(fisherRange->GetInt(4));
-    dispFish.SetMax(fisherMax->GetReal(24.0));
+    dispFish.SetClamp(fisherMin->GetReal(1.0),fisherMax->GetReal(24.0));
    
     dispFish.Run(prog);
     
