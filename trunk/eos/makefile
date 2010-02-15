@@ -85,7 +85,7 @@ ifeq ($(PLATFORM),win)
 endif
 
 ifeq ($(PLATFORM),lin)
- EXTRA_OPT	= -msse2 -mfpmath=sse
+ EXTRA_OPT	= #-msse2 -mfpmath=sse # Disabled for now out of general paranoia at the running differences.
 endif
 
 COMMON_C	= -mmmx -m3dnow $(EXTRA_OPT) -ffast-math -fno-strict-aliasing -c -Wall -Wfloat-equal $(INCLUDE)
