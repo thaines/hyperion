@@ -77,8 +77,7 @@ void LightDir::Run(time::Progress * prog)
 
  // Now generate the data structure we actually pass around from the input - 
  // group data points by segment...
-  prog->Report(step++,steps);
-  ds::Array<Pixel> pixel(seg.Size(0)*seg.Size(1)); // Array of all pixels, grouped by segment.
+  prog->Report(step++,steps);  
   ds::Array<nat32> size(segCount); // Number of pixels in each segment.
   ds::Array<nat32> offset(segCount+1); // Array of offsets for each segment, with size on end.
   
@@ -87,11 +86,18 @@ void LightDir::Run(time::Progress * prog)
    for (nat32 i=0;i<size.Size();i++) size[i] = 0;
    for (nat32 y=0;y<seg.Size(1);y++)
    {
-    for (nat32 x=0;x<seg.Size(0);x++) size[seg.Get(x,y)] += 1;
+    for (nat32 x=0;x<seg.Size(0);x++)
+    {
+     if (!math::IsZero(irr.Get(x,y)))
+     {
+      size[seg.Get(x,y)] += 1;
+     }
+    }
    }
    
    offset[0] = 0;
    for (nat32 i=0;i<size.Size();i++) offset[i+1] = offset[i] + size[i];
+   ds::Array<Pixel> pixel(offset[size.Size()]); // Array of all pixels, grouped by segment.
    
   // Copy pixel information into the pixel buffer...
    prog->Report(step++,steps);
@@ -106,12 +112,15 @@ void LightDir::Run(time::Progress * prog)
    {
     for (nat32 x=0;x<seg.Size(0);x++)
     {
-     nat32 s = seg.Get(x,y);
-     Pixel & targ = pixel[offset[s]+size[s]];
-     size[s] += 1;
+     if (!math::IsZero(irr.Get(x,y)))
+     {
+      nat32 s = seg.Get(x,y);
+      Pixel & targ = pixel[offset[s]+size[s]];
+      size[s] += 1;
      
-     targ.irr = irr.Get(x,y);
-     targ.dir = dir.Get(x,y);
+      targ.irr = irr.Get(x,y);
+      targ.dir = dir.Get(x,y);
+     }
     }
    }
 
@@ -128,20 +137,22 @@ void LightDir::Run(time::Progress * prog)
   {
    prog->Report(step++,steps);
    nat32 segSize = offset[s+1] - offset[s];
-   
-   prog->Push();
-   for (nat32 l=0;l<lc.Size();l++)
+   if (segSize!=0)
    {
-    prog->Report(l,lc.Size());
-    segCost[l] = SegLightCost(lc[l].dir,recDepth, pixel,offset[s],segSize, 
+    prog->Push();
+    for (nat32 l=0;l<lc.Size();l++)
+    {
+     prog->Report(l,lc.Size());
+     segCost[l] = SegLightCost(lc[l].dir,recDepth, pixel,offset[s],segSize, 
                               tAux,tWork);
-   }
-   prog->Pop();
+    }
+    prog->Pop();
    
-   real32 minLightCost = math::Infinity<real32>();
-   for (nat32 l=0;l<lc.Size();l++) minLightCost = math::Min(minLightCost,segCost[l]);
+    real32 minLightCost = math::Infinity<real32>();
+    for (nat32 l=0;l<lc.Size();l++) minLightCost = math::Min(minLightCost,segCost[l]);
 
-   for (nat32 l=0;l<lc.Size();l++) lc[l].cost += math::Min(segCost[l]-minLightCost,maxSegCostPP*segSize);
+    for (nat32 l=0;l<lc.Size();l++) lc[l].cost += math::Min(segCost[l]-minLightCost,maxSegCostPP*segSize);
+   }
   }
 
  
@@ -162,8 +173,12 @@ void LightDir::Run(time::Progress * prog)
   for (nat32 s=0;s<segCount;s++)
   {
    prog->Report(s,segCount);
-   SegLightCost(bestLightDir,recDepth, pixel,offset[s],offset[s+1]-offset[s], 
-                tAux,tWork,&albedo[s]);
+   if (offset[s+1]!=offset[s])
+   {
+    SegLightCost(bestLightDir,recDepth, pixel,offset[s],offset[s+1]-offset[s], 
+                 tAux,tWork,&albedo[s]);
+   }
+   else albedo[s] = 0.0;
   }
   prog->Pop();
 
