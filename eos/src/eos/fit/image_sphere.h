@@ -42,11 +42,12 @@ class EOS_CLASS ImageOfSphere
   /// Adds a pixel coordinate - must be in the coordinate system of the camera.
   /// These coordinates are the edge of the sphere in the image - i.e. rays cast
   /// from them should graze the output sphere.
+  /// Must be called at least 3 times before Run, assuming no degeneracy.
    void AddPixel(real32 x,real32 y);
 
 
-  /// Runs the algorithm.
-   void Run(time::Progress * prog = null<time::Progress*>());
+  /// Runs the algorithm - returns true on success, false on failure...
+   bit Run(time::Progress * prog = null<time::Progress*>());
 
 
   /// Returns the position of the light source.
@@ -68,7 +69,19 @@ class EOS_CLASS ImageOfSphere
    bs::Vert centre;
    
   // Error function for LM...
-   static void ErrorFunc(const math::Vect<3,real32> & pv,math::Vect<1,real32> & err,const ds::Array<bs::Ray> & oi);
+   struct ErrData
+   {
+    ds::Array<bs::Ray> ray;
+    real32 radius;
+   };
+   static void ErrorFunc(const math::Vect<3,real32> & pv,math::Vect<1,real32> & err,const ErrData & oi);
+   
+  // Function that calculates the centre of a sphere given 3 rays from the same
+  // starting position and a radius...
+   static void SphereFromRays(real32 radius,const bs::Vert & start,
+                              const bs::Normal & rayA,const bs::Normal & rayB,const bs::Normal & rayC,
+                              bs::Vert & out);
+                              
 };
 
 //------------------------------------------------------------------------------

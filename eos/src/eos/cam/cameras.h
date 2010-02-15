@@ -409,9 +409,9 @@ class EOS_CLASS Camera : public Extrinsic
     math::Mat<3,3,real64> rot;
     Decompose(intr,rot);
 
-    dir[0] = rot[2][0];
-    dir[1] = rot[2][1];
-    dir[2] = rot[2][2];
+    dir[0] = -rot[2][0];
+    dir[1] = -rot[2][1];
+    dir[2] = -rot[2][2];
    }
 
 
