@@ -49,12 +49,7 @@ class EOS_CLASS LightAmb
   /// Sets the ambient range to consider, noting that we presume a light source
   /// of strength 1 with no falloff. Defaults to 0.0 to 0.75
    void SetAmbRange(real32 min,real32 max);
-   
-  /// Sets the maximum cost per segment per pixel, relative to the minimum cost
-  /// of that segment - used to cap influence so no one segment biases things 
-  /// too strongly. Defaults to 0.1
-   void SetSegCapPP(real32 maxCost);
-   
+
   /// Sets the irradiance errors standard deviation, this only matters for
   /// calculating error when albedo is less than irradiance, as presumed too 
   /// small to matter in other situations.

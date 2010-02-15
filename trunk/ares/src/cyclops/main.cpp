@@ -38,6 +38,7 @@
 #include "cyclops/light_est.h"
 #include "cyclops/cam_response.h"
 #include "cyclops/intrinsic_est.h"
+#include "cyclops/ambient_est.h"
 
 //------------------------------------------------------------------------------
 // Code for cyclops class...
@@ -135,6 +136,7 @@ Cyclops::Cyclops()
   gui::Button * but44 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but45 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but46 = static_cast<gui::Button*>(guiFact.Make("Button"));
+  gui::Button * but47 = static_cast<gui::Button*>(guiFact.Make("Button"));
 
   gui::Label * lab1 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab2 = static_cast<gui::Label*>(guiFact.Make("Label"));
@@ -182,6 +184,7 @@ Cyclops::Cyclops()
   gui::Label * lab44 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab45 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab46 = static_cast<gui::Label*>(guiFact.Make("Label"));
+  gui::Label * lab47 = static_cast<gui::Label*>(guiFact.Make("Label"));
 
   but1->SetChild(lab1); lab1->Set("Intrinsic Calibration");
   but2->SetChild(lab2); lab2->Set("Protractor");
@@ -229,6 +232,7 @@ Cyclops::Cyclops()
   but44->SetChild(lab44); lab44->Set("Camera Response");
   but45->SetChild(lab45); lab45->Set("Intrinsic To Camera");
   but46->SetChild(lab46); lab46->Set("Approximate Intrinsic");
+  but47->SetChild(lab47); lab47->Set("Ambient Estimation");
 
   vert0->AttachBottom(but19,false);
   vert0->AttachBottom(but21,false);
@@ -271,6 +275,7 @@ Cyclops::Cyclops()
   
   vert8->AttachBottom(but44,false);
   vert8->AttachBottom(but42,false);
+  vert8->AttachBottom(but47,false);
 
   vert9->AttachBottom(but25,false);
   vert9->AttachBottom(but14,false);
@@ -341,6 +346,7 @@ Cyclops::Cyclops()
   but44->OnClick(MakeCB(this,&Cyclops::StartCamResponse));
   but45->OnClick(MakeCB(this,&Cyclops::StartIntrinsicToCamera));
   but46->OnClick(MakeCB(this,&Cyclops::StartIntrinsicEst));
+  but47->OnClick(MakeCB(this,&Cyclops::StartAmbientEst));
 
  // Enter the message pump...
   app->Go();
@@ -816,6 +822,11 @@ void Cyclops::StartIntrinsicToCamera(gui::Base * obj,gui::Event * event)
 void Cyclops::StartIntrinsicEst(gui::Base * obj,gui::Event * event)
 {
  new IntrinsicEst(*this);
+}
+
+void Cyclops::StartAmbientEst(gui::Base * obj,gui::Event * event)
+{
+ new AmbientEst(*this);
 }
 
 //------------------------------------------------------------------------------

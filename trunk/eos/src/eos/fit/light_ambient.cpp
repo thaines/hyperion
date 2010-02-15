@@ -11,7 +11,7 @@ namespace eos
 //------------------------------------------------------------------------------
 LightAmb::LightAmb()
 :lightDir(0.0,0.0,1.0),minAlbedo(0.001),maxAlbedo(1.5),minAmbient(0.0),maxAmbient(0.75),
-maxSegCostPP(0.1),lowAlbErr(8192.0),segPruneThresh(0.1),
+lowAlbErr(8192.0),segPruneThresh(0.1),
 albedoRecDepth(7),ambientRecDepth(7),bestAmbient(0.0)
 {}
 
@@ -40,11 +40,6 @@ void LightAmb::SetAmbRange(real32 min,real32 max)
 {
  minAmbient = min;
  maxAmbient = max;
-}
-
-void LightAmb::SetSegCapPP(real32 maxCost)
-{
- maxSegCostPP = maxCost;
 }
 
 void LightAmb::SetIrrErr(real32 sd)
