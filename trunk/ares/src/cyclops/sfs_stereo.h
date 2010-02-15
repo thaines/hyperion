@@ -23,6 +23,7 @@ class StereoSfS
   gui::ComboBox * viewSelect;
   gui::EditBox * needleWeight;
   gui::EditBox * iterations;
+  gui::EditBox * deltaCap;
 
 
   cam::CameraPair pair;

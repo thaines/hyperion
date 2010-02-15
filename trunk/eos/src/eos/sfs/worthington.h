@@ -53,6 +53,11 @@ class EOS_CLASS Worthington
    
   /// Sets the number of iterations done.
    void SetIters(nat32 iters = 200);
+   
+  /// If called instead of the gradient based needle map initialisation it uses
+  /// the needle map provided in colour form for initialisation - useful if you
+  /// have extra data.
+   void UseIniNeedle(const svt::Field<bs::ColourRGB> & iniN);
 
 
   /// Produces results, outputting an indication of
@@ -89,6 +94,7 @@ class EOS_CLASS Worthington
   // Inputs...
    svt::Field<real32> image;
    svt::Field<real32> albedo;
+   svt::Field<bs::ColourRGB> iniNeedle;
    svt::Field<bit> givenMask;
    bs::Normal toLight;
  

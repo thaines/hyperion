@@ -6,7 +6,8 @@
 //------------------------------------------------------------------------------
 SfS::SfS(Cyclops & cyc)
 :cyclops(cyc),win(null<gui::Window*>()),
-dataVar(null<svt::Var*>()),albedoVar(null<svt::Var*>()),visVar(null<svt::Var*>()),
+dataVar(null<svt::Var*>()),albedoVar(null<svt::Var*>()),
+iniNeedleVar(null<svt::Var*>()),visVar(null<svt::Var*>()),
 hasRun(false)
 {
  // Create default images...
@@ -196,15 +197,22 @@ hasRun(false)
    
    gui::Label * lab11 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    wahIters = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   
+   gui::Button * but6 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
+   gui::Label * lab61 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+      
    gui::Horizontal * horiz4 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
    alg3->SetChild(horiz4);
    
+
+   
    lab11->Set("   Iters:");
    wahIters->Set("256");
+   lab61->Set("Load Initial Needle Map...");
+   but6->SetChild(lab61);
    
    horiz4->AttachRight(lab11,false);
    horiz4->AttachRight(wahIters,false);
+   horiz4->AttachRight(but6,false);
    
    
    alg4 = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
@@ -545,6 +553,7 @@ hasRun(false)
   but3->OnClick(MakeCB(this,&SfS::Run));
   but4->OnClick(MakeCB(this,&SfS::SaveNeedle));
   but5->OnClick(MakeCB(this,&SfS::LoadAlbedo));
+  but6->OnClick(MakeCB(this,&SfS::LoadInitialNeedle));
   whichAlg->OnChange(MakeCB(this,&SfS::ChangeAlg));
 }
 
@@ -553,6 +562,7 @@ SfS::~SfS()
  delete win;
  delete dataVar;
  delete albedoVar;
+ delete iniNeedleVar;
  delete visVar; 
 }
 
@@ -625,6 +635,31 @@ void SfS::LoadAlbedo(gui::Base * obj,gui::Event * event)
    delete albedoVar;
    albedoVar = newVar;
    albedoVar->ByName("rgb",albedoMap);
+   hasRun = false;
+
+  // Redraw...
+   UpdateView();
+ }
+}
+
+void SfS::LoadInitialNeedle(gui::Base * obj,gui::Event * event)
+{
+ str::String fn;
+ if (cyclops.App().LoadFileDialog("Select Needle Image","*.bmp,*.jpg,*.png,*.tif",fn))
+ {
+  // Load image into memory...
+   cstr filename = fn.ToStr();
+   svt::Var * newVar = filter::LoadImageRGB(cyclops.Core(),filename);
+   mem::Free(filename);
+   if (newVar==null<svt::Var*>())
+   {
+    cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load image");
+    return;
+   }
+
+   delete iniNeedleVar;
+   iniNeedleVar = newVar;
+   iniNeedleVar->ByName("rgb",iniNeedle);
    hasRun = false;
 
   // Redraw...
@@ -744,6 +779,7 @@ void SfS::Run(gui::Base * obj,gui::Event * event)
       alg.SetAlbedo(a);
       alg.SetLight(toLight);
       alg.SetIters(iters);
+      if (iniNeedleVar) alg.UseIniNeedle(iniNeedle);
       
     // Run...
      alg.Run(cyclops.BeginProg());

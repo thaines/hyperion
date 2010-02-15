@@ -95,10 +95,16 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    but7->SetChild(lab7); lab7->Set("Save View...");
    
    lightDirection = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   albCap = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    gui::Label * lab8 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab9 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    
    lightDirection->Set("(0.0,0.0,1.0)");
+   lightDirection->SetSize(96,24);
+   albCap->Set("1.5");
+   albCap->SetSize(32,24);
    lab8->Set(" Light Dir:");
+   lab9->Set(" Albedo Cap:");
 
 
    viewSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
@@ -120,6 +126,8 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    
    horiz2->AttachRight(lab8,false);
    horiz2->AttachRight(lightDirection,false);
+   horiz2->AttachRight(lab9,false);
+   horiz2->AttachRight(albCap,false);
    horiz2->AttachRight(viewSelect,false);
    horiz2->AttachRight(but6,false);
    horiz2->AttachRight(but7,false);
@@ -335,6 +343,8 @@ void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
    if (cur.Error()) toLight = bs::Normal(0.0,0.0,1.0);
   }
   toLight.Normalise();
+  
+  real32 cap = crf(albCap->GetReal(1.0));
 
 
  // Setup some storage...
@@ -415,6 +425,7 @@ void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
      }
      
      math::CrossProduct(xDir,yDir,needle.Get(x,y));
+     needle.Get(x,y).Normalise();
     }
    }
   }
@@ -495,6 +506,7 @@ void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
      albedo[s] = (1.0-w)*estimate[end-1].estimate + w*estimate[end].estimate;
     }
     else albedo[s] = estimate[end].estimate;
+    albedo[s] = math::Min(albedo[s],cap);
    }
    else
    {
@@ -704,13 +716,14 @@ void AlbedoEst::Update()
    break;
    case 5: // Corrected Image
    {
+    real32 maxCha = 0.01;
     for (nat32 y=0;y<image.Size(1);y++)
     {
      for (nat32 x=0;x<image.Size(0);x++)
      {
       real32 l = (irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0;
       real32 cl = crf(l);
-      cl /= albedo[seg.Get(x,y)];
+      if (!math::IsZero(albedo[seg.Get(x,y)])) cl /= albedo[seg.Get(x,y)];
       real32 ul = crf.Inverse(cl);
       ul /= l;
       if (math::IsFinite(ul))
@@ -718,12 +731,24 @@ void AlbedoEst::Update()
        image.Get(x,y).r *= ul;
        image.Get(x,y).g *= ul;
        image.Get(x,y).b *= ul;
+       maxCha = math::Max(maxCha,image.Get(x,y).r,image.Get(x,y).g,image.Get(x,y).b);
       }
       else
       {
        image.Get(x,y).r = 0.0;
        image.Get(x,y).g = 0.0;
        image.Get(x,y).b = 0.0;
+      }
+     }
+    }
+    
+    if (maxCha>1.0)
+    {
+     for (nat32 y=0;y<image.Size(1);y++)
+     {
+      for (nat32 x=0;x<image.Size(0);x++)
+      {
+       image.Get(x,y) /= maxCha;
       }
      }
     }

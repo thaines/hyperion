@@ -98,6 +98,9 @@ class SfS
   svt::Var * albedoVar;
   svt::Field<bs::ColourRGB> albedoMap;
 
+  svt::Var * iniNeedleVar;
+  svt::Field<bs::ColourRGB> iniNeedle; // Used by w&h only.
+
   svt::Var * visVar;
   svt::Field<bs::ColRGB> visible;
   bit hasRun;
@@ -110,6 +113,7 @@ class SfS
   void LoadImage(gui::Base * obj,gui::Event * event);
   void LoadAlbedo(gui::Base * obj,gui::Event * event);
   void LoadCalib(gui::Base * obj,gui::Event * event);
+  void LoadInitialNeedle(gui::Base * obj,gui::Event * event);
   void Run(gui::Base * obj,gui::Event * event);
   void SaveNeedle(gui::Base * obj,gui::Event * event);
 

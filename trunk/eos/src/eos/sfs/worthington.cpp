@@ -45,6 +45,11 @@ void Worthington::SetIters(nat32 iters)
  iterCount = iters;
 }
 
+void Worthington::UseIniNeedle(const svt::Field<bs::ColourRGB> & iniN)
+{
+ iniNeedle = iniN;
+}
+
 void Worthington::Run(time::Progress * prog)
 {
  prog->Push();
@@ -110,29 +115,44 @@ void Worthington::Run(time::Progress * prog)
        if (!math::IsFinite(normR)) normR = 1.0;
        real32 coneAng = math::InvCos(normR);
       
-      // Make a normal perpendicular to the plane in which the gradiant angle and [0,0,1]^T are in...
-      // (We use a sobel filter to decide dy and dx.)
-       real32 dx = (blur.Get(x+1,y-1) + 2.0*blur.Get(x+1,y) + blur.Get(x+1,y+1)) - 
-                   (blur.Get(x-1,y-1) + 2.0*blur.Get(x-1,y) + blur.Get(x-1,y+1));
-       real32 dy = (blur.Get(x-1,y+1) + 2.0*blur.Get(x,y+1) + blur.Get(x+1,y+1)) - 
-                   (blur.Get(x-1,y-1) + 2.0*blur.Get(x,y-1) + blur.Get(x+1,y-1));
-       bs::Normal grad(dx,dy,0.0);
-       if (math::IsZero(grad.Length()))
+      // If provided use the given needle map for initialisation, otherwise the original gradient method...
+       bs::Normal grad(0.0,0.0,0.0);
+       if (iniNeedle.Valid())
        {
-        // Fallback - just choose a direction at 'random' and hope it gets fixed latter...
-         grad = toLight;
-         grad[0] = -grad[0];
-         grad[1] = -grad[1];
+        grad[0] = 2.0 * (iniNeedle.Get(x,y).r - 0.5);
+        grad[1] = 2.0 * (iniNeedle.Get(x,y).g - 0.5);
+        grad[2] = iniNeedle.Get(x,y).b;
+        grad.Normalise();
        }
-       else grad.Normalise();
+       else
+       {
+        // Make a normal perpendicular to the plane in which the gradiant angle and [0,0,1]^T are in...
+        // (We use a sobel filter to decide dy and dx.)
+         real32 dx = (blur.Get(x+1,y-1) + 2.0*blur.Get(x+1,y) + blur.Get(x+1,y+1)) - 
+                     (blur.Get(x-1,y-1) + 2.0*blur.Get(x-1,y) + blur.Get(x-1,y+1));
+         real32 dy = (blur.Get(x-1,y+1) + 2.0*blur.Get(x,y+1) + blur.Get(x+1,y+1)) - 
+                     (blur.Get(x-1,y-1) + 2.0*blur.Get(x,y-1) + blur.Get(x+1,y-1));
+         grad[0] = dx;
+         grad[1] = dy;
+         if (math::IsZero(grad.Length()))
+         {
+          // Fallback - just choose a direction at 'random' and hope it gets fixed latter...
+           grad = toLight;
+           grad[0] = -grad[0];
+           grad[1] = -grad[1];
+         }
+         else grad.Normalise();
+       }
        
       // Rotate the light direction to the correct angle away from the gradiant...
        bs::Normal gradPerp;
        CrossProduct(grad,toLight,gradPerp);
-       
-       math::Mat<3,3> rotMat;
-       AngAxisToRotMat(gradPerp,coneAng,rotMat);
-       MultVect(rotMat,toLight,needle.Get(x,y));
+       if (!math::IsZero(gradPerp.LengthSqr()))
+       {
+        math::Mat<3,3> rotMat;
+        AngAxisToRotMat(gradPerp,coneAng,rotMat);
+        MultVect(rotMat,toLight,needle.Get(x,y));
+       }
      }
      else
      {
