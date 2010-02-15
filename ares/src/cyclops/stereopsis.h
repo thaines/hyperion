@@ -29,6 +29,7 @@ class Stereopsis
 
   gui::Expander * alg5;
   gui::Expander * alg6;
+  gui::Expander * alg7;
   gui::Expander * post2;
   gui::Expander * post3a;
   gui::Expander * post3b;
@@ -48,6 +49,21 @@ class Stereopsis
   gui::EditBox * bpOccLim;
   gui::EditBox * bpIters;
   gui::EditBox * bpOutput;
+  
+  gui::TickBox * dcUseHalfX;
+  gui::TickBox * dcUseHalfY;
+  gui::TickBox * dcUseCorners;
+  gui::TickBox * dcHalfHeight;
+  gui::EditBox * dcDistMult;
+  gui::EditBox * dcDiffSteps;
+  gui::EditBox * dcMinimaLimit;
+  gui::EditBox * dcBaseDistCap;
+  gui::EditBox * dcDistCapMult;
+  gui::EditBox * dcDistCapThreshold;
+  gui::EditBox * dcDispRange;
+  gui::TickBox * dcDoLR;
+  gui::EditBox * dcDistCapDifference;
+  gui::EditBox * dcDistSdMult;
 
   gui::EditBox * smoothStrength;
   gui::EditBox * smoothCutoff;

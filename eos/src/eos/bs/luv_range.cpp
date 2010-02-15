@@ -2,6 +2,8 @@
 // Copyright 2007 Tom Haines
 #include "eos/bs/luv_range.h"
 
+#include "eos/file/csv.h"
+
 namespace eos
 {
  namespace bs
@@ -184,6 +186,7 @@ void LuvRangePyramid::Create(const svt::Field<bs::ColourLuv> & img, const svt::F
     }
     
     if (done) break;
+         else levels += 1;
    }
   }
 
@@ -194,6 +197,13 @@ void LuvRangePyramid::Create(const svt::Field<bs::ColourLuv> & img, const svt::F
   for (nat32 l=1;l<data.Size();l++)
   {
    data[l].Create(data[l-1],halfWidth,halfHeight);
+  }
+  
+ // Loging...
+  LogDebug("pyramid {levels}" << LogDiv() << levels);
+  for (nat32 l=0;l<data.Size();l++)
+  {
+   LogDebug("level {n,width,height}" << LogDiv() << l << LogDiv() << data[l].Width() << LogDiv() << data[l].Height());
   }
 }
    
