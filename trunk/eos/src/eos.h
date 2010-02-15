@@ -220,6 +220,7 @@
 #include "eos/stereo/simple.h"
 #include "eos/stereo/dsr.h"
 #include "eos/stereo/hebp.h"
+#include "eos/stereo/diffuse_correlation.h"
 
 #include "eos/mya/surfaces.h"
 #include "eos/mya/ied.h"

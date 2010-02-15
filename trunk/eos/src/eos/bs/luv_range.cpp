@@ -7,6 +7,195 @@ namespace eos
  namespace bs
  {
 //------------------------------------------------------------------------------
+LuvRangeImage::LuvRangeImage()
+{}
+
+LuvRangeImage::~LuvRangeImage()
+{}
+   
+void LuvRangeImage::Create(const svt::Field<bs::ColourLuv> & img, bit useHalfX, bit useHalfY, bit useCorners)
+{
+ // First fill it in from the centre points only...
+  data.Resize(img.Size(0),img.Size(1));
+  for (nat32 y=0;y<data.Height();y++)
+  {
+   for (nat32 x=0;x<data.Width();x++) data.Get(x,y) = img.Get(x,y);
+  }
+ 
+ // Now do the halfs and corners, as needed...
+  if (useHalfX||useHalfY||useCorners)
+  {
+   for (nat32 y=0;y<data.Height();y++)
+   {
+    for (nat32 x=0;x<data.Width();x++)
+    {
+     bit safeX = (x+1)<data.Width();
+     bit safeY = (y+1)<data.Height();
+     
+     if (useHalfX&&safeX)
+     {
+      bs::ColourLuv half;
+      half.l = 0.5 * (img.Get(x,y).l + img.Get(x+1,y).l);
+      half.u = 0.5 * (img.Get(x,y).u + img.Get(x+1,y).u);
+      half.v = 0.5 * (img.Get(x,y).v + img.Get(x+1,y).v);
+      
+      data.Get(x  ,y) += half;
+      data.Get(x+1,y) += half;
+     }
+     
+     if (useHalfY&&safeY)
+     {
+      bs::ColourLuv half;
+      half.l = 0.5 * (img.Get(x,y).l + img.Get(x,y+1).l);
+      half.u = 0.5 * (img.Get(x,y).u + img.Get(x,y+1).u);
+      half.v = 0.5 * (img.Get(x,y).v + img.Get(x,y+1).v);
+      
+      data.Get(x,y  ) += half;
+      data.Get(x,y+1) += half;
+     }
+     
+     if (useCorners&&safeX&&safeY)
+     {
+      bs::ColourLuv quater;
+      quater.l = 0.25 * (img.Get(x,y).l + img.Get(x+1,y).l + img.Get(x,y+1).l + img.Get(x+1,y+1).l);
+      quater.u = 0.25 * (img.Get(x,y).u + img.Get(x+1,y).u + img.Get(x,y+1).u + img.Get(x+1,y+1).u);
+      quater.v = 0.25 * (img.Get(x,y).v + img.Get(x+1,y).v + img.Get(x,y+1).v + img.Get(x+1,y+1).v);
+      
+      data.Get(x  ,y  ) += quater;
+      data.Get(x+1,y  ) += quater;
+      data.Get(x  ,y+1) += quater;
+      data.Get(x+1,y+1) += quater;
+     }
+    }
+   }
+  }
+}
+   
+void LuvRangeImage::Create(const LuvRangeImage & img, bit halfWidth, bit halfHeight)
+{
+ // Calculate dimensions...
+  nat32 width = img.Width();
+  nat32 height = img.Height();
+  if (halfWidth) width = (width>>1) + (width&1);
+  if (halfHeight) height = (height>>1) + (height&1);
+ 
+ // Tempory mask indicating which ranges have been set...
+  ds::Array2D<bit> mask(width,height);
+  for (nat32 y=0;y<mask.Height();y++)
+  {
+   for (nat32 x=0;x<mask.Width();x++) mask.Get(x,y) = false;
+  }
+ 
+ // Copy data over...
+  data.Resize(width,height);
+  for (nat32 y=0;y<img.Height();y++)
+  {
+   for (nat32 x=0;x<img.Width();x++)
+   {
+    nat32 tx = x;
+    nat32 ty = y;
+    
+    if (halfWidth) tx /= 2;
+    if (halfHeight) ty /= 2;
+    
+    if (mask.Get(tx,ty)) data.Get(tx,ty) += img.Get(x,y);
+    else
+    {
+     data.Get(tx,ty) = img.Get(x,y);
+     mask.Get(tx,ty) = true;
+    }
+   }
+  }
+}
+  
+nat32 LuvRangeImage::Width() const
+{
+ return data.Width();
+}
+
+nat32 LuvRangeImage::Height() const
+{
+ return data.Height();
+}
+   
+const LuvRange & LuvRangeImage::Get(nat32 x,nat32 y) const
+{
+ return data.Get(x,y);
+}
+
+//------------------------------------------------------------------------------
+LuvRangePyramid::LuvRangePyramid()
+{}
+  
+LuvRangePyramid::~LuvRangePyramid()
+{}
+   
+void LuvRangePyramid::Create(const svt::Field<bs::ColourLuv> & img, bit useHalfX, bit useHalfY, bit useCorners, bit halfWidth, bit halfHeight)
+{
+ // Calculate how many levels are required...
+  nat32 levels = 1;
+  {
+   nat32 width = img.Size(0);
+   nat32 height = img.Size(1);
+   while (true)
+   {
+    bit done = true;
+    
+    if (halfWidth&&(width!=1))
+    {
+     done = false;
+     width = (width>>1) + (width&1);
+    }
+    
+    if (halfHeight&&(height!=1))
+    {
+     done = false;
+     height = (height>>1) + (height&1);
+    }
+    
+    if (done) break;
+   }
+  }
+
+ // Build 'em...
+  data.Size(levels);
+  data[0].Create(img,useHalfX,useHalfY,useCorners);
+  
+  for (nat32 l=1;l<data.Size();l++)
+  {
+   data[l].Create(data[l-1],halfWidth,halfHeight);
+  }
+}
+   
+nat32 LuvRangePyramid::Levels() const
+{
+ return data.Size();
+}
+   
+const LuvRangeImage & LuvRangePyramid::Level(nat32 l)
+{
+ return data[l];
+}
+
+//------------------------------------------------------------------------------
+LuvRangeDist::~LuvRangeDist()
+{}
+
+//------------------------------------------------------------------------------
+BasicLRD::~BasicLRD()
+{}
+   
+real32 BasicLRD::operator () (const LuvRange & lhs,const LuvRange & rhs) const
+{
+ return lhs ^ rhs;
+}
+   
+cstrconst BasicLRD::TypeString() const
+{
+ return "eos::bs::BasicLRD";
+}
+
+//------------------------------------------------------------------------------
 LuvRangeHierachy::LuvRangeHierachy(const svt::Field<bs::ColourLuv> & img,time::Progress * prog)
 {
  prog->Push();
