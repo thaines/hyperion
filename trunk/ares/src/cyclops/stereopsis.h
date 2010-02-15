@@ -107,6 +107,8 @@ class Stereopsis
   gui::EditBox * polyDistCap;
   gui::EditBox * polyPrune;
   
+  gui::EditBox * gaussianRadius;
+  gui::EditBox * gaussianFalloff;
   gui::EditBox * gaussianRange;
   gui::EditBox * gaussianMult;
   gui::EditBox * gaussianSdMult;

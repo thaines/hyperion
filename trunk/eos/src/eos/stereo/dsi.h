@@ -809,6 +809,85 @@ class EOS_CLASS RangeLuvDSC : public DSC
 };
 
 //------------------------------------------------------------------------------
+/// Given a DSC wraps it by making the cost the sum of costs for a square region,
+/// of length radius*2+1 on each side. Be warned that in hierachy use it has to
+/// store the entire region, and so can be very memory intensive, plus it 
+/// doesn't do what you might expect.
+/// (Resolution is not lost; instead regions are merged pixel to pixel at the
+/// original resolution in the matching grid. This makes sense only for range
+/// based DSC's really.)
+/// Repeats values at the edges.
+class EOS_CLASS RegionDSC : public DSC
+{
+ public:
+  /// Automatically initialises the falloff variable so the far corners have the
+  /// given weight compared to the centre value.
+   RegionDSC(const DSC * dsc,nat32 radius,real32 cornerWeight = 0.25);
+  
+  /// &nbsp;
+   ~RegionDSC();
+
+  /// &nbsp;
+   DSC * Clone() const;
+   
+  
+  /// Sets the falloff variable - the weight for each pixel is
+  /// exp(-falloff * dist) where dist is the euclidean distance from the
+  /// centre pixel.
+   void SetFalloff(real32 falloff);
+
+
+  /// &nbsp;
+   nat32 Bytes() const;
+
+  /// &nbsp;
+   real32 Cost(const byte * left,const byte * right) const;
+
+  /// &nbsp;
+   void Join(const byte * left,const byte * right,byte * out) const;
+
+  /// &nbsp;
+   void Join(nat32 n,const byte ** in,byte * out) const;
+
+
+  /// &nbsp;
+   nat32 WidthLeft() const;
+
+  /// &nbsp;
+   nat32 HeightLeft() const;
+
+  /// &nbsp;
+   void Left(nat32 x,nat32 y,byte * out) const;
+
+
+  /// &nbsp;
+   nat32 WidthRight() const;
+
+  /// &nbsp;
+   nat32 HeightRight() const;
+
+  /// &nbsp;
+   void Right(nat32 x,nat32 y,byte * out) const;
+
+
+  /// &nbsp;
+   real32 Cost(nat32 leftX,nat32 rightX,nat32 y) const;
+
+
+  /// &nbsp;
+   cstrconst TypeString() const;
+
+
+ private:
+  nat32 radius;
+  nat32 dim; // radius*2+1 - to save repeated calculation.
+  ds::Array<real32> weight; // Weight array, normalised, indexed by y*width + x.
+
+  real32 falloff;
+  DSC * child;
+};
+
+//------------------------------------------------------------------------------
 /// Allows you to combine an arbitary number of DSC's, simple summing there
 /// costs to get a final output.
 class EOS_CLASS ManhattanDSC : public DSC

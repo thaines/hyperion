@@ -91,7 +91,7 @@ void DispNorm::Run(time::Progress * prog)
    }
    else
    {
-    real32 var = math::Sqr(minSd); // Variance obtained so far.
+    real32 var = math::Sqr(maxSd); // Variance obtained so far.
     real32 mean = disp.Get(x,y);
 
     int32 minDisp = math::Clamp<int32>(int32(math::Round(mean))-int32(range),
