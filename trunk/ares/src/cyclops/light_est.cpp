@@ -101,6 +101,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    viewSelect->Append("Cost of Direction Sphere");
    viewSelect->Append("Albedo");
    viewSelect->Append("Per Pixel Solution Cost");
+   viewSelect->Append("Segment Value");
    viewSelect->Set(0);
    
    algSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
@@ -138,11 +139,13 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    gui::Label * lab10 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab11 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab12 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab13 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    
    bfMinAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfMaxAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfMaxSegCost = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfIrrErr = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   bfPruneThresh = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfSampleSubdiv = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    bfAlbRecursion = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
 
@@ -150,13 +153,15 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    lab8->Set(" Maximum Albedo");
    lab9->Set(" Maximum Segment Cost PP");
    lab10->Set("  Irradiance Error sd");
-   lab11->Set(" Sampling Subdivisions");
-   lab12->Set(" Albedo Recursion Depth");
+   lab11->Set(" Pruning Threshold");
+   lab12->Set(" Sampling Subdivisions");
+   lab13->Set(" Albedo Recursion Depth");
    
    bfMinAlb->Set("0.001");
    bfMaxAlb->Set("1.5");
    bfMaxSegCost->Set("0.1");
    bfIrrErr->Set("0.0078");
+   bfPruneThresh->Set("0.2");
    bfSampleSubdiv->Set("4");
    bfAlbRecursion->Set("8");
    
@@ -164,6 +169,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    bfMaxAlb->SetSize(48,24);
    bfMaxSegCost->SetSize(48,24);
    bfIrrErr->SetSize(64,24);
+   bfPruneThresh->SetSize(48,24);
    bfSampleSubdiv->SetSize(48,24);
    bfAlbRecursion->SetSize(48,24);
    
@@ -177,8 +183,10 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    horiz4->AttachRight(lab10,false);
    horiz4->AttachRight(bfIrrErr,false);
    horiz4->AttachRight(lab11,false);
-   horiz4->AttachRight(bfSampleSubdiv,false);
+   horiz4->AttachRight(bfPruneThresh,false);
    horiz4->AttachRight(lab12,false);
+   horiz4->AttachRight(bfSampleSubdiv,false);
+   horiz4->AttachRight(lab13,false);
    horiz4->AttachRight(bfAlbRecursion,false);
 
 
@@ -382,6 +390,7 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
   real32 maxAlb = bfMaxAlb->GetReal(3.0);
   real32 maxCost = bfMaxSegCost->GetReal(1.0);
   real32 irrErr = bfIrrErr->GetReal(0.0078);
+  real32 pruneThresh = bfPruneThresh->GetReal(0.2);
   nat32 subdiv = bfSampleSubdiv->GetInt(4);
   nat32 recursion = bfAlbRecursion->GetInt(8);
 
@@ -408,6 +417,7 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
   ld.SetAlbRange(minAlb,maxAlb);
   ld.SetSegCapPP(maxCost);
   ld.SetIrrErr(irrErr);
+  ld.SetPruneThresh(pruneThresh);
   ld.SetSampleSubdiv(subdiv);
   ld.SetRecursion(recursion);
 
@@ -476,6 +486,26 @@ void LightEst::SaveView(gui::Base * obj,gui::Event * event)
  }
 }
 
+// Helper class for calculating the segment value below...
+struct SegValue
+{
+ real32 div;
+ 
+ real32 expI; // Expectation of irradiance and axes multiplied by div.
+ real32 expX;
+ real32 expY;
+ real32 expZ;
+ 
+ real32 expSqrI; // As above but squared (Before calcaulting expectation).
+ real32 expSqrX;
+ real32 expSqrY;
+ real32 expSqrZ;
+ 
+ real32 expIrrX; // Expectation multiplied by div of irradiance multiplied by each of the axes.
+ real32 expIrrY;
+ real32 expIrrZ;
+};
+
 void LightEst::Update()
 {
  // Find what size we need to be operatinf at...
@@ -496,6 +526,7 @@ void LightEst::Update()
    case 2: // Segmentation
    case 7: // Albedo
    case 8: // Per Pixel Solution Cost.
+   case 9: // Segment cost.
     width = seg.Size(0);
     height = seg.Size(1);
    break;
@@ -827,6 +858,141 @@ void LightEst::Update()
        image.Get(x,y).b = l;
       }
      }
+    }
+   }
+   case 9: // Segment value
+   {
+    if ((seg.Size(0)==irr.Size(0))&&
+        (seg.Size(1)==irr.Size(1))&&
+        (seg.Size(0)==fish.Size(0))&&
+        (seg.Size(1)==fish.Size(1)))
+    {
+     // First count the segments...
+      nat32 segCount = 1;
+      for (nat32 y=0;y<seg.Size(1);y++)
+      {
+       for (nat32 x=0;x<seg.Size(0);x++) segCount = math::Max(segCount,seg.Get(x,y)+1);
+      }
+      
+      
+     // Create array to hold expectation values for every segment...
+      ds::Array<SegValue> segExp(segCount);
+      for (nat32 s=0;s<segCount;s++)
+      {
+       segExp[s].div = 0.0;
+       
+       segExp[s].expI = 0.0;
+       segExp[s].expX = 0.0;
+       segExp[s].expY = 0.0;
+       segExp[s].expZ = 0.0;
+
+       segExp[s].expSqrI = 0.0;
+       segExp[s].expSqrX = 0.0;
+       segExp[s].expSqrY = 0.0;
+       segExp[s].expSqrZ = 0.0;
+       
+       segExp[s].expIrrX = 0.0;
+       segExp[s].expIrrY = 0.0;
+       segExp[s].expIrrZ = 0.0;
+      }
+
+
+     // Now do a pass over the image and sum up the above for each segment...
+      for (nat32 y=0;y<seg.Size(1);y++)
+      {
+       for (nat32 x=0;x<seg.Size(0);x++)
+       {
+        real32 l = fish.Get(x,y).Length();
+        if (!math::IsZero(l))
+        {
+         real32 w = l;
+         bs::Normal pos;
+         for (nat32 i=0;i<3;i++) pos[i] = math::InvCos(fish.Get(x,y)[i]/l); // Makes 'em 0..pi
+         nat32 s = seg.Get(x,y);
+         real32 ir = crf((irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0);
+
+
+         segExp[s].div += w;
+       
+         segExp[s].expI += w*ir;
+         segExp[s].expX += w*pos[0];
+         segExp[s].expY += w*pos[1];
+         segExp[s].expZ += w*pos[2];
+
+         segExp[s].expSqrI += w*math::Sqr(ir);
+         segExp[s].expSqrX += w*math::Sqr(pos[0]);
+         segExp[s].expSqrY += w*math::Sqr(pos[1]);
+         segExp[s].expSqrZ += w*math::Sqr(pos[2]);
+       
+         segExp[s].expIrrX += w*ir*pos[0];
+         segExp[s].expIrrY += w*ir*pos[1];
+         segExp[s].expIrrZ += w*ir*pos[2];
+        }
+       }
+      }
+     
+     
+     // Now calculate the 0..1 value for every segment...
+      ds::Array<real32> segCost(segCount);
+      for (nat32 s=0;s<segCount;s++)
+      {
+       if (!math::IsZero(segExp[s].div))
+       {
+        real32 sqrDivI = (segExp[s].expSqrI/segExp[s].div) - math::Sqr(segExp[s].expI/segExp[s].div);
+        real32 sqrDivX = (segExp[s].expSqrX/segExp[s].div) - math::Sqr(segExp[s].expX/segExp[s].div);
+        real32 sqrDivY = (segExp[s].expSqrY/segExp[s].div) - math::Sqr(segExp[s].expY/segExp[s].div);
+        real32 sqrDivZ = (segExp[s].expSqrZ/segExp[s].div) - math::Sqr(segExp[s].expZ/segExp[s].div);
+        
+        if ((sqrDivI>0.0)&&(!math::IsZero(sqrDivI)))
+        {
+         real32 costX = 0.0,costY = 0.0,costZ = 0.0;
+         
+         if ((sqrDivX>0.0)&&(!math::IsZero(sqrDivX)))
+         {
+          costX = (segExp[s].expIrrX/segExp[s].div) - (segExp[s].expX*segExp[s].expI/math::Sqr(segExp[s].div));
+          costX /= math::Sqrt(sqrDivX) * math::Sqrt(sqrDivI);
+         }
+         
+         if ((sqrDivY>0.0)&&(!math::IsZero(sqrDivY)))
+         {
+          costY = (segExp[s].expIrrY/segExp[s].div) - (segExp[s].expY*segExp[s].expI/math::Sqr(segExp[s].div));
+          costY /= math::Sqrt(sqrDivY) * math::Sqrt(sqrDivI);
+         }
+         
+         if ((sqrDivZ>0.0)&&(!math::IsZero(sqrDivZ)))
+         {
+          costZ = (segExp[s].expIrrZ/segExp[s].div) - (segExp[s].expZ*segExp[s].expI/math::Sqr(segExp[s].div));
+          costZ /= math::Sqrt(sqrDivZ) * math::Sqrt(sqrDivI);
+         }
+         
+         segCost[s] = math::Sqrt(math::Sqr(costX) + math::Sqr(costY) + math::Sqr(costZ));
+        }
+        else segCost[s] = -1.0;
+       }
+       else segCost[s] = -1.0;
+      }
+     
+     
+     // And finally fill in the image with the values...
+      real32 pruneThresh = bfPruneThresh->GetReal(0.2);
+      for (nat32 y=0;y<image.Size(1);y++)
+      {
+       for (nat32 x=0;x<image.Size(0);x++)
+       {
+        image.Get(x,y).r = segCost[seg.Get(x,y)];
+        if (image.Get(x,y).r<pruneThresh)
+        {
+         image.Get(x,y).r = 0.0;
+         image.Get(x,y).g = 0.0;
+         image.Get(x,y).b = 0.5;
+        }
+        else
+        {
+         image.Get(x,y).g = image.Get(x,y).r;
+         image.Get(x,y).b = image.Get(x,y).r;
+        }
+       }
+      }
     }
    }
    break;
