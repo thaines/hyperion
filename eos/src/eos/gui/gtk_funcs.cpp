@@ -121,8 +121,10 @@ EOS_VAR_DEF unsigned int EOS_STDCALL (*gtk_table_get_col_spacing)(GtkTable *tabl
 EOS_VAR_DEF GtkWidget * EOS_STDCALL (*gtk_file_chooser_dialog_new)(const char * title,GtkWindow * parent,GtkFileChooserAction action,const char * first_button_text,...);
 EOS_VAR_DEF int EOS_STDCALL (*gtk_dialog_run)(GtkDialog * dialog);
 EOS_VAR_DEF int EOS_STDCALL (*gtk_file_chooser_set_current_name)(GtkFileChooser * chooser,const char * name);
-EOS_VAR_DEF void EOS_STDCALL (*gtk_file_chooser_set_filename)(GtkFileChooser * chooser,const char *name);
+EOS_VAR_DEF int EOS_STDCALL (*gtk_file_chooser_set_filename)(GtkFileChooser * chooser,const char *name);
 EOS_VAR_DEF char * EOS_STDCALL (*gtk_file_chooser_get_filename)(GtkFileChooser * chooser);
+EOS_VAR_DEF int EOS_STDCALL (*gtk_file_chooser_set_current_folder)(GtkFileChooser * chooser,const char * name);
+EOS_VAR_DEF char * EOS_STDCALL (*gtk_file_chooser_get_current_folder)(GtkFileChooser * chooser);
 EOS_VAR_DEF void EOS_STDCALL (*gtk_file_chooser_add_filter)(GtkFileChooser * chooser,GtkFileFilter * filter);
 EOS_VAR_DEF GtkFileFilter * EOS_STDCALL (*gtk_file_filter_new)();
 EOS_VAR_DEF void EOS_STDCALL (*gtk_file_filter_set_name)(GtkFileFilter * filter,const char *name);
@@ -157,7 +159,7 @@ EOS_VAR_DEF void EOS_STDCALL (*gtk_combo_box_prepend_text)(GtkComboBox * combo_b
 EOS_VAR_DEF void EOS_STDCALL (*gtk_combo_box_remove_text)(GtkComboBox * combo_box,int position);
 EOS_VAR_DEF char * EOS_STDCALL (*gtk_combo_box_get_active_text)(GtkComboBox * combo_box);
 
-EOS_VAR_DEF GtkWidget * (*gtk_entry_new)();
+EOS_VAR_DEF GtkWidget * EOS_STDCALL (*gtk_entry_new)();
 EOS_VAR_DEF void EOS_STDCALL (*gtk_entry_set_text)(GtkEntry * entry,const char * text);
 EOS_VAR_DEF const char * EOS_STDCALL (*gtk_entry_get_text)(GtkEntry *entry);
 
@@ -309,6 +311,8 @@ bit LoadGtk()
   LoadGtkFunc(gtk_file_chooser_set_current_name,"gtk_file_chooser_set_current_name");
   LoadGtkFunc(gtk_file_chooser_set_filename,"gtk_file_chooser_set_filename");
   LoadGtkFunc(gtk_file_chooser_get_filename,"gtk_file_chooser_get_filename");
+  LoadGtkFunc(gtk_file_chooser_set_current_folder,"gtk_file_chooser_set_current_folder");
+  LoadGtkFunc(gtk_file_chooser_get_current_folder,"gtk_file_chooser_get_current_folder");
   LoadGtkFunc(gtk_file_chooser_add_filter,"gtk_file_chooser_add_filter");
   LoadGtkFunc(gtk_file_filter_new,"gtk_file_filter_new");
   LoadGtkFunc(gtk_file_filter_set_name,"gtk_file_filter_set_name");
