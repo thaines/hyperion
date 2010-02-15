@@ -72,7 +72,7 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    whichAlg = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
    whichAlg->Append("Hierarchical DP");
    whichAlg->Append("Hierarchical BP");
-   //whichAlg->Append("Hierarchical CBP");
+   whichAlg->Append("Diffusion Correlation");
    whichAlg->Set(1);
    horiz6->AttachRight(whichAlg,false);
 
@@ -751,6 +751,10 @@ void Stereopsis::ChangeAlg(gui::Base * obj,gui::Event * event)
    alg5->Visible(false);
    alg6->Visible(true);
   break;
+  case 2:
+   alg5->Visible(false);
+   alg6->Visible(false);
+  break;
  }
 }
 
@@ -818,6 +822,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    bit aGaussian = augGaussian->Ticked();
    bit aFisher = augFisher->Ticked();
    if (aFisher) aGaussian = true; // Need Gaussian as input - might as well force it as storage is cheap.
+   if (whichAlg->Get()==2) aGaussian = true; // Algorithm generates it anyway.
   
    delete result;
    result = new svt::Var(cyclops.Core());
@@ -845,6 +850,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    {
     case 0: steps += 1; break; // Dynamic Programming
     case 1: steps += 1; break; // Belief Propagation
+    case 2: steps += 1; break; // Diffusion Correlation
    }
    switch (whichPost->Get())
    {
@@ -899,6 +905,19 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
      sdsi->Set(leftMask,rightMask);
 
      sdsi->Run(prog);
+    }
+    break;
+    case 2: // Diffusion correlation
+    {
+     stereo::DiffCorrStereo * dcs = new stereo::DiffCorrStereo();
+     dsi = dcs;
+     
+     dcs->SetImages(leftLuv,rightLuv);
+     dcs->SetMasks(leftMask,rightMask);
+     
+     // Need to do parameter stuff *************************************************
+     
+     dcs->Run(prog);
     }
     break;
    }
@@ -1050,21 +1069,28 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
   // If needed augment with standard deviations...
    if (aGaussian)
    {
-    prog->Report(step++,steps);
+    if ((whichAlg->Get()!=2)||(whichPost->Get()!=0))
+    {
+     prog->Report(step++,steps);
     
-    stereo::LuvDSC luvDSC(leftLuv,rightLuv);
+     stereo::LuvDSC luvDSC(leftLuv,rightLuv);
     
-    fit::DispNorm dispNorm;
-    dispNorm.Set(disp,luvDSC);
-    dispNorm.SetMask(leftMask);
-    dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
-    dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
-    dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
-    dispNorm.SetMaxIters(gaussianIters->GetInt(1000));
+     fit::DispNorm dispNorm;
+     dispNorm.Set(disp,luvDSC);
+     dispNorm.SetMask(leftMask);
+     dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
+     dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
+     dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
+     dispNorm.SetMaxIters(gaussianIters->GetInt(1000));
     
-    dispNorm.Run(prog);
+     dispNorm.Run(prog);
     
-    dispNorm.Get(sd);
+     dispNorm.Get(sd);
+    }
+    else
+    {
+     ((stereo::DiffCorrStereo*)dsi)->GetSd(sd);
+    }
    }
   
 
