@@ -49,6 +49,12 @@ class EOS_CLASS LightDir
   /// Default is 1/128, i.e. 2 values for a 2^8 colour image.
    void SetIrrErr(real32 sd);
    
+  /// Sets the thresholding for pruning segments - if the information in a
+  /// segment gets a correlation less than this it is ignored. Segments with 
+  /// constant colour are ignored anyway for not having a standard deviation.
+  /// Defauolts to 0.3
+   void SetPruneThresh(real32 cor);
+   
   /// Sets the number of subdivision of the alg::HemiOfNorm class used to 
   /// generate light source directions to sample.
   /// Defaults to 4.
@@ -81,6 +87,11 @@ class EOS_CLASS LightDir
   /// Returns the albedo for a given segment number.
    real32 SegmentAlbedo(nat32 s) const {return albedo[s];}
 
+  /// Returns the correlation for a given segment number - this was used to
+  /// prune segments with insufficient info.
+  /// 0..1 except when its less than 0 to indicate a segment where its undefined.
+   real32 SegmentCor(nat32 s) const {return cor[s];}
+
 
   /// &nbsp;
    static inline cstrconst TypeString() {return "eos::math::Fisher";}
@@ -92,6 +103,7 @@ class EOS_CLASS LightDir
    real32 maxAlbedo;
    real32 maxSegCostPP;
    real32 lowAlbErr;
+   real32 segPruneThresh;
    nat32 subdiv;
    nat32 recDepth;
    
@@ -111,6 +123,7 @@ class EOS_CLASS LightDir
    ds::Array<LightCost> lc; // Cost for each light source direction - for diagnostics really.
    
    ds::Array<real32> albedo; // Albedo for each segment number.
+   ds::Array<real32> cor; // Correlation for each segment.
 
 
   // Runtime...
@@ -146,6 +159,27 @@ class EOS_CLASS LightDir
      bit operator < (const CostRange & rhs) const {return minCost < rhs.minCost;}
     };
     
+   // This is used to calculate the correlation for each segment...
+    struct SegValue
+    {
+     real32 div;
+ 
+     real32 expI; // Expectation of irradiance and axes multiplied by div.
+     real32 expX;
+     real32 expY;
+     real32 expZ;
+ 
+     real32 expSqrI; // As above but squared (Before calcaulting expectation).
+     real32 expSqrX;
+     real32 expSqrY;
+     real32 expSqrZ;
+ 
+     real32 expIrrX; // Expectation multiplied by div of irradiance multiplied by each of the axes.
+     real32 expIrrY;
+     real32 expIrrZ;
+    };
+
+
    // Method that returns the cost of assigning a given light direction to a 
    // given segment - the segment is given as a range in an array of Pixel's,
    // an array of PixelAux is provided that is at least as long.

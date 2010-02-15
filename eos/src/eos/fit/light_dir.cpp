@@ -11,7 +11,7 @@ namespace eos
  {
 //------------------------------------------------------------------------------
 LightDir::LightDir()
-:minAlbedo(0.001),maxAlbedo(3.0),maxSegCostPP(0.1),lowAlbErr(8192.0),
+:minAlbedo(0.001),maxAlbedo(3.0),maxSegCostPP(0.1),lowAlbErr(8192.0),segPruneThresh(0.3),
 subdiv(4),recDepth(8),bestLightDir(0.0,0.0,1.0)
 {}
 
@@ -40,6 +40,11 @@ void LightDir::SetIrrErr(real32 sd)
  lowAlbErr = 1.0/(2.0*math::Sqr(sd));
 }
 
+void LightDir::SetPruneThresh(real32 cor)
+{
+ segPruneThresh = cor;
+}
+
 void LightDir::SetSampleSubdiv(nat32 sd)
 {
  subdiv = sd;
@@ -64,10 +69,116 @@ void LightDir::Run(time::Progress * prog)
 
  // Prep for logging...
   nat32 step = 0;
-  nat32 steps = 5 + segCount + 2;
+  nat32 steps = 5 + segCount + 3;
   
-   
- // First generate the sampling set of light source directions to sample...
+ 
+ // Calculate the correlation for each segment...
+  prog->Report(step++,steps);
+  prog->Push();
+  {
+   // Create array to hold expectation values for every segment...
+    prog->Report(0,2+seg.Size(1));
+    ds::Array<SegValue> segExp(segCount);
+    for (nat32 s=0;s<segCount;s++)
+    {
+     segExp[s].div = 0.0;
+      
+     segExp[s].expI = 0.0;
+     segExp[s].expX = 0.0;
+     segExp[s].expY = 0.0;
+     segExp[s].expZ = 0.0;
+
+     segExp[s].expSqrI = 0.0;
+     segExp[s].expSqrX = 0.0;
+     segExp[s].expSqrY = 0.0;
+     segExp[s].expSqrZ = 0.0;
+       
+     segExp[s].expIrrX = 0.0;
+     segExp[s].expIrrY = 0.0;
+     segExp[s].expIrrZ = 0.0;
+    }
+    
+   // Now do a pass over the image and sum up the above for each segment...
+    for (nat32 y=0;y<seg.Size(1);y++)
+    {
+     prog->Report(1+y,2+seg.Size(1));
+     for (nat32 x=0;x<seg.Size(0);x++)
+     {
+      real32 l = dir.Get(x,y).Length();
+      if (!math::IsZero(l))
+      {
+       real32 w = l;
+       bs::Normal pos;
+       for (nat32 i=0;i<3;i++) pos[i] = math::InvCos(dir.Get(x,y)[i]/l); // Makes 'em 0..pi
+       nat32 s = seg.Get(x,y);
+       real32 ir = irr.Get(x,y);
+
+
+       segExp[s].div += w;
+     
+       segExp[s].expI += w*ir;
+       segExp[s].expX += w*pos[0];
+       segExp[s].expY += w*pos[1];
+       segExp[s].expZ += w*pos[2];
+
+       segExp[s].expSqrI += w*math::Sqr(ir);
+       segExp[s].expSqrX += w*math::Sqr(pos[0]);
+       segExp[s].expSqrY += w*math::Sqr(pos[1]);
+       segExp[s].expSqrZ += w*math::Sqr(pos[2]);
+      
+       segExp[s].expIrrX += w*ir*pos[0];
+       segExp[s].expIrrY += w*ir*pos[1];
+       segExp[s].expIrrZ += w*ir*pos[2];
+      }
+     }
+    }
+
+   // Now calculate the 0..1 value for every segment...
+    prog->Report(1+seg.Size(1),2+seg.Size(1));
+    cor.Size(segCount);
+    for (nat32 s=0;s<segCount;s++)
+    {
+     if (!math::IsZero(segExp[s].div))
+     {
+      real32 sqrDivI = (segExp[s].expSqrI/segExp[s].div) - math::Sqr(segExp[s].expI/segExp[s].div);
+      real32 sqrDivX = (segExp[s].expSqrX/segExp[s].div) - math::Sqr(segExp[s].expX/segExp[s].div);
+      real32 sqrDivY = (segExp[s].expSqrY/segExp[s].div) - math::Sqr(segExp[s].expY/segExp[s].div);
+      real32 sqrDivZ = (segExp[s].expSqrZ/segExp[s].div) - math::Sqr(segExp[s].expZ/segExp[s].div);
+        
+      if ((sqrDivI>0.0)&&(!math::IsZero(sqrDivI)))
+      {
+       real32 costX = 0.0,costY = 0.0,costZ = 0.0;
+        
+       if ((sqrDivX>0.0)&&(!math::IsZero(sqrDivX)))
+       {
+        costX = (segExp[s].expIrrX/segExp[s].div) - (segExp[s].expX*segExp[s].expI/math::Sqr(segExp[s].div));
+        costX /= math::Sqrt(sqrDivX) * math::Sqrt(sqrDivI);
+       }
+         
+       if ((sqrDivY>0.0)&&(!math::IsZero(sqrDivY)))
+       {
+        costY = (segExp[s].expIrrY/segExp[s].div) - (segExp[s].expY*segExp[s].expI/math::Sqr(segExp[s].div));
+        costY /= math::Sqrt(sqrDivY) * math::Sqrt(sqrDivI);
+       }
+         
+       if ((sqrDivZ>0.0)&&(!math::IsZero(sqrDivZ)))
+       {
+        costZ = (segExp[s].expIrrZ/segExp[s].div) - (segExp[s].expZ*segExp[s].expI/math::Sqr(segExp[s].div));
+        costZ /= math::Sqrt(sqrDivZ) * math::Sqrt(sqrDivI);
+       }
+         
+       cor[s] = math::Sqrt(math::Sqr(costX) + math::Sqr(costY) + math::Sqr(costZ));
+      }
+      else cor[s] = -1.0;
+     }
+     else cor[s] = -1.0;
+    }
+  }
+  prog->Pop();
+ 
+ 
+ 
+ // Generate the sampling set of light source directions to sample...
   prog->Report(step++,steps);
   alg::HemiOfNorm hon(subdiv);
   lc.Size(hon.Norms());
@@ -137,7 +248,7 @@ void LightDir::Run(time::Progress * prog)
   {
    prog->Report(step++,steps);
    nat32 segSize = offset[s+1] - offset[s];
-   if (segSize!=0)
+   if ((segSize!=0)&&(cor[s]>segPruneThresh))
    {
     prog->Push();
     for (nat32 l=0;l<lc.Size();l++)

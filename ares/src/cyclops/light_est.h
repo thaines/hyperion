@@ -27,6 +27,7 @@ class LightEst
   gui::EditBox * bfMinAlb;
   gui::EditBox * bfMaxAlb;
   gui::EditBox * bfMaxSegCost;
+  gui::EditBox * bfPruneThresh;
   gui::EditBox * bfIrrErr;
   gui::EditBox * bfSampleSubdiv;
   gui::EditBox * bfAlbRecursion;
