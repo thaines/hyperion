@@ -13,13 +13,19 @@ LuvRangeImage::LuvRangeImage()
 LuvRangeImage::~LuvRangeImage()
 {}
    
-void LuvRangeImage::Create(const svt::Field<bs::ColourLuv> & img, bit useHalfX, bit useHalfY, bit useCorners)
+void LuvRangeImage::Create(const svt::Field<bs::ColourLuv> & img, const svt::Field<bit> & msk, bit useHalfX, bit useHalfY, bit useCorners)
 {
  // First fill it in from the centre points only...
   data.Resize(img.Size(0),img.Size(1));
+  mask.Resize(img.Size(0),img.Size(1));
   for (nat32 y=0;y<data.Height();y++)
   {
-   for (nat32 x=0;x<data.Width();x++) data.Get(x,y) = img.Get(x,y);
+   for (nat32 x=0;x<data.Width();x++)
+   {
+    data.Get(x,y) = img.Get(x,y);
+    if (msk.Valid()) mask.Get(x,y) = msk.Get(x,y);
+                else mask.Get(x,y) = true;
+   }
   }
  
  // Now do the halfs and corners, as needed...
@@ -29,10 +35,12 @@ void LuvRangeImage::Create(const svt::Field<bs::ColourLuv> & img, bit useHalfX, 
    {
     for (nat32 x=0;x<data.Width();x++)
     {
-     bit safeX = (x+1)<data.Width();
-     bit safeY = (y+1)<data.Height();
+     if (!mask.Get(x,y)) continue;
      
-     if (useHalfX&&safeX)
+     bit safeX = ((x+1)<data.Width())  && mask.Get(x+1,y);
+     bit safeY = ((y+1)<data.Height()) && mask.Get(x,y+1);
+     
+     if (useHalfX && safeX)
      {
       bs::ColourLuv half;
       half.l = 0.5 * (img.Get(x,y).l + img.Get(x+1,y).l);
@@ -43,7 +51,7 @@ void LuvRangeImage::Create(const svt::Field<bs::ColourLuv> & img, bit useHalfX, 
       data.Get(x+1,y) += half;
      }
      
-     if (useHalfY&&safeY)
+     if (useHalfY && safeY)
      {
       bs::ColourLuv half;
       half.l = 0.5 * (img.Get(x,y).l + img.Get(x,y+1).l);
@@ -54,7 +62,9 @@ void LuvRangeImage::Create(const svt::Field<bs::ColourLuv> & img, bit useHalfX, 
       data.Get(x,y+1) += half;
      }
      
-     if (useCorners&&safeX&&safeY)
+     // You could code this to handle one entry being masked, but seems safer to
+     // just drop such scenarios altogether.
+     if (useCorners && safeX && safeY && mask.Get(x+1,y+1))
      {
       bs::ColourLuv quater;
       quater.l = 0.25 * (img.Get(x,y).l + img.Get(x+1,y).l + img.Get(x,y+1).l + img.Get(x+1,y+1).l);
@@ -79,8 +89,8 @@ void LuvRangeImage::Create(const LuvRangeImage & img, bit halfWidth, bit halfHei
   if (halfWidth) width = (width>>1) + (width&1);
   if (halfHeight) height = (height>>1) + (height&1);
  
- // Tempory mask indicating which ranges have been set...
-  ds::Array2D<bit> mask(width,height);
+ // Setup mask with all entries invalid...
+  mask.Resize(width,height);
   for (nat32 y=0;y<mask.Height();y++)
   {
    for (nat32 x=0;x<mask.Width();x++) mask.Get(x,y) = false;
@@ -92,6 +102,8 @@ void LuvRangeImage::Create(const LuvRangeImage & img, bit halfWidth, bit halfHei
   {
    for (nat32 x=0;x<img.Width();x++)
    {
+    if (!img.Valid(x,y)) continue;
+    
     nat32 tx = x;
     nat32 ty = y;
     
@@ -117,6 +129,11 @@ nat32 LuvRangeImage::Height() const
 {
  return data.Height();
 }
+
+bit LuvRangeImage::Valid(nat32 x,nat32 y) const
+{
+ return mask.Get(x,y);
+}
    
 const LuvRange & LuvRangeImage::Get(nat32 x,nat32 y) const
 {
@@ -130,7 +147,7 @@ LuvRangePyramid::LuvRangePyramid()
 LuvRangePyramid::~LuvRangePyramid()
 {}
    
-void LuvRangePyramid::Create(const svt::Field<bs::ColourLuv> & img, bit useHalfX, bit useHalfY, bit useCorners, bit halfWidth, bit halfHeight)
+void LuvRangePyramid::Create(const svt::Field<bs::ColourLuv> & img, const svt::Field<bit> & mask, bit useHalfX, bit useHalfY, bit useCorners, bit halfWidth, bit halfHeight)
 {
  // Calculate how many levels are required...
   nat32 levels = 1;
@@ -159,7 +176,7 @@ void LuvRangePyramid::Create(const svt::Field<bs::ColourLuv> & img, bit useHalfX
 
  // Build 'em...
   data.Size(levels);
-  data[0].Create(img,useHalfX,useHalfY,useCorners);
+  data[0].Create(img,mask,useHalfX,useHalfY,useCorners);
   
   for (nat32 l=1;l<data.Size();l++)
   {
