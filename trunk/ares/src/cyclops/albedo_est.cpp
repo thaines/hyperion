@@ -101,7 +101,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    
    lightDirection->Set("(0.0,0.0,1.0)");
    lightDirection->SetSize(96,24);
-   albCap->Set("1.5");
+   albCap->Set("1.0");
    albCap->SetSize(32,24);
    lab8->Set(" Light Dir:");
    lab9->Set(" Albedo Cap:");
