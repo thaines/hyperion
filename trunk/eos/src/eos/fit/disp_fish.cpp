@@ -35,6 +35,14 @@ void DispFish::Run(time::Progress * prog)
 {
  prog->Push();
  
+ // First create depth/cost pairs for all pixels covering the range...
+ 
+ 
+ // Create the buffer to store R-contribution/weight pairs...
+ 
+ 
+ // Iterate the pixels and calculate the distribution for each - this consists 
+ // of an easy direction and hard concentration...
  
  
  prog->Pop();
