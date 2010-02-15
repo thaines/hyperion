@@ -98,6 +98,10 @@ class EOS_CLASS CameraFull
 
   /// Returns true on success.
    bit Save(const str::String & fn,bit overwrite = false);
+   
+  /// Fills it in from a CameraCalibration on the presumption that the camera 
+  /// is in the default position.
+   void FromCC(const CameraCalibration & cc);
 
 
   /// &nbsp;

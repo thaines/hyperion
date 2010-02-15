@@ -286,6 +286,22 @@ class EOS_CLASS Ray
     out *= dist;
     out += s;
    }
+   
+  /// Given an arbitary point in space calculates the closest distance to the ray from the point.
+   real32 Distance(const Vert & p)
+   {
+    Vert temp = p; temp -= s;
+    real32 dist = temp * n;
+    if (dist>0.0)
+    {
+     temp = n;
+     temp *= dist;
+     temp += s;
+     for (nat32 i=0;i<3;i++) temp[i] = p[i] - temp[i];
+    }
+
+    return temp.Length();
+   }
 
 
   /// &nbsp;

@@ -223,13 +223,13 @@ inline void ToStr<int64>(const int64 & obj,cstr out)
 template <>
 inline void ToStr<real32>(const real32 & obj,cstr out)
 {
- ::gcvt(obj,8,out);
+ out = ::gcvt(obj,8,out); // out= to make a bloody gcc warning go away - apparently I'm not allowed to ignore the return.
 }
 
 template <>
 inline void ToStr<real64>(const real64 & obj,cstr out)
 {
- ::gcvt(obj,8,out);
+ out = ::gcvt(obj,8,out);
 }
 
 template <>

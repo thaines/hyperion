@@ -190,6 +190,13 @@ bit CameraFull::Save(const str::String & fn,bit overwrite)
   return file::SaveXML(&root,fn,overwrite);
 }
 
+void CameraFull::FromCC(const CameraCalibration & cc)
+{
+ camera = Camera(cc.intrinsic);
+ radial = cc.radial;
+ dim = cc.dim;
+}
+
 //------------------------------------------------------------------------------
 void CameraPair::SetDefault(real64 width,real64 height)
 {
