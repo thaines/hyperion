@@ -549,8 +549,10 @@ EOS_VAR unsigned int EOS_STDCALL (*gtk_table_get_col_spacing)(GtkTable *table,un
 EOS_VAR GtkWidget * EOS_STDCALL (*gtk_file_chooser_dialog_new)(const char * title,GtkWindow * parent,GtkFileChooserAction action,const char * first_button_text,...);
 EOS_VAR int EOS_STDCALL (*gtk_dialog_run)(GtkDialog * dialog);
 EOS_VAR int EOS_STDCALL (*gtk_file_chooser_set_current_name)(GtkFileChooser * chooser,const char * name);
-EOS_VAR void EOS_STDCALL (*gtk_file_chooser_set_filename)(GtkFileChooser * chooser,const char * name);
+EOS_VAR int EOS_STDCALL (*gtk_file_chooser_set_filename)(GtkFileChooser * chooser,const char * name);
 EOS_VAR char * EOS_STDCALL (*gtk_file_chooser_get_filename)(GtkFileChooser * chooser);
+EOS_VAR int EOS_STDCALL (*gtk_file_chooser_set_current_folder)(GtkFileChooser * chooser,const char * name);
+EOS_VAR char * EOS_STDCALL (*gtk_file_chooser_get_current_folder)(GtkFileChooser * chooser);
 EOS_VAR void EOS_STDCALL (*gtk_file_chooser_add_filter)(GtkFileChooser * chooser,GtkFileFilter * filter);
 EOS_VAR GtkFileFilter * EOS_STDCALL (*gtk_file_filter_new)();
 EOS_VAR void EOS_STDCALL (*gtk_file_filter_set_name)(GtkFileFilter * filter,const char *name);
@@ -586,7 +588,7 @@ EOS_VAR void EOS_STDCALL (*gtk_combo_box_prepend_text)(GtkComboBox * combo_box,c
 EOS_VAR void EOS_STDCALL (*gtk_combo_box_remove_text)(GtkComboBox * combo_box,int position);
 EOS_VAR char * EOS_STDCALL (*gtk_combo_box_get_active_text)(GtkComboBox * combo_box);
 
-EOS_VAR GtkWidget * (*gtk_entry_new)();
+EOS_VAR GtkWidget * EOS_STDCALL (*gtk_entry_new)();
 EOS_VAR void EOS_STDCALL (*gtk_entry_set_text)(GtkEntry * entry,const char * text);
 EOS_VAR const char * EOS_STDCALL (*gtk_entry_get_text)(GtkEntry *entry);
 

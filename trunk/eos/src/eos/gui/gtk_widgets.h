@@ -480,6 +480,7 @@ class EOS_CLASS AppGtk : public App
 
  private:
   ds::List<Window*> mw;
+  char * lastDir;
 
   static int IdleEvent(void * data);
 };

@@ -1570,6 +1570,7 @@ int EOS_STDCALL WindowGtk::DeleteEvent(GtkWidget * widget,GdkEvent * event,void 
 
 //------------------------------------------------------------------------------
 AppGtk::AppGtk()
+:lastDir(0)
 {}
 
 AppGtk::~AppGtk()
@@ -1582,6 +1583,8 @@ AppGtk::~AppGtk()
   (*targ)->Release();
   ++targ;
  }
+ 
+ g_free(lastDir);
 }
 
 void AppGtk::Go()
@@ -1691,6 +1694,8 @@ bit AppGtk::LoadFileDialog(cstrconst title,cstrconst exts,str::String & fn)
   }
   gtk_file_chooser_add_filter(dialog,filter);
  }
+ 
+ if (lastDir) gtk_file_chooser_set_current_folder(dialog,lastDir);
 
  bit ret = gtk_dialog_run(dialog)==GTK_RESPONSE_ACCEPT;
  if (ret)
@@ -1699,6 +1704,9 @@ bit AppGtk::LoadFileDialog(cstrconst title,cstrconst exts,str::String & fn)
    fn = filename;
   g_free(filename);
  }
+ 
+ g_free(lastDir);
+ lastDir = gtk_file_chooser_get_current_folder(dialog);
 
  gtk_widget_destroy (dialog);
  return ret;
@@ -1714,6 +1722,8 @@ bit AppGtk::SaveFileDialog(cstrconst title,str::String & fn)
   gtk_file_chooser_set_current_name(dialog,fnIn);
  mem::Free(fnIn);
 
+ if (lastDir) gtk_file_chooser_set_current_folder(dialog,lastDir);
+
  bit ret = gtk_dialog_run(dialog)==GTK_RESPONSE_ACCEPT;
  if (ret)
  {
@@ -1721,6 +1731,9 @@ bit AppGtk::SaveFileDialog(cstrconst title,str::String & fn)
    fn = filename;
   g_free(filename);
  }
+
+ g_free(lastDir);
+ lastDir = gtk_file_chooser_get_current_folder(dialog);
 
  gtk_widget_destroy(dialog);
  return ret;
