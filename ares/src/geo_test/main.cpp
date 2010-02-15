@@ -110,7 +110,7 @@ int main()
 
  // Testing of concentration from probability within an angle class...
  // (The geometrical link is really getting stretched here.)
-  sfs::FisherAngProb fap;
+ /* sfs::FisherAngProb fap;
   fap.Make(0.05,1.0,4.0,120,1800,&con.BeginProg());
   con.EndProg();
   
@@ -134,7 +134,44 @@ int main()
   con << " 80 degrees = " << fap.Concentration(80.0 * math::pi/180.0) << "\n";
   con << " 90 degrees = " << fap.Concentration(90.0 * math::pi/180.0) << "\n";
   con << "120 degree = " << fap.Concentration(120.0 * math::pi/180.0) << "\n";
-  con << "150 degree = " << fap.Concentration(150.0 * math::pi/180.0) << "\n";
+  con << "150 degree = " << fap.Concentration(150.0 * math::pi/180.0) << "\n";*/
+  
+  
+ 
+ // Testing of subdivision sphere object - just hammering it and seeing if it breaks...
+  // Hammer it...
+   fit::SubDivSphere sds;
+   fit::SubDivSphere::Tri targ = sds.GetRoot(0);
+   for (nat32 i=0;i<6;i++)
+   {
+    targ = sds.MakeB(targ);
+   }
+   targ = sds.MakeAdjA(targ);
+
+
+  // Create ply file of result...
+   file::Ply ply;
+   ds::Array<nat32> vertInd(sds.VertCount());
+   for (nat32 i=0;i<vertInd.Size();i++)
+   {
+    vertInd[i] = ply.Add(bs::Vert(sds.Vert(i)));
+   }
+   for (nat32 i=0;i<sds.TriCount();i++)
+   {
+    fit::SubDivSphere::Tri tri = i;
+    if (!sds.HasChildren(tri))
+    {
+     ply.Add(vertInd[sds.IndA(tri)]);
+     ply.Add(vertInd[sds.IndB(tri)]);
+     ply.Add(vertInd[sds.IndC(tri)]);
+     ply.Face();
+    }
+   }
+
+
+  // Save...
+   ply.Save("sphere_subdiv.ply",true);
+  
  
  con.WaitSize(1);
  return 0;

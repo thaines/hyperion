@@ -10,7 +10,7 @@ namespace eos
 SubDivSphere::SubDivSphere()
 :tris(20,40),verts(12,12)
 {
- const real32 nc = math::Sqrt(math::Sqr(1.0+((1.0+math::Sqrt(5.0))/2.0)));
+ const real32 nc = math::Sqrt(1.0 + math::Sqr((1.0 + math::Sqrt(5.0))/2.0));
  const real32 innc = 1.0/nc;
  const real32 pnc = math::phi/nc;
  
@@ -40,9 +40,9 @@ SubDivSphere::SubDivSphere()
  tris[4].vertInd[0]  =  4; tris[4].vertInd[1]  =  5; tris[4].vertInd[2]  =  0;
  tris[5].vertInd[0]  =  4; tris[5].vertInd[1]  =  2; tris[5].vertInd[2]  =  5;
  tris[6].vertInd[0]  =  6; tris[6].vertInd[1]  =  7; tris[6].vertInd[2]  =  3;
- tris[7].vertInd[0]  =  6; tris[6].vertInd[1]  =  1; tris[7].vertInd[2]  =  7;
- tris[8].vertInd[0]  =  8; tris[7].vertInd[1]  =  9; tris[8].vertInd[2]  =  4;
- tris[9].vertInd[0]  =  8; tris[8].vertInd[1]  =  6; tris[9].vertInd[2]  =  9;
+ tris[7].vertInd[0]  =  6; tris[7].vertInd[1]  =  1; tris[7].vertInd[2]  =  7;
+ tris[8].vertInd[0]  =  8; tris[8].vertInd[1]  =  9; tris[8].vertInd[2]  =  4;
+ tris[9].vertInd[0]  =  8; tris[9].vertInd[1]  =  6; tris[9].vertInd[2]  =  9;
  tris[10].vertInd[0] = 10; tris[10].vertInd[1] = 11; tris[10].vertInd[2] =  7;
  tris[11].vertInd[0] = 10; tris[11].vertInd[1] =  5; tris[11].vertInd[2] = 11;
  tris[12].vertInd[0] =  8; tris[12].vertInd[1] =  4; tris[12].vertInd[2] =  0;
@@ -79,7 +79,7 @@ SubDivSphere::SubDivSphere()
  // The below code is purly to check the above constructed data structure is
  // correct, as a mistake would be vicous...
  // (To be comented out after first run.)
-  for (nat32 i=0;i<tris.Size();i++)
+  /*for (nat32 i=0;i<tris.Size();i++)
   {
    for (nat32 j=0;j<3;j++)
    {
@@ -94,7 +94,7 @@ SubDivSphere::SubDivSphere()
     }
     log::Assert(ok);
    }
-  }
+  }*/
 }
 
 SubDivSphere::~SubDivSphere()
@@ -200,7 +200,7 @@ void SubDivSphere::MakeExist(Tri tri,nat32 a)
 
 void SubDivSphere::SubDivide(Tri tri)
 {
- if (tris[tri].child==nat32(-1)) return;
+ if (tris[tri].child!=nat32(-1)) return;
 
  // First create the 4 relevant triangles - first entry is the middle, then adj to A,B,C...
   nat32 base = tris.Size();
