@@ -309,6 +309,8 @@
 #include "eos/fit/disp_norm.h"
 #include "eos/fit/light_dir.h"
 #include "eos/fit/sphere_sample.h"
+#include "eos/fit/light_ambient.h"
 
 //------------------------------------------------------------------------------
 #endif
+
