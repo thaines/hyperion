@@ -131,6 +131,12 @@ class EOS_CLASS Multigrid2D
   /// Can be called after a first call of Run, or without ever calling Run.
    void ReRun(time::Progress * prog = null<time::Progress*>());
    
+  
+  /// This zero means the x values - an be called between re-runs or before 
+  /// extracting the data, as appropriate. Mainly useful when the constraints 
+  /// don't restrict the ultimate depth.
+   void ZeroMean();
+   
    
   /// Returns an x value. The x values will all be zero before tha algorithm is first run.
    real32 Get(nat32 x,nat32 y) const

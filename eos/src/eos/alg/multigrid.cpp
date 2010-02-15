@@ -275,6 +275,27 @@ void Multigrid2D::ReRun(time::Progress * prog)
  prog->Pop();
 }
 
+void Multigrid2D::ZeroMean()
+{
+ // Calculate the mean, incrimentally for stability...
+  real32 mean = 0.0;
+  nat32 count = 0;
+  for (nat32 y=0;y<data[0].Height();y++)
+  {
+   for (nat32 x=0;x<data[0].Width();x++)
+   {
+    count += 1;
+    mean += (data[0].Get(x,y).x-mean)/real32(count);
+   }
+  }
+  
+ // Apply the offset...
+  for (nat32 y=0;y<data[0].Height();y++)
+  {
+   for (nat32 x=0;x<data[0].Width();x++) data[0].Get(x,y).x -= mean;
+  }
+}
+
 void Multigrid2D::GetX(ds::Array2D<real32> & out) const
 {
  for (nat32 y=0;y<data[0].Height();y++)
