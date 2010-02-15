@@ -103,7 +103,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    viewSelect->Append("Fisher Direction");
    viewSelect->Append("Fisher Concentration (log10)");
    viewSelect->Append("Sphere Rendered with Estimate");
-   viewSelect->Append("Cost of Direction Sphere (log10)");
+   viewSelect->Append("Cost of Direction Sphere");
    viewSelect->Append("Albedo");
    viewSelect->Set(0);
    
@@ -150,7 +150,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 
    lab7->Set("    Minimum Albedo");
    lab8->Set(" Maximum Albedo");
-   lab9->Set(" Maximum Segment Size");
+   lab9->Set(" Maximum Segment Cost");
    lab10->Set("   Sampling Subdivisions");
    lab11->Set(" Albedo Recursion Depth");
    
@@ -420,6 +420,7 @@ void LightEst::Run(gui::Base * obj,gui::Event * event)
   {
    samples[i].cost = ld.SampleCost(i);
    samples[i].dir = ld.SampleDir(i);
+   LogDebug("sample {dir,cost}" << LogDiv() << samples[i].dir << LogDiv() << samples[i].cost);
   }
   
   str::String s;
@@ -630,9 +631,11 @@ void LightEst::Update()
      // First generate a Delauney triangulation with all the samples in, with 
      // costs as the stored data...
       ds::Delaunay2D<real32> doc;
+      real32 minCost = math::Infinity<real32>();
       for (nat32 i=0;i<samples.Size();i++)
       {
        doc.Add(samples[i].dir[0],samples[i].dir[1],samples[i].cost);
+       minCost = math::Min(minCost,samples[i].cost);
       }
      
      // Now iterate all the pixels, interpolating costs for those inside the 
@@ -653,32 +656,55 @@ void LightEst::Update()
         if (math::Sqr(dirX)+math::Sqr(dirY)<1.0)
         {
          ds::Delaunay2D<real32>::Mid tri = doc.Triangle(dirX,dirY);
+         nat32 pc = 0;
          real32 cost[3];
-         real32 dist[3];
+         real32 xp[3];
+         real32 yp[3];
          for (nat32 i=0;i<3;i++)
          {
-          if (tri.Infinite(i))
-          {
-           cost[i] = 0.0;
-           dist[i] = 0.0;
-          }
-          else
+          if (!tri.Infinite(i))
           {
            ds::Delaunay2D<real32>::Pos pos = tri.GetPos(i);
-           cost[i] = *pos;
-           dist[i] = math::Sqrt(math::Sqr(pos.X()-dirX) + math::Sqr(pos.Y()-dirY));
+           cost[pc] = *pos - minCost;
+           xp[pc] = pos.X();
+           yp[pc] = pos.Y();
+           ++pc;
           }
          }
-        
-         real32 distSum = dist[0] + dist[1] + dist[2];
-         if (math::IsZero(distSum)) l = -1.0;
-         else
+         
+         switch(pc)
          {
-          real32 c = cost[0]*(distSum-dist[0]) +
-                     cost[1]*(distSum-dist[1]) +
-                     cost[2]*(distSum-dist[2]);
-          c /= distSum*2.0;
-          l = math::Log10(1.0+c);
+          case 0:
+           l = -1.0;
+          break;
+          case 1:
+           l = cost[0];
+          break;
+          case 2:
+          {
+           real32 length = math::Sqrt(math::Sqr(xp[1]-xp[0]) + math::Sqr(yp[1]-yp[0]));
+           real32 t = ((dirX-xp[0])*(xp[1]-xp[0]) + (dirY-yp[0])*(yp[1]-yp[0]))/math::Sqr(length);
+           l = (1.0-t)*cost[0] + t*cost[1];
+          }
+          break;
+          case 3:
+          {
+           // Below is using Barycentric Coordinates...
+            real32 xC =  dirX-xp[2];
+            real32 yC =  dirY-yp[2];
+            real32 x1 = xp[0]-xp[2];
+            real32 x2 = xp[1]-xp[2];
+            real32 y1 = yp[0]-yp[2];
+            real32 y2 = yp[1]-yp[2];
+           
+            real32 mult = 1.0/(x1*y2 - x2*y1);
+           
+            real32 lam1 = (y2*xC - x2*yC) * mult;
+            real32 lam2 = (x1*yC - y1*xC) * mult;
+
+            l = lam1*cost[0] + lam2*cost[1] + (1.0-lam1-lam2)*cost[2];
+          }
+          break;
          }
         }
         else
@@ -686,26 +712,26 @@ void LightEst::Update()
          l = -1.0;
         }
        
-        if (l<0.0)
-        {
-         image.Get(x,y).r = 0.0;
-         image.Get(x,y).g = 0.0;
-         image.Get(x,y).b = 0.5;
-        }
-        else
-        {
-         max = math::Max(max,l);
-         image.Get(x,y).r = l;
-         image.Get(x,y).g = l;
-         image.Get(x,y).b = l;
-        }
+        max = math::Max(max,l);
+        image.Get(x,y).r = l;
+        image.Get(x,y).g = l;
+        image.Get(x,y).b = l;
        }
       }
     
      // Normalise...
       for (nat32 y=0;y<image.Size(1);y++)
       {
-       for (nat32 x=0;x<image.Size(0);x++) image.Get(x,y) /= max;
+       for (nat32 x=0;x<image.Size(0);x++)
+       {
+        if (image.Get(x,y).r<0.0)
+        {
+         image.Get(x,y).r = 0.0;
+         image.Get(x,y).g = 0.0;
+         image.Get(x,y).b = 0.5;
+        }
+        else image.Get(x,y) /= max;
+       }
       }
     }
    }
