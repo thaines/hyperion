@@ -1407,7 +1407,7 @@ real32 SfS_BP_Nice3::SmoothK(real32 irrA,real32 irrB,const FisherAngProb & fap) 
 {
  real32 angA = math::InvCos(math::Min<real32>(irrA,1.0));
  real32 angB = math::InvCos(math::Min<real32>(irrB,1.0));
- real32 rot  = smoothBase + smoothMult * math::Abs(angA-angB);
+ real32 rot  = math::Min((smoothBase*math::pi/180.0) + smoothMult * math::Abs(angA-angB),math::pi);
  
  bs::Normal normA(math::Sin(angA),0.0,math::Cos(angA));
  bs::Normal normB(math::Cos(rot)*math::Sin(angB),math::Sin(rot)*math::Sin(angB),math::Cos(angB));

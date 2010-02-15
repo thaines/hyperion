@@ -465,11 +465,11 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
    lab58->Set(" Angle Multiplier:");
    lab59->Set(" Momentum:");
    
-   haw3SmoothChance->Set("0.02");
-   haw3SmoothBase->Set("2.0");
-   haw3SmoothMult->Set("0.5");
-   haw3SmoothMinK->Set("0.1");
-   haw3SmoothMaxK->Set("8.0");
+   haw3SmoothChance->Set("0.05");
+   haw3SmoothBase->Set("15.0");
+   haw3SmoothMult->Set("0.0");
+   haw3SmoothMinK->Set("1.0");
+   haw3SmoothMaxK->Set("4.0");
    haw3Cone0->Set("24.0");
    haw3Cone45->Set("32.0");
    haw3Cone90->Set("24.0");
