@@ -303,6 +303,17 @@ void DispFish::Get(svt::Field<bs::Vert> & fish)
  }
 }
 
+void DispFish::Get(svt::Field<math::Fisher> & fish)
+{
+ for (nat32 y=0;y<out.Height();y++)
+ {
+  for (nat32 x=0;x<out.Width();x++)
+  {
+   for (nat32 i=0;i<3;i++) fish.Get(x,y)[i] = out.Get(x,y)[i];
+  }
+ }
+}
+
 bs::Vert & DispFish::GetFish(nat32 x,nat32 y)
 {
  return out.Get(x,y);

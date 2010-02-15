@@ -814,7 +814,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    result->Setup2D(leftImg->Size(0),leftImg->Size(1));
    real32 dispIni = 0.0;
    bit maskIni = true;
-   bs::Vert fishIni(0.0,0.0,0.0);
+   math::Fisher fishIni;
    result->Add("disp",dispIni);
    result->Add("mask",maskIni);
    if (aGaussian) result->Add("sd",dispIni);
@@ -824,7 +824,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    svt::Field<real32> disp(result,"disp");
    svt::Field<bit> mask(result,"mask");
    svt::Field<real32> sd(result,"sd");
-   svt::Field<bs::Vert> fish(result,"fish");
+   svt::Field<math::Fisher> fish(result,"fish");
 
 
   // Prep progress bar...

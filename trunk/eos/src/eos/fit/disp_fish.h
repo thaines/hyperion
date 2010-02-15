@@ -17,6 +17,7 @@
 #include "eos/ds/arrays2d.h"
 #include "eos/svt/field.h"
 #include "eos/stereo/dsi.h"
+#include "eos/math/stats_dir.h"
 
 namespace eos
 {
@@ -67,6 +68,9 @@ class EOS_CLASS DispFish
    
   /// Extracts the results.
    void Get(svt::Field<bs::Vert> & fish);
+
+  /// Extracts the results.
+   void Get(svt::Field<math::Fisher> & fish);
    
   /// Extracts a result.
    bs::Vert & GetFish(nat32 x,nat32 y);

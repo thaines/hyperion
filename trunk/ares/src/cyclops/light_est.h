@@ -23,28 +23,27 @@ class LightEst
   gui::ComboBox * viewSelect;
   gui::ComboBox * algSelect;
   
-  gui::Expander * kMeanGrid;
-  gui::EditBox * kmgDim;
-  gui::EditBox * kmgMinSeg;
-  gui::EditBox * kmgColMult;
-  gui::EditBox * kmgSpatialMult;
-  gui::EditBox * kmgMaxIters;
+  gui::Expander * brutalFish;
+  gui::EditBox * bfMinAlb;
+  gui::EditBox * bfMaxAlb;
+  gui::EditBox * bfMaxSegCost;  
+  gui::EditBox * bfSampleSubdiv;  
+  gui::EditBox * bfAlbRecursion; 
   
-  gui::Expander * meanShift;
-  gui::EditBox * msEdgeWindow;
-  gui::EditBox * msEdgeMix;
-  gui::EditBox * msSpatialSize;
-  gui::EditBox * msColourSize;
-  gui::EditBox * msMergeCutoff;
-  gui::EditBox * msMinSeg;
-  gui::EditBox * msAvgSteps;
-  gui::EditBox * msMergeMax;
-  
-  
-  svt::Var * inputVar;
-  svt::Field<bs::ColourRGB> inputImage;
-  svt::Field<nat32> segmentation;
+  gui::Label * lightDir; 
+  bs::Normal lightD;
 
+
+  math::Func crf;
+
+  svt::Var * irrVar;
+  svt::Field<bs::ColourRGB> irr;
+  svt::Var * segVar;
+  svt::Field<nat32> seg;
+  svt::Var * dispVar;
+  svt::Field<math::Fisher> fish;
+  svt::Var * albedoVar;
+  svt::Field<real32> albedo;
 
   svt::Var * imageVar;
   svt::Field<bs::ColourRGB> image;
@@ -57,13 +56,15 @@ class LightEst
 
   void Resize(gui::Base * obj,gui::Event * event);
 
-  void LoadImage(gui::Base * obj,gui::Event * event);
+  void LoadIrr(gui::Base * obj,gui::Event * event);
+  void LoadCRF(gui::Base * obj,gui::Event * event);
+  void LoadSeg(gui::Base * obj,gui::Event * event);
+  void LoadDisp(gui::Base * obj,gui::Event * event);
   void Run(gui::Base * obj,gui::Event * event);
   void ChangeView(gui::Base * obj,gui::Event * event);
   void ChangeAlg(gui::Base * obj,gui::Event * event);
   void SaveView(gui::Base * obj,gui::Event * event);
-  void SaveSeg(gui::Base * obj,gui::Event * event);
-  
+
   void Update();
 };
 
