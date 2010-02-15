@@ -267,7 +267,8 @@ void StereoSfS::LoadNeedle(gui::Base * obj,gui::Event * event)
    delete needleVar;
    math::Fisher fishIni;
    
-   needleVar = new svt::Var(*tempVar);
+   needleVar = new svt::Var(cyclops.Core());
+   needleVar->Setup2D(tempVar->Size(0),tempVar->Size(1));
    needleVar->Add("fish",fishIni);
    needleVar->Commit();
    needleVar->ByName("fish",needle);
@@ -281,7 +282,9 @@ void StereoSfS::LoadNeedle(gui::Base * obj,gui::Event * event)
      math::Fisher & f = needle.Get(x,y);
      bs::ColourRGB & c = rgb.Get(x,y);
      
-     f[0] = c.r; f[1] = c.g; f[2] = c.b;
+     f[0] = 2.0*(c.r-0.5);
+     f[1] = 2.0*(c.g-0.5);
+     f[2] = c.b;
      if (!math::IsZero(f.Length())) f.Normalise();
     }
    }

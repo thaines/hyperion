@@ -320,6 +320,7 @@ void AlbedoEst::LoadPair(gui::Base * obj,gui::Event * event)
    cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load pcc file");
   }
  }
+ pair.LeftToDefault();
 }
 
 void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
@@ -333,6 +334,7 @@ void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
    cur >> toLight;
    if (cur.Error()) toLight = bs::Normal(0.0,0.0,1.0);
   }
+  toLight.Normalise();
 
 
  // Setup some storage...
@@ -456,7 +458,7 @@ void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
    prog->Report(s,segSize.Size());
    if (segSize[s]>0)
    {
-    ds::Array<real32> estimate(segSize[s]);
+    ds::Array<WeightEst> estimate(segSize[s]);
     nat32 pos = 0;
     for (nat32 y=0;y<irradiance.Size(1);y++)
     {
@@ -464,7 +466,9 @@ void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
      {
       if (mask.Get(x,y)&&(seg.Get(x,y)==s))
       {
-       estimate[pos] = irradiance.Get(x,y) / (needle.Get(x,y) * toLight);
+       real32 dot = needle.Get(x,y) * toLight;
+       estimate[pos].estimate = irradiance.Get(x,y) / dot;
+       estimate[pos].weight = dot;
        pos += 1;
       }
      }
@@ -472,7 +476,25 @@ void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
     eos::log::Assert(pos==segSize[s]);
    
     estimate.SortNorm();
-    albedo[s] = estimate[estimate.Size()/2];
+    
+    real32 weightSum = 0.0;
+    for (nat32 i=0;i<estimate.Size();i++) weightSum += estimate[i].weight;
+    weightSum /= 2.0;
+    
+    nat32 end = 0;
+    real32 endWeight = estimate[0].weight;
+    while (endWeight<weightSum)
+    {
+     end += 1;
+     endWeight += estimate[end].weight;
+    }
+    
+    if (end!=0)
+    {
+     real32 w = (weightSum - endWeight + estimate[end].weight) / estimate[end].weight;
+     albedo[s] = (1.0-w)*estimate[end-1].estimate + w*estimate[end].estimate;
+    }
+    else albedo[s] = estimate[end].estimate;
    }
    else
    {
@@ -490,7 +512,7 @@ void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
 
  // Display the output string...
   str::String s;
-  s << "Highest albedo = " << maxA;
+  s << "Highest albedo = " << maxA << ", non-linear albedo = " << crf.Inverse(maxA);
   results->Set(s);
 
 
@@ -716,7 +738,8 @@ void AlbedoEst::Update()
      {
       real32 l = (irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0;
       real32 cl = crf(l);
-      cl /= albedo[seg.Get(x,y)];
+      real32 a = albedo[seg.Get(x,y)];
+      if (!math::IsZero(a)) cl /= a;
       max = math::Max(max,cl);
 
       image.Get(x,y).r = cl;
