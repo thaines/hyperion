@@ -25,6 +25,7 @@ class AlbedoEst
   
   gui::ComboBox * viewSelect;
   gui::EditBox * lightDirection;
+  gui::EditBox * albCap;
 
   gui::Label * results;
 

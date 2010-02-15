@@ -84,18 +84,23 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    
    needleWeight = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    iterations = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   deltaCap = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    
    gui::Label * lab7 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab8 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab9 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    
    needleWeight->Set("1.0");
    iterations->Set("1120");
+   deltaCap->Set("4.0");
    
    needleWeight->SetSize(48,24);
-   iterations->SetSize(96,24);
+   iterations->SetSize(48,24);
+   deltaCap->SetSize(32,24);
    
    lab7->Set(" Needle Sd Mult:");
    lab8->Set(" Iterations:");
+   lab9->Set(" Delta Half Life:");
 
 
    viewSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
@@ -117,6 +122,8 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    horiz2->AttachRight(needleWeight,false);
    horiz2->AttachRight(lab8,false);
    horiz2->AttachRight(iterations,false);
+   horiz2->AttachRight(lab9,false);
+   horiz2->AttachRight(deltaCap,false);
    horiz2->AttachRight(but5,false);
    horiz2->AttachRight(but6,false);
 
@@ -314,6 +321,7 @@ void StereoSfS::Run(gui::Base * obj,gui::Event * event)
  // Get the parameters...
   real32 nWeight = needleWeight->GetReal(1.0);
   nat32 iters = iterations->GetInt(100);
+  real32 dCap = deltaCap->GetReal(1.0);
  
  
  // Create the solver...
@@ -406,7 +414,9 @@ void StereoSfS::Run(gui::Base * obj,gui::Event * event)
        // Create relations between this pixel and all neighbours...
         for (nat32 i=0;i<4;i++)
         {
-         ibp.SetRel(x,y,i,1.0,exp[i]-disp.Get(x,y),1.0/nWeight);
+         real32 d = exp[i]-disp.Get(x,y);
+         real32 w = (1.0/nWeight) / math::Pow(real32(2.0),math::Abs(d)/dCap);
+         ibp.SetRel(x,y,i,1.0,d,w);
         }
       }
       else
