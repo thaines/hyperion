@@ -14,7 +14,7 @@ namespace eos
  namespace io
  {
 //------------------------------------------------------------------------------
-/// Converts from big endian to the current platform.
+/// Converts from big endian (Motorola) to the current platform.
 template<typename T>
 T FromBigEndian(T v);
 
@@ -90,6 +90,42 @@ inline T ToBigEndian(T v)
 }
 
 //------------------------------------------------------------------------------
+/// Converts to the current platform given a bit to indicate endiness - true for
+/// big (motorola), false for little (intel).
+template<typename T>
+inline T ToCurrent(T v,bit big)
+{
+ if (big) return FromBigEndian(v);
+     else return v;
+}
+
+//------------------------------------------------------------------------------
+/// Fetches aa int16 from a byte stream.
+inline int16 Int16FromBS(byte * bs)
+{
+ return int16(bs[0]) | (int16(bs[1])<<8);
+}
+
+/// Fetches an int32 from a byte stream.
+inline int32 Int32FromBS(byte * bs)
+{
+ return int32(bs[0]) | (int32(bs[1])<<8) | (int32(bs[2])<<16) | (int32(bs[3])<<24);
+}
+
+/// Fetches a nat16 from a byte stream.
+inline nat16 Nat16FromBS(byte * bs)
+{
+ return nat16(bs[0]) | (nat16(bs[1])<<8);
+}
+
+/// Fetches a nat32 from a byte stream.
+inline nat32 Nat32FromBS(byte * bs)
+{
+ return nat32(bs[0]) | (nat32(bs[1])<<8) | (nat32(bs[2])<<16) | (nat32(bs[3])<<24);
+}
+
+//------------------------------------------------------------------------------
  };
 };
 #endif
+

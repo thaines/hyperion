@@ -147,7 +147,7 @@ OBJS_MATH       = $(OBJ)/math_constants.o $(OBJ)/math_functions.o $(OBJ)/math_ve
 OBJS_TIME       = $(OBJ)/time_times.o $(OBJ)/time_progress.o $(OBJ)/time_format.o
 OBJS_DATA	= $(OBJ)/data_blocks.o $(OBJ)/data_buffers.o $(OBJ)/data_giants.o $(OBJ)/data_checksums.o $(OBJ)/data_randoms.o $(OBJ)/data_property.o
 OBJS_STR	= $(OBJ)/str_functions.o $(OBJ)/str_strings.o $(OBJ)/str_tokens.o $(OBJ)/str_tokenize.o
-OBJS_FILE	= $(OBJ)/file_dirs.o $(OBJ)/file_files.o $(OBJ)/file_dlls.o $(OBJ)/file_images.o $(OBJ)/file_wavefront.o $(OBJ)/file_xml.o $(OBJ)/file_csv.o $(OBJ)/file_stereo_helpers.o $(OBJ)/file_ply.o $(OBJ)/file_devil_funcs.o $(OBJ)/file_meshes.o
+OBJS_FILE	= $(OBJ)/file_dirs.o $(OBJ)/file_files.o $(OBJ)/file_dlls.o $(OBJ)/file_images.o $(OBJ)/file_wavefront.o $(OBJ)/file_xml.o $(OBJ)/file_csv.o $(OBJ)/file_stereo_helpers.o $(OBJ)/file_ply.o $(OBJ)/file_devil_funcs.o $(OBJ)/file_meshes.o $(OBJ)/file_exif.o
 OBJS_SVT	= $(OBJ)/svt_core.o $(OBJ)/svt_node.o $(OBJ)/svt_meta.o $(OBJ)/svt_var.o $(OBJ)/svt_field.o $(OBJ)/svt_type.o $(OBJ)/svt_file.o $(OBJ)/svt_calculation.o $(OBJ)/svt_sample.o
 OBJS_ALG	= $(OBJ)/alg_mean_shift.o $(OBJ)/alg_fitting.o $(OBJ)/alg_bp2d.o $(OBJ)/alg_shapes.o $(OBJ)/alg_genetic.o $(OBJ)/alg_local_plane.o $(OBJ)/alg_depth_plane.o $(OBJ)/alg_greedy_merge.o $(OBJ)/alg_solvers.o $(OBJ)/alg_nearest.o $(OBJ)/alg_multigrid.o
 OBJS_FILTER	= $(OBJ)/filter_image_io.o $(OBJ)/filter_conversion.o $(OBJ)/filter_segmentation.o $(OBJ)/filter_render_segs.o $(OBJ)/filter_kernel.o $(OBJ)/filter_grad_angle.o $(OBJ)/filter_edge_confidence.o $(OBJ)/filter_synergism.o $(OBJ)/filter_seg_graph.o $(OBJ)/filter_normalise.o $(OBJ)/filter_pyramid.o $(OBJ)/filter_dog_pyramid.o $(OBJ)/filter_dir_pyramid.o $(OBJ)/filter_sift.o $(OBJ)/filter_shape_index.o $(OBJ)/filter_corner_harris.o $(OBJ)/filter_matching.o $(OBJ)/filter_mser.o $(OBJ)/filter_specular.o $(OBJ)/filter_scaling.o $(OBJ)/filter_colour_matching.o $(OBJ)/filter_grad_walk.o $(OBJ)/filter_grad_bilateral.o $(OBJ)/filter_smoothing.o $(OBJ)/filter_mscr.o $(OBJ)/filter_seg_k_mean_grid.o
@@ -465,6 +465,9 @@ $(OBJ)/file_devil_funcs.o: $(DIRS) $(SRC)/eos/file/devil_funcs.h $(SRC)/eos/file
 
 $(OBJ)/file_meshes.o: $(DIRS) $(SRC)/eos/file/meshes.h $(SRC)/eos/file/meshes.cpp
 	$(C) -o $(OBJ)/file_meshes.o $(SRC)/eos/file/meshes.cpp
+
+$(OBJ)/file_exif.o: $(DIRS) $(SRC)/eos/file/exif.h $(SRC)/eos/file/exif.cpp
+	$(C) -o $(OBJ)/file_exif.o $(SRC)/eos/file/exif.cpp
 
 
 $(OBJ)/svt_core.o: $(DIRS) $(SRC)/eos/svt/core.h $(SRC)/eos/svt/core.cpp

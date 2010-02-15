@@ -148,6 +148,7 @@
 #include "eos/file/stereo_helpers.h"
 #include "eos/file/ply.h"
 #include "eos/file/meshes.h"
+#include "eos/file/exif.h"
 
 #include "eos/svt/core.h"
 #include "eos/svt/node.h"
