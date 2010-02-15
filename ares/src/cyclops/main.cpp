@@ -132,6 +132,7 @@ Cyclops::Cyclops()
   gui::Button * but42 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but43 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but44 = static_cast<gui::Button*>(guiFact.Make("Button"));
+  gui::Button * but45 = static_cast<gui::Button*>(guiFact.Make("Button"));
 
   gui::Label * lab1 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab2 = static_cast<gui::Label*>(guiFact.Make("Label"));
@@ -177,6 +178,7 @@ Cyclops::Cyclops()
   gui::Label * lab42 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab43 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab44 = static_cast<gui::Label*>(guiFact.Make("Label"));
+  gui::Label * lab45 = static_cast<gui::Label*>(guiFact.Make("Label"));
 
   but1->SetChild(lab1); lab1->Set("Intrinsic Calibration");
   but2->SetChild(lab2); lab2->Set("Protractor");
@@ -222,6 +224,7 @@ Cyclops::Cyclops()
   but42->SetChild(lab42); lab42->Set("Light Estimation");
   but43->SetChild(lab43); lab43->Set("Pair to Default");
   but44->SetChild(lab44); lab44->Set("Camera Response");
+  but45->SetChild(lab45); lab45->Set("Intrinsic To Camera");
 
   vert0->AttachBottom(but19,false);
   vert0->AttachBottom(but21,false);
@@ -259,9 +262,7 @@ Cyclops::Cyclops()
 
   vert7->AttachBottom(but15,false);
   vert7->AttachBottom(but32,false);
-  vert7->AttachBottom(but17,false);
-  vert7->AttachBottom(but36,false);
-  vert7->AttachBottom(but29,false);
+  vert7->AttachBottom(but45,false);
   
   vert8->AttachBottom(but44,false);
   vert8->AttachBottom(but42,false);
@@ -273,6 +274,9 @@ Cyclops::Cyclops()
 
   vert10->AttachBottom(but35,false);
   vert10->AttachBottom(but27,false);
+  vert10->AttachBottom(but17,false);
+  vert10->AttachBottom(but36,false);
+  vert10->AttachBottom(but29,false);
   
   vert11->AttachBottom(but38,false);
   vert11->AttachBottom(but39,false);
@@ -330,6 +334,7 @@ Cyclops::Cyclops()
   but42->OnClick(MakeCB(this,&Cyclops::StartLightEst));
   but43->OnClick(MakeCB(this,&Cyclops::PairToDefault));
   but44->OnClick(MakeCB(this,&Cyclops::StartCamResponse));
+  but45->OnClick(MakeCB(this,&Cyclops::StartIntrinsicToCamera));
 
  // Enter the message pump...
   app->Go();
@@ -762,6 +767,44 @@ void Cyclops::PairToDefault(gui::Base * obj,gui::Event * event)
 void Cyclops::StartCamResponse(gui::Base * obj,gui::Event * event)
 {
  new CamResponse(*this);
+}
+
+void Cyclops::StartIntrinsicToCamera(gui::Base * obj,gui::Event * event)
+{
+ // Load the .icd...
+  cam::CameraCalibration intrinsic;
+  {
+   str::String fn;
+   if (App().LoadFileDialog("Select Intrinsic","*.icd",fn)==false) return;
+   if (intrinsic.Load(fn)==false)
+   {
+    App().MessageDialog(gui::App::MsgErr,"Failed to load intrinsic calibration file");
+    return;
+   }
+  }
+
+
+ // Create the .cam...
+  cam::CameraFull camera;
+  camera.camera = cam::Camera(intrinsic.intrinsic);
+  camera.radial = intrinsic.radial;
+  camera.dim = intrinsic.dim;
+
+
+ // Save the .cam...
+ {
+  str::String fn(".cam");
+  if (App().SaveFileDialog("Save Camera...",fn))
+  {
+   if (!fn.EndsWith(".cam")) fn += ".cam";
+   // Save the file...
+    if (!camera.Save(fn,true))
+    {
+     App().MessageDialog(gui::App::MsgErr,"Error saving the file.");
+     return;
+    }
+  }
+ }
 }
 
 //------------------------------------------------------------------------------
