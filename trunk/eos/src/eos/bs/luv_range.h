@@ -151,7 +151,7 @@ class EOS_CLASS LuvRange
 //------------------------------------------------------------------------------
 /// Provides an image expressed as a set of pixel ranges. Supports multiple
 /// possible initialisations - from images, from other LuvRangeImages, with
-/// parameters to decide initialisation...
+/// parameters to decide initialisation. Includes a built in mask.
 class EOS_CLASS LuvRangeImage
 {
  public:
@@ -167,7 +167,8 @@ class EOS_CLASS LuvRangeImage
   /// how it initialises ranges. The actually colour of each pixel is always
   /// used, however you can optionally use the linear interpolation half way
   /// points and/or the corner points.
-   void Create(const svt::Field<bs::ColourLuv> & img, bit useHalfX = true, bit useHalfY = true, bit useCorners = true);
+  /// Can hand in a invalid mask if you choose.
+   void Create(const svt::Field<bs::ColourLuv> & img, const svt::Field<bit> & mask, bit useHalfX = true, bit useHalfY = true, bit useCorners = true);
    
   /// Copies another LuvRangeImage, with support for halfing the resolution in either direction.
    void Create(const LuvRangeImage & img, bit halfWidth = false, bit halfHeight = false);
@@ -180,6 +181,9 @@ class EOS_CLASS LuvRangeImage
    nat32 Height() const;
    
   /// &nbsp;
+   bit Valid(nat32 x,nat32 y) const;
+
+  /// &nbsp;
    const LuvRange & Get(nat32 x,nat32 y) const;
 
 
@@ -189,6 +193,7 @@ class EOS_CLASS LuvRangeImage
  
  private:
   ds::Array2D<LuvRange> data;
+  ds::Array2D<bit> mask;
 };
 
 //------------------------------------------------------------------------------
@@ -206,7 +211,7 @@ class EOS_CLASS LuvRangePyramid
    
   
   /// Fills in the pyramid from the given image with the given settings.
-   void Create(const svt::Field<bs::ColourLuv> & img, bit useHalfX = true, bit useHalfY = true, bit useCorners = true, bit halfWidth = true, bit halfHeight = true);
+   void Create(const svt::Field<bs::ColourLuv> & img,const svt::Field<bit> & mask, bit useHalfX = true, bit useHalfY = true, bit useCorners = true, bit halfWidth = true, bit halfHeight = true);
    
   
   /// Returns how many levels exist.
