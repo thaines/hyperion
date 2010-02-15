@@ -109,7 +109,7 @@ inline bit RealSchurHessenberg(TA & h,typename TA::type tol = static_cast<typena
   // Simultaneously find p and q, which bounds the unreduced sub-matrix that
   // directly follows the lower corners quasi-triangular part, i.e. the part
   // that is complete.
-  // Unlike the book we set p to tbe the upper-left corner and q to be the
+  // Unlike the book we set p to be the upper-left corner and q to be the
   // lower-right corner, so for the Francis QR step we are handling a matrix
   // going from h[p][p] to h[q][q].
    nat32 p = size;
@@ -431,10 +431,11 @@ inline bit PolyRoot(const VA & in,VB & out,MA & temp,
 /// are 0 and reverts to the quadratic formular etc if appropriate.
 /// This means that the in vector must be full length, longer than the out 
 /// vector by 1 ushally. size is the number of degrees of the polynomial plus one.
-/// Returns how many roots were found, 0 on failure, or if there are actually no roots.
+/// Returns how many roots were found, 0 on failure, or if there are actually no roots/infinite roots.
 template <typename VA,typename VB,typename MA>
 inline nat32 RobustPolyRoot(VA & in,VB & out,MA & temp,
-                            typename MA::type tol = static_cast<typename MA::type>(1e-6),nat32 max_iters = 1000,nat32 size = 0)
+                            typename MA::type tol = static_cast<typename MA::type>(1e-6),
+                            nat32 max_iters = 1000,nat32 size = 0)
 {
  if (size==0) size = in.Size();
  log::Assert((in.Size()>=size)&&(out.Size()>=size-1)&&(temp.Rows()>=size-1)&&(temp.Cols()>=size-1));
