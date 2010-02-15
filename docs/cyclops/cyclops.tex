@@ -555,12 +555,12 @@ Write me.
 
 
 
-\section {Scale}
+\section{Crop}
 Write me.
 
 
 
-\section{Crop}
+\section {Scale}
 Write me.
 
 
@@ -586,13 +586,11 @@ Write more.
 
 
 
-\section{Super Warp}
-Not yet implimented.
+%\section{Super Warp}
 
 
 
-\section{Distorter}
-Not yet implimented.
+%\section{Distorter}
 
 
 
@@ -617,10 +615,30 @@ Write more.
 
 
 
+\section{Pair to Default}
+Applys a rotation and offset to a pair to stick the left camera into the default position, at the origin and looking down the z-axis such that its going negative into the screen.
+
+Write more.
+
+
+
 \section{Swap Pair}
 Swap around a pair file, such that the left camera becomes the right and vice-versa.
 
 Write more.
+
+
+
+\section{File Info}
+Provides a breakdown of the information within the three \emph{simple} file types used  by the program:
+\begin{itemize}
+\item \emph{.icd} file. Represents a cameras intrinsic calibration. That is its intrinsic matrix and radial distortion parameters, as well as the dimensions of the images to which is applies.
+
+\item \emph{.cam} file. Represents both the intrinsic and extrinsic parameters of a single camera. Contains a projection matrix and radial distortion parameters, which get broken down into position and orientation etc by this tool for display.
+
+\item \emph{.pcc} file. Represents two cameras, including there intrinsic and extrinsic parameters as well as the fundamental matrix for them.
+\end{itemize}
+Opening any one of the aforementioned files with this tool with the load button will produce textual information in regards to its contents. Obviously, this tool is only of value if you actually understand the information contained, or have another program which you can transfer it into.
 
 
 
@@ -651,12 +669,28 @@ Write me.
 
 
 \section{Render Mesh}
-Write me, after critical fixing bugs.
+Write me, after fixing critical bugs.
 
 
 
-\section{Visualise}
-Not yet implemented.
+%\section{Camera Response}
+
+
+
+\section{Light Estimation}
+Write me.
+
+
+
+%\section{Ambient Estimation}
+
+
+
+%\section{Albedo Estimation}
+
+
+
+%\section{Visualise}
 
 
 
@@ -679,6 +713,11 @@ Write me.
 
 
 
+\section{Segmentation}
+Write me.
+
+
+
 \section{Crop Disparity}
 Write me.
 
@@ -691,18 +730,23 @@ Write more.
 
 
 
+\section{Shape from Shading}
+Write me.
 
 
-\section{File Info}
-Provides a breakdown of the information within the three \emph{simple} file types used  by the program:
-\begin{itemize}
-\item \emph{.icd} file. Represents a cameras intrinsic calibration. That is its intrinsic matrix and radial distortion parameters, as well as the dimensions of the images to which is applies.
 
-\item \emph{.cam} file. Represents both the intrinsic and extrinsic parameters of a single camera. Contains a projection matrix and radial distortion parameters, which get broken down into position and orientation etc by this tool for display.
+\section{Integration}
+Write me.
 
-\item \emph{.pcc} file. Represents two cameras, including there intrinsic and extrinsic parameters as well as the fundamental matrix for them.
-\end{itemize}
-Opening any one of the aforementioned files with this tool with the load button will produce textual information in regards to its contents. Obviously, this tool is only of value if you actually understand the information contained, or have another program which you can transfer it into.
+
+
+\section{Needle Comparator}
+Write me.
+
+
+
+\section{Re-lighter}
+Write me.
 
 
 
