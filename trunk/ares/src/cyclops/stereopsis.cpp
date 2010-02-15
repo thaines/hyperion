@@ -119,6 +119,14 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    augGaussian = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
    horiz6->AttachRight(augGaussian,false);
 
+   gui::Label * lab5e = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab5e->Set(" Alt Aug G:");
+   horiz6->AttachRight(lab5e,false);
+
+   altAugG = static_cast<gui::TickBox*>(cyclops.Fact().Make("TickBox"));
+   altAugG->SetState(true);
+   horiz6->AttachRight(altAugG,false);
+   
    gui::Label * lab5d = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab5d->Set(" Aug Fisher:");
    horiz6->AttachRight(lab5d,false);
@@ -551,7 +559,7 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
 
    augG = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
    vert1->AttachBottom(augG,false);
-   augG->Visible(true);
+   augG->Visible(false);
    gui::Vertical * vertG = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));
    augG->SetChild(vertG);
    augG->Set("Gaussian Fitting Parameters");
@@ -641,8 +649,61 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    horiz7b->AttachRight(lab39,false);
    horiz7b->AttachRight(gaussianMaxK,false);
    horiz7b->AttachRight(lab37,false);
-   horiz7b->AttachRight(gaussianIters,false);            
+   horiz7b->AttachRight(gaussianIters,false);
    
+   
+   
+   augAltG = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
+   vert1->AttachBottom(augAltG,false);
+   augAltG->Visible(true);
+   gui::Vertical * vertAG = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));
+   augAltG->SetChild(vertAG);
+   augAltG->Set("Alternate Gaussian Fitting Parameters");
+   augAltG->Expand(false);
+
+   gui::Horizontal * horiz7c = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   vertAG->AttachBottom(horiz7c,false);
+
+   gui::Label * lab100 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab100->Set(" Sd:");
+   agSd = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   agSd->Set("7.0");
+   agSd->SetSize(48,24);
+
+   gui::Label * lab101 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab101->Set(" Cost Mult:");
+   agCostMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   agCostMult->Set("1.0");
+   agCostMult->SetSize(48,24);
+
+   gui::Label * lab102 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab102->Set(" Min Sd:");
+   agMin = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   agMin->Set("0.1");
+   agMin->SetSize(48,24);
+
+   gui::Label * lab103 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab103->Set(" Max Sd:");
+   agMax = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   agMax->Set("16.0");
+   agMax->SetSize(48,24);
+
+   gui::Label * lab104 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   lab104->Set(" Sd Mult:");
+   agSdMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   agSdMult->Set("3.0");
+   agSdMult->SetSize(48,24);
+
+   horiz7c->AttachRight(lab100,false);
+   horiz7c->AttachRight(agSd,false);
+   horiz7c->AttachRight(lab101,false);
+   horiz7c->AttachRight(agCostMult,false);
+   horiz7c->AttachRight(lab102,false);
+   horiz7c->AttachRight(agMin,false);
+   horiz7c->AttachRight(lab103,false);
+   horiz7c->AttachRight(agMax,false);   
+   horiz7c->AttachRight(lab104,false);
+   horiz7c->AttachRight(agSdMult,false);    
 
    augF = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
    vert1->AttachBottom(augF,false);
@@ -733,6 +794,7 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
   whichAlg->OnChange(MakeCB(this,&Stereopsis::ChangeAlg));
   whichPost->OnChange(MakeCB(this,&Stereopsis::ChangePost));
   augGaussian->OnChange(MakeCB(this,&Stereopsis::SwitchGaussian));
+  altAugG->OnChange(MakeCB(this,&Stereopsis::SwitchAltGaussian));
   augFisher->OnChange(MakeCB(this,&Stereopsis::SwitchFisher));
 
   but1->OnClick(MakeCB(this,&Stereopsis::LoadLeft));
@@ -1007,6 +1069,11 @@ void Stereopsis::LoadExisting(gui::Base * obj,gui::Event * event)
 
 void Stereopsis::ChangeAlg(gui::Base * obj,gui::Event * event)
 {
+ ChangePost(obj,event);
+}
+
+void Stereopsis::ChangePost(gui::Base * obj,gui::Event * event)
+{
  switch (whichAlg->Get())
  {
   case 0:
@@ -1034,10 +1101,7 @@ void Stereopsis::ChangeAlg(gui::Base * obj,gui::Event * event)
    alg7->Visible(true);
   break;
  }
-}
 
-void Stereopsis::ChangePost(gui::Base * obj,gui::Event * event)
-{
  switch (whichPost->Get())
  {
   case 0:
@@ -1066,17 +1130,24 @@ void Stereopsis::ChangePost(gui::Base * obj,gui::Event * event)
   break;
  }
  
- augG->Visible(augGaussian->Ticked()||(whichPost->Get()==1));
+ augG->Visible((!altAugG->Ticked())&&(augGaussian->Ticked()||(whichPost->Get()==1)));
+ augAltG->Visible(altAugG->Ticked()&&(augGaussian->Ticked()||(whichPost->Get()==1)));
+ augF->Visible(augFisher->Ticked());
 }
 
 void Stereopsis::SwitchGaussian(gui::Base * obj,gui::Event * event)
 {
- augG->Visible(augGaussian->Ticked()||(whichPost->Get()==1));
+ ChangePost(obj,event);
+}
+
+void Stereopsis::SwitchAltGaussian(gui::Base * obj,gui::Event * event)
+{
+ ChangePost(obj,event);
 }
 
 void Stereopsis::SwitchFisher(gui::Base * obj,gui::Event * event)
 {
- augF->Visible(augFisher->Ticked());
+ ChangePost(obj,event);
 }
 
 void Stereopsis::Run(gui::Base * obj,gui::Event * event)
@@ -1318,18 +1389,32 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
      // Calculate standard deviations for the disparity values...
       stereo::LuvDSC luvDSC(leftLuv,rightLuv);
       stereo::RegionDSC regionDSC(&luvDSC,gaussianRadius->GetInt(4),gaussianFalloff->GetReal(0.5));
-
-      fit::DispNorm dispNorm;
-      dispNorm.Set(disp,regionDSC,gaussianMult->GetReal(1.0));
-      dispNorm.SetMask(leftMask);
-      dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
-      dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
-      dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
-      dispNorm.SetMaxIters(gaussianIters->GetInt(1000));
+      
+      if (altAugG->Ticked())
+      {
+       fit::LaplaceDispNorm laplaceDispNorm;
+       laplaceDispNorm.Set(disp,regionDSC, agCostMult->GetReal(1.0));
+       laplaceDispNorm.SetMask(leftMask);
+       laplaceDispNorm.SetParam(agSd->GetReal(7.0), agMin->GetReal(0.1), agMax->GetReal(16.0), agSdMult->GetReal(3.0));
      
-      dispNorm.Run(prog);
+       laplaceDispNorm.Run(prog);
     
-      dispNorm.Get(sdOR);
+       laplaceDispNorm.Get(sdOR);      
+      }
+      else
+      {
+       fit::DispNorm dispNorm;
+       dispNorm.Set(disp,regionDSC,gaussianMult->GetReal(1.0));
+       dispNorm.SetMask(leftMask);
+       dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
+       dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
+       dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
+       dispNorm.SetMaxIters(gaussianIters->GetInt(1000));
+     
+       dispNorm.Run(prog);
+    
+       dispNorm.Get(sdOR);
+      }
 
 
      // Smooth it...
@@ -1483,17 +1568,31 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
     stereo::RegionDSC regionDSC(&luvDSC,gaussianRadius->GetInt(4),gaussianFalloff->GetReal(0.5));
     //stereo::LuvRegionDSC regionDSC(leftLuv,rightLuv,&luvDSC,gaussianRadius->GetInt(4),0.1,gaussianFalloff->GetReal(0.5));
     
-    fit::DispNorm dispNorm;
-    dispNorm.Set(disp,regionDSC,gaussianMult->GetReal(1.0));
-    dispNorm.SetMask(mask);
-    dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
-    dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
-    dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
-    dispNorm.SetMaxIters(gaussianIters->GetInt(1000));
+    if (altAugG->Ticked())
+    {
+     fit::LaplaceDispNorm laplaceDispNorm;
+     laplaceDispNorm.Set(disp,regionDSC, agCostMult->GetReal(1.0));
+     laplaceDispNorm.SetMask(leftMask);
+     laplaceDispNorm.SetParam(agSd->GetReal(7.0), agMin->GetReal(0.1), agMax->GetReal(16.0), agSdMult->GetReal(3.0));
+     
+     laplaceDispNorm.Run(prog);
     
-    dispNorm.Run(prog);
+     laplaceDispNorm.Get(sd);      
+    }
+    else
+    {
+     fit::DispNorm dispNorm;
+     dispNorm.Set(disp,regionDSC,gaussianMult->GetReal(1.0));
+     dispNorm.SetMask(mask);
+     dispNorm.SetRange(gaussianRange->GetInt(20),gaussianSdMult->GetReal(2.0));
+     dispNorm.SetClampK(gaussianMinK->GetReal(2.5),gaussianMaxK->GetReal(10.0));
+     dispNorm.SetClamp(gaussianMin->GetReal(0.1),gaussianMax->GetReal(10.0));
+     dispNorm.SetMaxIters(gaussianIters->GetInt(1000));
     
-    dispNorm.Get(sd);
+     dispNorm.Run(prog);
+    
+     dispNorm.Get(sd);
+    }
    }
   
 

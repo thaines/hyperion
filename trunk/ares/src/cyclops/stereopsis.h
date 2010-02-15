@@ -40,6 +40,7 @@ class Stereopsis
   gui::ComboBox * whichAlg;
   gui::ComboBox * whichPost;
   gui::TickBox * augGaussian;
+  gui::TickBox * altAugG;
   gui::TickBox * augFisher;
   
   gui::Button * but7;
@@ -52,6 +53,7 @@ class Stereopsis
   gui::Expander * post3b;
   gui::Expander * post4;
   gui::Expander * augG;
+  gui::Expander * augAltG;
   gui::Expander * augF;
 
   gui::EditBox * occCost;
@@ -117,7 +119,13 @@ class Stereopsis
   gui::EditBox * gaussianMinK;
   gui::EditBox * gaussianMaxK;
   gui::EditBox * gaussianIters;
-  
+
+  gui::EditBox * agSd;
+  gui::EditBox * agCostMult;
+  gui::EditBox * agMin;
+  gui::EditBox * agMax;
+  gui::EditBox * agSdMult;
+
   //gui::EditBox * fisherRange;
   gui::EditBox * fisherProb;
   gui::EditBox * fisherMult;
@@ -154,6 +162,7 @@ class Stereopsis
   void ChangeAlg(gui::Base * obj,gui::Event * event);
   void ChangePost(gui::Base * obj,gui::Event * event);
   void SwitchGaussian(gui::Base * obj,gui::Event * event);
+  void SwitchAltGaussian(gui::Base * obj,gui::Event * event);
   void SwitchFisher(gui::Base * obj,gui::Event * event);
 
   void Run(gui::Base * obj,gui::Event * event);
