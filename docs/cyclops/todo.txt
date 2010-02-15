@@ -1,0 +1,6 @@
+Cyclops manual needs:
+Anaglyph creation tutorial.
+Normal map for flat surface creation tutorial. (Remember to scale - too noisy at high res. Consider making it square - i.e. application of homography.)
+Homography tool tutorial.
+Full use a re-map, such that you take a photo, render and composite some output to an undistorted version, and then finally re-distort to end up with an edit of the original photo.
+More information on visualisation - a google sketch up tutorial might be sweet. (Export in .kmz?)

@@ -1,0 +1,7 @@
+<function input="rgb_sum_div3" output="irradiance">
+ <poly power="5" mult="6.5835131"/>
+ <poly power="4" mult="-12.156221"/>
+ <poly power="3" mult="8.1646691"/>
+ <poly power="2" mult="-1.9104345"/>
+ <poly power="1" mult="0.333285"/>
+</function>

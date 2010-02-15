@@ -1,0 +1,2 @@
+<?xml version="1.0"?>
+<calibration><origin value="bottom-left"/><resolution width="3072" height="2304"/><intrinsic><focal x="2551.835" y="2584.854"/><principal x="1574.5632" y="1171.2067"/><skew value="21.924877"/></intrinsic><radial><aspect_ratio value="1.0129393"/><centre x="1617.2708" y="1181.5448"/><factors k="-1.2551612e-05" kk="-1.009226e-08" kkk="2.6513419e-13" kkkk="9.504003e-16"/></radial></calibration>

@@ -1,0 +1,44 @@
+All naming is based off greek mythology... (Though its not 100% consistant with any one set of mythology.)
+
+hyperion (Titan of Light, father of Sun, Moon and Dawn.) - Seemed like a good name for the system as a whole, based on the super module names. It also sounds cool.
+
+
+
+Super Modules:
+--------------
+
+eos (The Dawn) - A general purpose library, contains all the code shared by the actual executables. Abstracts the OS.
+
+helios (The Sun) - A general grid, for distributed computation and communication. Provides distributed and redudant communications, storage and calculations. Designed to be easy to setup, so tempory grids can be created easilly. Suitable level of security to be internet facing.
+
+selene (The Moon) - A general purpose application, integrated with Helios. Esentially the interface to helios, and a good general purpose application in itself when running independent of helios.
+
+
+
+Other Modules:
+--------------
+
+aegle (Helios's daughter.) - A large scale data proccessing environment, takes xml script files and dynamically linked modules of algorithms to run scripts on. Integrates with helios.
+
+ares (God of war) - Contains test code for all other parts of the system.
+
+
+
+Uses:
+-----
+
+aegle - A tool for the flexable testing of computer vision algorithms.
+
+selene - Primarilly a 3d modeling application, but in fact a general data type editor, where 3d models are just one data type, uses aegle/helios for all heavy proccessing. Secondry job as computer vision toolkit.
+
+helios - Makes aegle a distributed environment, so its scripts can be distibuted over a grid.
+
+
+
+Dependencies: (Excluding dep directory(s))
+-------------
+
+Uses minGW for windows compilation, gcc for Linux compilation.
+Uses Doxygen for documentation.
+Uses M$ HTML Help Workshop to generate .chm files for documentation. (Windows only)
+Uses latex (pdf variant) to generate some documents.

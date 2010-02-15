@@ -1,0 +1,3 @@
+<function input="rgb_sum_div3" output="irradiance">
+ <poly power="1" mult="1"/>
+</function>

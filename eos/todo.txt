@@ -1,0 +1,258 @@
+Work Bag:
+---------
+
+
+
+
+Cyclops/Conveniance Bag:
+------------------------
+
+Get mscr working.
+Create features from mscr system - simple grids of samples from affine coordinate system should work.
+ (Needs assignment of rotation.)
+Create matching of mscr features thats fast and works well.
+Test above, integrate into Cyclops, make default.
+Optimise to make really, really fast - will need to do this a lot.
+
+Create continuous stereo algorithm that can work with multiple input images and integrates the rectification step - something high powered enough to work in a multi view environment basically.
+Test algorithm, make fast.
+
+Create multi-view system interface, with file format for state.
+Add calculation of fundamental matrices between multi-view images.
+Add auto-calibration and normal calibration to get basic camera positions.
+Add bundle adjustment for refinement of parameters.
+Add extraction of details for camera pairs so they can be used in rest of system.
+Add creation of stereopsis support file based on multiple images.
+Add disparity calculation for the images, using stereopsis support file.
+Add mesh from disparity.
+Add combining of meshes into big mesh, with simplification built in for practical reasons.
+Add missing features from this multi view setup.
+
+
+
+Saving ply meshes seems to add uv coords - wtf?
+Add colour from uv and image.
+Finish Mesh Wibaliser (Above 2 and then some - deletion of uv/colour, flat and catmull-clark subdivision.)
+UV coordinate handling required by subdivision methods. (Both of them, make sure of correct interpolation for catmull-clark.)
+
+Go over tutorials and update. Need another burst of activity on the manual.
+
+
+Add Crop/Scale .cam file.
+Fix Normal map renderer, needs some smoothing really. (Or just smooth the mesh...)
+Add camera brightness function calculator, and brightness compensation tool to make it linear (Probably as HDR tool.).
+
+
+Add super warp.
+Add Distorter, to match Undistorter.
+- Distorter will be a re-map tool, to convert from the .icd of one camera to the .icd of another. (Angles as well as distortion. Could be v. useful for emulating a camera with a render.)
+Add tool for creating 'perfect' .icd files, i.e. for a perfect 50mm camera of res 300x200 etc. (Not so much for handling input but for taking rendered output and using the re-map tool.)
+
+Add mesh visualisation.
+
+
+Add hough transform to intrinsic camera calibration snap button.
+Add 'Spatial-Depth Super Resolution for Range Images' to post proccessors in Cyclops.
+Stereopsis smooth tool should be made more aware of disparities, to preserve boundaries better.
+Could also be given a better weighting metric, by weighting matches by how closelly they match colour-wise. (To detect bad guesses for occluded pixels.)
+
+Add two new smoothing methods:
+- Gradient descent - assume result is close and do sub pixel refinement with elastic bands.
+- Alternative smoother - Bi-lateral smoothing of disparity values.
+
+Mesh to Disparity under Windows - something screwy for release build only, only on windows - back off optimisation.
+Under Linux, seen stability issues with homography tool - has crashed due allocation of insane memory blob. Also seg faulted on exit after use of tool.
+
+Look into Camera Calibration from 3D target - appears to output rotation matrices that include a mirroring. Bugger.
+Make normal map rendering work - fill in gaps, fix normal reversal.
+Orientation maps keep ending up with x and y reversed - wtf. There is currently deliberate Z ordinate reversal code in the Projection matrix from Fundamental matrix code. Makes for rotation matrices with a mirroring - this needs fixing.
+Add normal map rendering from .cam file as alternative renderer. Probably do colour as well.
+
+Add even better correspondence algorithm to Stereopsis tool. (Continuous Hierachical BP probably.)
+Add 3d model viewer, that loads plys and objs, with texture mapping.
+Add Mask suport to colour matcher, in the long term add matching regions.
+
+
+
+Redo the Meta part of SVT to accept general types, rather than hardcoded to the current supported types. Keep old interface though; augment with more flexable version.
+Fix the svt calculation object, to properly seperate parameters from basics so that the xml code leads to a particular parameter requirement, and help info. Makes things more complicated, but is correct approach.
+
+
+
+Look into gaussian buckets approach to stereo, as way of doing steropsis with integration.
+
+Fix fixed-angle plane fitter - use 1D kernel density estimation, consider inter-pixel consistancy.
+Finish advanced plane fitting thing - alg/local_plane.h.
+Test Dialler class.
+Make progress bar time estimation more sophisticated, it could do a far better job.
+layered_graphs.h - finish data structure. Core code and ideas worked out, actual flat template missing. Not to mention testing.
+alg/greedy_merge.h - re-write this module.
+
+Work on getting specularity removal working, create simple test app for fun. Maby experiment on using it for improving stereo algorithms. Extend with in-filling and light colour determination to make a standalone tool.
+
+Optimise logging system - must be possible to make it faster. Maby some buffering with a seperate logging thread for writing?
+
+Mask suport needed throughout Cyclops - mostly done I think.
+Some cyclops image procesing tools are hard coded to 8bpc rather than generalised to suport 12 and 16bpc. Fix.
+Add 'do you want to quit' to sub-tools with considerable input effort.
+
+
+Is Luv suitable for sfs? Answer: No, but no colour space is without heavy calibration.
+
+ds/kd_tree.h - test, add n nearest neighbours suport.
+
+Impliment MSER system and all related. Test, optimise.
+Fix it - implimentation for cyclops doesn't work very well.
+Need to check KD tree, incase its the reason. (Though I doubt it.)
+Testing multiple inputs would help, as so far only museum image has been tried.
+
+Check/Add cache prefetch to windows build, if at all possible.
+
+Update disparity convertor to take into account changes of rectified input size.
+Fix console system - finish design (!), finish linux, port to windows properly.
+Delete StreamFile - its out of date. (in io/out.h)
+
+mem/managers.h
+
+
+file/dirs.h & file/files.h - port to windows, add pattern suport, fix dir '/' at end bug so consistant. Test (& definatly fix) dir.
+
+Add more searching etc operations to string class - too much is being inlined.
+Add const cursor capability to  string class and buffer class.
+
+log/logs.h - Add proccess id to log name.
+             clean up (circular stuff bit of a mess),
+             Force construction/destruction order - dangerous dependencies at present.
+             add features that were missed in initial work.
+             Add redirection/intercept suport - create (virtual) de/multiplexing streams for this.
+             Correct directorys to use log subdirectory, after fixing dir object/string object.
+             Fix memory leak(s), valgrind several executables and resolve any issues. (Just date thing so far.)
+             Remove file/csv.h header requirement - it sucks.
+
+svt executable - Add support for some actual editting features, delete, move and merge basically. Also add extracting of various things, as text files and image files. Text files suitable for simple programs and also moving into C-style programs. Creation of svts would also help, by importing stuff.
+
+Fix memory leaks in camera capture system, and generally clean up. Look into windows suport and making it work with multi-threading. Report bugs found to gphoto2 team.
+
+gui/ More widgets. Beautification stuff. Add Validation defaults for EditBox.
+gui/ OpenGL area.
+
+cyclops - polish, finish manual.
+          Go through all Cyclops tools and make directorys behave better, to avoid duplicate browsing sequences.
+          Long term - add automatic panorama suport - make it work in polar coordinates so it can suport wrap arround. (With suitable correction for offset matching on wrap arround to correct the intrinsic matrix/matrices.)
+          Extend Warping to incude interpolation animation creation support and multiple types - backwards and dual mode, where it uses both at once and gets clever. (Last provided for use with creating good-looking interpolations.)
+          Make all time consuming parts of Cyclops use the progress bar. Disable buttons to make safe.
+          Add suport in triangulator to re-load saved 3D models - kinda tricky but quite do-able.
+          Look into radial distortion suport - different parts (cyclops/disparity convertor) are handling it differently, there must be a screw up.
+          Make rectification of croped input work. This is disturbingly hard.
+          Verify triangulation pre-proccesing minimizer - appears to often 'snap' position, as in a slight change results in a large change in projection.
+          Fix Camera capture - make simultaneous work, consider windows support, hunt bugs.
+          Add in-program 3D visualisation of results of stereo algorithms on rectified input.
+          Demo mode - i.e. capture - rectify - stereo - 3D in a single button press.
+          Create cyclops build script that makes for a leaner output. (No dll, tight link all into one clean .exe)
+          Create installer. (Prob. windows only, linux can just be a copy and paste op.)
+          Add forum to website.
+
+math/gaussian_mix.h
+-add gaussian mixture suport to the factor graph solver.
+
+cam module:
+ Polar rectification.
+ Scene Bundle Adjustment. (Cameras and points, with all details.)
+
+
+bleyer04:
+ send e-mail to author and ask questions about degenerate plane fitting, and possibly sad seg stereo if not fixed.
+ Fix flaw in sad seg stereo, assuming there is one, hard to tell. Maby try the non-optimisaed overkill version to verify identical operation.
+ Figure out what the hell to do about plane fitting when not enough data is avaliable.
+ Run through middlebury, make perfect.
+ Improve to take partial stereo pairs, i.e. where they have been rectified and are no longer square.
+ stabalise mean shift, so it produces good results all the time.
+ improve efficiency of final greedy step by preventing duplicate warps when nothing locally changes.
+
+
+Fix SIFT. Long term, doesn't really matter as MSER is avaliable. Maby delete for reasons of patent. Comment out anyway.
+Sift: Figure out x64 bug when applying to imL.bmp, check if OS specific or not as only assuming x64 specific.
+Fix and test SIFT.
+
+'Fix' greyscale problem with image io.
+Move filter/segmentation to alg, making it n dimensional instead of fixed to 2.
+Voronoi: add 3D version and maby convex hull calculator. Fix point at infinity when points intersect 'bug'.
+
+'Fix' Factor Graph release build when using non-loopy under windows. All other combos work - presumed compiler optimisation error.
+Impliment a clique graph convertor, a bayesian network representation and a solver.
+
+Finish basic renderer.
+Add scene to Job code, create executable to utilise it.
+Update inside object rendering model - its currently rather limited, to suport arbitary fogging models. Not used yet, so do before this becomes an issue.
+
+
+Improve SVD. Add specifications for faster versions that only calculate the diagonal/u/v. Removing u and the sorting calculation is priority, for accelerating the null-space calculation. Consider R-Bi-diagonalisation version, with suitable changeover point. Modualarise.
+Current SVD eigen value calcualtion whilst robust has a lot of divides in to make it so. Might be better way to structure code - play arround with it.
+
+Fix XML reader - bugs out on some coments.
+
+
+
+Next Phase(s):
+--------------
+
+Add R250 psuedo random number generator, as something more heavy weight would be good to have arround. Maby do something even madder as well.
+
+file/large_files.h
+
+data/encryption.h
+
+math/number.h
+math/fixed.h
+math/conversion.h
+
+net/sockets.h ... (server.h? (Using a work queue arrangment.))
+gl/ ... (Graphics rendering.) (Add gl window to gui - visualisation can then be added to Cyclops.)
+
+Add standardised plugin system of some variety.
+Expand rend module to include, well, everything you could ever want. Big one.
+
+Add eigen-vector calculation to matrix library. (Already have eigen-value.)
+Add FFT (inc. inverse) to matrix library.
+Clean up matrix library - tis a complete and utter mess.
+
+
+
+Multi-view geometry for Cyclops (Maybe another executable):
+-----------------------------------------------------------
+
+Need a camera system file format, to which cameras can be added and positions refined. Would need suport for minimisation based on fundamental matrices with points in multiple images. Probably dedicated to system.
+
+Need advanced image matcher for fundamental matrix calculation, that can run between many images.
+
+Need 3D view of resulting camera geometry.
+
+Need polar rectification, to support bad configurations, and Stereopsis as such. Integration with multi-camera file format such that results can be assigned to camera pairs.
+
+Need merger of multiple disparity maps - i.e. chaining, with (bp) smoothing/noise removal etc. Save output file as ply with per-vertex colour merged from images.
+
+Need polygon reduction tool and texture layout tool, to make such 3D models usable, so that the per vertex colour can be correctly moved onto a texture and far, far less polygons used.
+
+Need stereopsis that can handle colour differences - subtraction of gaussian might work as pre-processing.
+Maby add 'simple' DSI mode, where it sums DSI's for multiple values - could prove very effective. The option of a voxel approach exists as well.
+
+
+
+Stuff to look into:
+-------------------
+
+Belief Propagation messages using transmission of minimas and maximas of probability distribution considering time - look into possibility of, such that incomplete/noisy transmission works.
+
+
+
+Latter:
+-------
+
+data/giants.h
+
+- Anything in helios's sys.dll should end up in eos, prefably improved. (Helios itself should of course become version 2.)
+
+Comment recycle bin:
+--------------------
+
+// Please be quiet in this file.
