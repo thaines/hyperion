@@ -467,9 +467,76 @@ void FisherBingham::Maximum(Vect<3> & out,real32 err,nat32 limit) const
 nat32 FisherBingham::Critical(Vect<3> out[6],real32 err,nat32 limit) const
 {
  LogTime("eos::math::FisherBingham::Critical");
- 
- 
- 
+
+ // Geometrically inspired solution - transilate the problem to finding the 
+ // closest point on an ellipsoid, which has an efficient solution...
+  // Rotate so that we are dealing with a diagonal matrix...
+   Vect<3,real32> bing;
+   Mat<3,3,real32> rot;
+   {
+    Mat<3,3,real32> temp = static_cast< Mat<3,3,real32> >(bingham);
+    SymEigen(temp,rot,bing);
+   
+    real32 maxBing = math::Max(bing[0],bing[1],bing[2]);
+    bing -= maxBing + 0.5;
+   }
+  
+   Vect<3,real32> fish;
+   TransMultVect(rot,fisher,fish);
+
+
+  // Solve... (Special case there being no Fisher distribution)
+   nat32 ret = 6;
+   if (math::IsZero(fish.LengthSqr()))
+   {
+    out[0][0] =  1.0; out[0][1] =  0.0; out[0][2] =  0.0;
+    out[1][0] = -1.0; out[1][1] =  0.0; out[1][2] =  0.0;
+    out[2][0] =  0.0; out[2][1] =  1.0; out[2][2] =  0.0;
+    out[3][0] =  0.0; out[3][1] = -1.0; out[3][2] =  0.0;
+    out[4][0] =  0.0; out[4][1] =  0.0; out[4][2] =  1.0;
+    out[5][0] =  0.0; out[5][1] =  0.0; out[5][2] = -1.0;
+   }
+   else
+   {
+    // Calculate the mean and diagonal covariance matrix of the equivalent conditioned normal distribution...
+     Vect<3> covar;
+     Vect<3> mean;
+     for (nat32 i=0;i<3;i++)
+     {
+      covar[i] = -0.5/bing[i];
+      mean[i] = covar[i] * fish[i];
+     }
+    
+    // Calculate the parameters of the relevant ellipsoid and point for solving the nearest point problem...
+     Vect<3> ellipsoid;
+     Vect<3> point;
+     for (nat32 i=0;i<3;i++)
+     {
+      ellipsoid[i] = math::Sqrt(1.0/covar[i]);
+      point[i] = ellipsoid[i] * mean[i];
+     }
+    
+    // Find all points where the ellipsoid normal points at the point...
+     ret = alg::PointEllipsoidDir(ellipsoid,point,out,err,limit);
+    
+    // Translate back from ellipsoid coordinates to unit sphere coordinates, 
+    // and normalise to handle any numerical error...
+     for (nat32 j=0;j<ret;j++)
+     {
+      for (nat32 i=0;i<3;i++) out[j][i] = out[j][i]/ellipsoid[i];
+      out[j].Normalise();
+     }
+   }
+
+
+  // Remove the rotation...
+   for (nat32 i=0;i<ret;i++)
+   {
+    Vect<3,real32> temp = out[i];
+    MultVect(rot,temp,out[i]);
+   }
+  
+ return ret;
 }
 
 nat32 FisherBingham::Maximums(Vect<3> out[2]) const

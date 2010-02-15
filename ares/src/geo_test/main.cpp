@@ -22,9 +22,9 @@ int main()
 
  // Define a point...
   math::Vect<3> point;
-  point[0] = rand.Real(-4.0,4.0);
-  point[1] = rand.Real(-4.0,4.0);
-  point[2] = rand.Real(-4.0,4.0);
+  point[0] = rand.Real(-1.0,1.0);
+  point[1] = rand.Real(-1.0,1.0);
+  point[2] = rand.Real(-1.0,1.0);
   
  // Find the points on the ellipsoid that have normals pointing at the point...
   math::Vect<3> out[6];

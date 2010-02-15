@@ -250,7 +250,7 @@ inline bit RealSchurHessenberg(TA & h,typename TA::type tol = static_cast<typena
  
  // Upper triangularize the 2x2 blocks that have real eigenvalues...
  
- // Code me **************************************************
+ // Code me ************************************************** (And remember to make sure this code is called, as this is currently skipped on success.)
  
  return false;
 }
