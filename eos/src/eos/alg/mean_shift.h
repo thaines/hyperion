@@ -88,7 +88,7 @@ class EOS_CLASS MeanShift
   /// it works by checking which item the feature vector is currently dimensionally over, 
   /// if its one that has not converged it assumes its going to converge to the same 
   /// point and sets its convergence point to where this point ultimatly ends up.
-  /// It only conciders points where there euclidean distance for the scaled non-positional parts
+  /// It only considers points where there euclidean distance for the scaled non-positional parts
   /// of the feature vector is less than half. This just so happens to be the required
   /// behaviour for a mean shift image smoothing:-)
    void Passover(bit enabled);
