@@ -583,8 +583,8 @@ void LightEst::Update()
       {
        f /= len;
        
-       image.Get(x,y).r = f[0]*0.5+0.5;
-       image.Get(x,y).g = f[1]*0.5+0.5;
+       image.Get(x,y).r = (f[0]+1.0)*0.5;
+       image.Get(x,y).g = (f[1]+1.0)*0.5;
        image.Get(x,y).b = f[2];
       }
      }
@@ -809,7 +809,7 @@ void LightEst::Update()
        real32 k = fish.Get(x,y).Length();
        real32 angS = math::IsZero(k)?angI:(math::InvCos(math::Min<real32>((lightD * fish.Get(x,y))/k,1.0)));
        
-       real32 l = -k*math::Cos(angI-angS) + k;
+       real32 l = math::Log10(1.0 + -k*math::Cos(angI-angS) + k);
      
        image.Get(x,y).r = l;
        maxL = math::Max(maxL,l);

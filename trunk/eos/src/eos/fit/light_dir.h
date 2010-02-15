@@ -105,7 +105,7 @@ class EOS_CLASS LightDir
    
    struct LightCost
    {
-    bs::Normal dir;
+    bs::Normal dir; // Actually a fisher distribution.
     real32 cost;
    };
    ds::Array<LightCost> lc; // Cost for each light source direction - for diagnostics really.
