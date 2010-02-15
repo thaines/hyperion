@@ -440,10 +440,16 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    horiz8->AttachRight(but5,false);
 
    gui::Label * lab29 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   lab29->Set(" Range:");
-   fisherRange = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   fisherRange->Set("4");
-   fisherRange->SetSize(48,24);
+   lab29->Set(" Prob:");
+   fisherProb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   fisherProb->Set("0.1");
+   fisherProb->SetSize(48,24);
+
+   //gui::Label * lab29 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   //lab29->Set(" Range:");
+   //fisherRange = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   //fisherRange->Set("4");
+   //fisherRange->SetSize(48,24);
    
    gui::Label * lab32 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    lab32->Set(" Min K:");
@@ -457,20 +463,22 @@ result(null<svt::Var*>()),segmentation(null<svt::Var*>())
    fisherMax->Set("16.0");
    fisherMax->SetSize(48,24);
 
-   gui::Label * lab33 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   lab33->Set(" Bias:");
-   fisherBias = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   fisherBias->Set("4.0");
-   fisherBias->SetSize(48,24);
+   //gui::Label * lab33 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   //lab33->Set(" Bias:");
+   //fisherBias = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   //fisherBias->Set("4.0");
+   //fisherBias->SetSize(48,24);
       
+   //horiz8->AttachRight(lab29,false);
+   //horiz8->AttachRight(fisherRange,false);
    horiz8->AttachRight(lab29,false);
-   horiz8->AttachRight(fisherRange,false);
+   horiz8->AttachRight(fisherProb,false);
    horiz8->AttachRight(lab32,false);
    horiz8->AttachRight(fisherMin,false);
    horiz8->AttachRight(lab31,false);
    horiz8->AttachRight(fisherMax,false);
-   horiz8->AttachRight(lab33,false);
-   horiz8->AttachRight(fisherBias,false);
+   //horiz8->AttachRight(lab33,false);
+   //horiz8->AttachRight(fisherBias,false);
    
 
    gui::Horizontal * horiz2 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
@@ -809,6 +817,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
   // Create the result to extract into...
    bit aGaussian = augGaussian->Ticked();
    bit aFisher = augFisher->Ticked();
+   if (aFisher) aGaussian = true; // Need Gaussian as input - might as well force it as storage is cheap.
   
    delete result;
    result = new svt::Var(cyclops.Core());
@@ -1064,7 +1073,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    {
     prog->Report(step++,steps);
     
-    stereo::LuvDSC luvDSC(leftLuv,rightLuv);
+    /*stereo::LuvDSC luvDSC(leftLuv,rightLuv);
     
     fit::DispFish dispFish;
     dispFish.Set(disp,luvDSC);
@@ -1076,7 +1085,18 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    
     dispFish.Run(prog);
     
-    dispFish.Get(fish);
+    dispFish.Get(fish);*/
+    
+    fit::DispNormFish dnf;
+    dnf.Set(disp,sd);
+    dnf.SetMask(leftMask);
+    dnf.SetPair(pair);
+    dnf.SetRegion(fisherProb->GetReal(0.1));
+    dnf.SetRange(fisherMin->GetReal(0.0),fisherMax->GetReal(16.0));
+    
+    dnf.Run(prog);
+    
+    dnf.Get(fish);
    }
 
 
