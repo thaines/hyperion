@@ -581,9 +581,8 @@ void LightDir::CostRange::CalcCost(ds::Array<LightDir::PixelAux> & tAux,nat32 le
    }
    else lowMinCost += tAux[i].minC;
    
-  // Maximum cost always needs updating...
+  // Maximum cost...
    highMinCost += math::Max(lowC,highC);
-     // Can optimise (reduce) by split calculation into 2 cases + minima boost. *************
  }
 }
 

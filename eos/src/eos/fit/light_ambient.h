@@ -152,17 +152,36 @@ class EOS_CLASS LightAmb
      real32 minC; // minimum cost, we subtract this from the function so 0 is the minimum cost.
     }; // C = s*r + t*sqrt(1-r^2), where r = I/a + A (I = irr, a = albedo, A = ambient.)
    
+   
+   // Given a segments details and an ambient range this uses branch and bound
+   // to find the optimal albedo and associated cost for the segment...
+    
+   
    // Method that is given a single point in the sampling space - returns the 
    // cost for that point (For a specific segment.)...
     real32 Cost(real32 amb,real32 alb,const ds::Array<PixelAux> & pixel,nat32 start,nat32 size);
+
+   // Method that is given a fixed ambient and albedo range which outputs a cost
+   // range for the minimum cost of a segment...
+   // (Needs a whole host of data.)
+    void CostRangeAlb(real32 amb,real32 lowAlb,real32 highAlb,
+                      real32 & outLow,real32 & outHigh,
+                      const ds::Array<PixelAux> & pixel,nat32 start,nat32 size);
+
+   // Method that is given an ambient range and a fixed albedo which outputs a cost
+   // range for the minimum cost of a segment...
+   // (Needs a whole host of data.)
+    void CostRangeAmb(real32 lowAmb,real32 highAmb,real32 alb,
+                      real32 & outLow,real32 & outHigh,
+                      const ds::Array<PixelAux> & pixel,nat32 start,nat32 size);
    
    // Method that is given an ambient and albedo range and outputs a cost
    // range for the minimum cost of a segment...
    // (Needs a whole host of data.)
-    void CostRange(real32 lowAmb,real32 highAmb,
-                   real32 lowAlb,real32 highAlb,
-                   real32 & outLow,real32 & outHigh,
-                   const ds::Array<PixelAux> & pixel,nat32 start,nat32 size);
+    void CostDualRange(real32 lowAmb,real32 highAmb,
+                       real32 lowAlb,real32 highAlb,
+                       real32 & outLow,real32 & outHigh,
+                       const ds::Array<PixelAux> & pixel,nat32 start,nat32 size);
 };
 
 //------------------------------------------------------------------------------
