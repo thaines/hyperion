@@ -143,6 +143,7 @@ Cyclops::Cyclops()
   gui::Button * but48 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but49 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but50 = static_cast<gui::Button*>(guiFact.Make("Button"));
+  gui::Button * but51 = static_cast<gui::Button*>(guiFact.Make("Button"));
 
   gui::Label * lab1 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab2 = static_cast<gui::Label*>(guiFact.Make("Label"));
@@ -194,6 +195,7 @@ Cyclops::Cyclops()
   gui::Label * lab48 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab49 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab50 = static_cast<gui::Label*>(guiFact.Make("Label"));
+  gui::Label * lab51 = static_cast<gui::Label*>(guiFact.Make("Label"));
 
   but1->SetChild(lab1); lab1->Set("Intrinsic Calibration");
   but2->SetChild(lab2); lab2->Set("Protractor");
@@ -245,6 +247,7 @@ Cyclops::Cyclops()
   but48->SetChild(lab48); lab48->Set("Sphere Fitter");
   but49->SetChild(lab49); lab49->Set("Stereo & SfS Combiner");
   but50->SetChild(lab50); lab50->Set("Albedo Estimation");
+  but51->SetChild(lab51); lab51->Set("Disparity Sd Augmentor");
 
   vert0->AttachBottom(but19,false);
   vert0->AttachBottom(but21,false);
@@ -290,6 +293,7 @@ Cyclops::Cyclops()
   vert8->AttachBottom(but42,false);
   vert8->AttachBottom(but50,false);
   vert8->AttachBottom(but47,false);
+  vert8->AttachBottom(but51,false);
 
   vert9->AttachBottom(but25,false);
   vert9->AttachBottom(but14,false);
@@ -365,6 +369,7 @@ Cyclops::Cyclops()
   but48->OnClick(MakeCB(this,&Cyclops::StartSphereFitter));
   but49->OnClick(MakeCB(this,&Cyclops::StartStereoSfS));
   but50->OnClick(MakeCB(this,&Cyclops::StartAlbedoEst));
+  but51->OnClick(MakeCB(this,&Cyclops::DisparitySdAugment));
 
  // Enter the message pump...
   app->Go();
@@ -860,6 +865,11 @@ void Cyclops::StartStereoSfS(gui::Base * obj,gui::Event * event)
 void Cyclops::StartAlbedoEst(gui::Base * obj,gui::Event * event)
 {
  new AlbedoEst(*this);
+}
+
+void Cyclops::DisparitySdAugment(gui::Base * obj,gui::Event * event)
+{
+ // ******************************************
 }
 
 //------------------------------------------------------------------------------
