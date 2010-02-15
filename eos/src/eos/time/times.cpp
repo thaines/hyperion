@@ -122,8 +122,9 @@ Date::Date(bit locale,nat32 time)
 {
  struct tm * t;
 
- if (locale) t = localtime((time_t*)&time);
-        else t = gmtime((time_t*)&time);
+ time_t raw = time;
+ if (locale) t = localtime(&raw);
+        else t = gmtime(&raw);
 
  year    = t->tm_year+1900;
  month   = (Month)t->tm_mon;

@@ -52,7 +52,7 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 
  // Build gui...
   win = static_cast<gui::Window*>(cyclops.Fact().Make("Window"));
-  win->SetTitle("Light Source & Albedo Estimation");
+  win->SetTitle("Light Source Estimation");
   cyclops.App().Attach(win);
   win->SetSize(image.Size(0)+16,image.Size(1)+96);
 

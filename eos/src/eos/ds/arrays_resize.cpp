@@ -69,7 +69,7 @@ nat32 ArrayResizeCode::Resize(nat32 elementSize,nat32 newSize,void (*Make)(void 
     if (newIndexSize>indexSize)
     {
      byte ** newIndex = new byte*[newIndexSize];
-     mem::Copy(newIndex,index,sizeof(byte*)*indexSize);
+     mem::Copy(newIndex,index,indexSize);
 
      delete[] index;
      index = newIndex;

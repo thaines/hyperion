@@ -132,7 +132,7 @@ LogObj::~LogObj()
   
  // If any profiling details were recorded write out the profilling information
  // to a file, name the file based on the time the program closes...
-  if (ls->profile.Size()!=0)
+  if ((ls)&&(ls->profile.Size()!=0))
   {
    time::Date startTime(false,ls->startTime);
   
