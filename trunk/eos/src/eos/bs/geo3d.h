@@ -107,8 +107,8 @@ class EOS_CLASS Normal : public Vert
    void Reflect(const Normal & plane)
    {
     Normal sub = plane;
-    sub *= 2.0 * ((*this) * plane);
-    *this -= sub;
+    sub *= -2.0 * ((*this) * plane);
+    *this += sub;
    }
   
 
