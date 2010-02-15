@@ -446,7 +446,7 @@ void SphereFitter::Update()
   {
    bs::Normal norm = where; norm -= centre; norm.Normalise();
    bs::Normal in = where; in -= camCentre; in.Normalise();
-   bs::Normal out = in; out.Reflect(norm);
+   bs::Normal out = in; out.Reflect(norm); out.Normalise();
   
    str::String s;
    s << "Intercept at " << where << ", " << dist << " from camera.";
