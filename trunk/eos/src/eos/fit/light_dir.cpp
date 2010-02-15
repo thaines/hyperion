@@ -12,7 +12,7 @@ namespace eos
  {
 //------------------------------------------------------------------------------
 LightDir::LightDir()
-:minAlbedo(0.001),maxAlbedo(3.0),maxSegCostPP(0.1),lowAlbErr(8192.0),segPruneThresh(0.1),
+:minAlbedo(0.001),maxAlbedo(1.5),maxSegCostPP(0.1),lowAlbErr(8192.0),segPruneThresh(0.1),
 subdiv(1),furtherSubdiv(3),recDepth(8),bestLightDir(0.0,0.0,1.0)
 {}
 

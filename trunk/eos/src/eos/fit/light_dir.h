@@ -39,7 +39,7 @@ class EOS_CLASS LightDir
    void SetData(svt::Field<nat32> seg,svt::Field<real32> irr,svt::Field<math::Fisher> dir);
    
   /// Sets the albedo range to consider, noting that we presume a light source
-  /// of strength 1 with no falloff. Defaults to 0.001 to 3.0
+  /// of strength 1 with no falloff. Defaults to 0.001 to 1.5
    void SetAlbRange(real32 min,real32 max);
    
   /// Sets the maximum cost per segment per pixel, relative to the minimum cost
@@ -80,7 +80,7 @@ class EOS_CLASS LightDir
   /// Returns the calculated optimal light source direction.
    const bs::Normal & BestLightDir() const;
    
-  /// Returns the number of driections sampled.
+  /// Returns the number of directions sampled.
    nat32 SampleSize() const;
    
   /// Returns the direction for sample i.
@@ -102,7 +102,7 @@ class EOS_CLASS LightDir
 
 
   /// &nbsp;
-   static inline cstrconst TypeString() {return "eos::math::Fisher";}
+   static inline cstrconst TypeString() {return "eos::fit::Fisher";}
 
 
  private:
