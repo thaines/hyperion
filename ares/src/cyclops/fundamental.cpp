@@ -93,7 +93,7 @@ mode(Edit),selected(null<Match*>())
    but6->SetChild(lab6); lab6->Set("Calculate");
    but7->SetChild(lab7); lab7->Set("Trust No Match");
    autoAlg->Append("Harris & NCC");
-   autoAlg->Append("MSER");
+   //autoAlg->Append("MSER");
 
    gui::Vertical * vert4 = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));
    horiz1->AttachRight(vert4,false);
