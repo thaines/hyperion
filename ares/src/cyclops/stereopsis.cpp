@@ -8,7 +8,7 @@ Stereopsis::Stereopsis(Cyclops & cyc)
 :cyclops(cyc),win(null<gui::Window*>()),
 leftVar(null<svt::Var*>()),rightVar(null<svt::Var*>()),
 leftImg(null<svt::Var*>()),rightImg(null<svt::Var*>()),
-result(null<svt::Var*>())
+result(null<svt::Var*>()),segmentation(null<svt::Var*>())
 {
  // Create default images...
   leftVar = new svt::Var(cyclops.Core());
@@ -307,6 +307,11 @@ result(null<svt::Var*>())
    post3b->Set("Segmentation Parameters");
    post3b->Expand(false);
 
+   gui::Button * but6 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
+   gui::Label * lab50 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   but6->SetChild(lab50); lab50->Set("Load Segmentation Instead...");
+   vert5->AttachBottom(but6,false);
+   
    gui::Horizontal * horiz4a = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
    gui::Horizontal * horiz4b = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
    vert5->AttachBottom(horiz4a,false);
@@ -501,6 +506,7 @@ result(null<svt::Var*>())
   but3->OnClick(MakeCB(this,&Stereopsis::Run));
   but4->OnClick(MakeCB(this,&Stereopsis::SaveSVT));
   but5->OnClick(MakeCB(this,&Stereopsis::LoadCalibration));
+  but6->OnClick(MakeCB(this,&Stereopsis::LoadSeg));
 }
 
 Stereopsis::~Stereopsis()
@@ -511,6 +517,7 @@ Stereopsis::~Stereopsis()
  delete leftImg;
  delete rightImg;
  delete result;
+ delete segmentation;
 }
 
 void Stereopsis::Quit(gui::Base * obj,gui::Event * event)
@@ -683,6 +690,46 @@ void Stereopsis::LoadCalibration(gui::Base * obj,gui::Event * event)
  }
 }
 
+void Stereopsis::LoadSeg(gui::Base * obj,gui::Event * event)
+{
+ str::String fn;
+ if (cyclops.App().LoadFileDialog("Select Segmentation File","*.seg",fn))
+ {
+  // Load svt, verify it is a segmentation...
+   cstr filename = fn.ToStr();
+   svt::Node * floatNode = svt::Load(cyclops.Core(),filename);
+   mem::Free(filename);
+   if (floatNode==null<svt::Node*>())
+   {
+    cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load file.");
+    delete floatNode;
+    return;
+   }
+
+   if (str::Compare(typestring(*floatNode),"eos::svt::Var")!=0)
+   {
+    cyclops.App().MessageDialog(gui::App::MsgErr,"File is the wrong structure for a segmentation");
+    delete floatNode;
+    return;
+   }
+   svt::Var * floatVar = static_cast<svt::Var*>(floatNode);
+
+   nat32 segInd;
+   if ((floatVar->Dims()!=2)||
+       (floatVar->GetIndex(cyclops.TT()("seg"),segInd)==false)||
+       (floatVar->FieldType(segInd)!=cyclops.TT()("eos::nat32")))
+   {
+    cyclops.App().MessageDialog(gui::App::MsgErr,"File is the wrong format for a segmentation");
+    delete floatVar;
+    return;
+   }
+
+  // Store it...
+   delete segmentation;
+   segmentation = floatVar;
+ }
+}
+
 void Stereopsis::ChangeAlg(gui::Base * obj,gui::Event * event)
 {
  switch (whichAlg->Get())
@@ -792,7 +839,7 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
    switch (whichPost->Get())
    {
     case 1: steps += 2; break; // Smoothing. (Has sd fitting step.)
-    case 2: steps += 2; break; // Plane fit + Seg
+    case 2: steps += 1; break; // Plane fit + Seg
    }
    
    if (aGaussian) steps += 1;
@@ -970,6 +1017,14 @@ void Stereopsis::Run(gui::Base * obj,gui::Event * event)
       bleyer.SetBailOut(planeBailOut->GetInt(12));
       bleyer.SetSegment(segSpatial->GetReal(7.0),segRange->GetReal(4.5),segMin->GetInt(20));
       bleyer.SetSegmentExtra(segRad->GetInt(2),segMix->GetReal(0.3),segEdge->GetReal(0.9));
+      
+      if ((segmentation!=null<svt::Var*>())&&
+          (segmentation->Size(0)==leftImg->Size(0))&&
+          (segmentation->Size(0)==leftImg->Size(1)))
+      {
+       svt::Field<nat32> segs(segmentation,"seg");
+       bleyer.SegmentOverride(segs);
+      }
 
      // Run...
       bleyer.Run(prog);

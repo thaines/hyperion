@@ -89,6 +89,8 @@ class Stereopsis
   svt::Var * leftImg;
   svt::Var * rightImg;
   svt::Var * result;
+  
+  svt::Var * segmentation;
 
   void Quit(gui::Base * obj,gui::Event * event);
 
@@ -99,6 +101,7 @@ class Stereopsis
   void LoadRight(gui::Base * obj,gui::Event * event);
 
   void LoadCalibration(gui::Base * obj,gui::Event * event);
+  void LoadSeg(gui::Base * obj,gui::Event * event);
   
   void ChangeAlg(gui::Base * obj,gui::Event * event);
   void ChangePost(gui::Base * obj,gui::Event * event);
