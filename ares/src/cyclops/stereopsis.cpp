@@ -681,12 +681,13 @@ void Stereopsis::LoadRight(gui::Base * obj,gui::Event * event)
 void Stereopsis::LoadCalibration(gui::Base * obj,gui::Event * event)
 {
  str::String fn;
- if (cyclops.App().LoadFileDialog("Load Camera Calibration","*.pcc",fn))
+ if (cyclops.App().LoadFileDialog("Load Camera Pair","*.pcc",fn))
  {
   if (pair.Load(fn)==false)
   {
    cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load pcc file");
   }
+  pair.LeftToDefault();
  }
 }
 
