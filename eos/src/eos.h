@@ -306,6 +306,7 @@
 
 #include "eos/fit/disp_fish.h"
 #include "eos/fit/disp_norm.h"
+#include "eos/fit/light_dir.h"
 
 //------------------------------------------------------------------------------
 #endif
