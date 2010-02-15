@@ -404,11 +404,6 @@ void SfS_BP::Run(time::Progress * prog)
     for (nat32 x=0;x<distMax.Width();x++)
     {
      dist.Get(x,y).Maximum(distMax.Get(x,y));
-     if (!math::IsFinite(distMax.Get(x,y).Length()))
-     {
-      LogDebug("NaN maximum {x,y,dir,fish,bing}" << LogDiv() << x << LogDiv() << y << LogDiv()
-               << distMax.Get(x,y) << LogDiv() << dist.Get(x,y).fisher << LogDiv() << dist.Get(x,y).bingham);
-     }
     }
    }
    prog->Pop();
@@ -728,8 +723,6 @@ void NeedleFromFB::Run(time::Progress * prog)
    {
     prog->Report(x,in.Width());
     math::Vect<3> vect[6];
-    LogDebug("{x,y,fb}" << LogDiv() << x << LogDiv() << y << LogDiv() 
-             << "[" << in.Get(x,y).fisher << ";" << in.Get(x,y).bingham << "]");
     nat32 num = in.Get(x,y).Critical(vect);
     switch(num)
     {

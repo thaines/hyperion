@@ -383,6 +383,108 @@ class EOS_CLASS SfS_BP_Nice2
 };
 
 //------------------------------------------------------------------------------
+/// An improved version of SfS_BP_Nice2, has a more sophisticated smoothing term
+/// and more adaptive use of the cone constraint.
+class EOS_CLASS SfS_BP_Nice3
+{
+ public:
+  /// &nbsp;
+   SfS_BP_Nice3();
+   
+  /// &nbsp;
+   ~SfS_BP_Nice3();
+
+
+  /// Sets the image to use.
+   void SetImage(const svt::Field<real32> & image);
+
+  /// Sets an albedo map to use.
+   void SetAlbedo(const svt::Field<real32> & albedo);
+
+  /// Sets the light source direction, this comes as a normal that
+  /// points towards the light at its infinite position.
+   void SetLight(bs::Normal & norm);
+
+  
+  /// Sets the smoothing parameters, i.e. for calculating the concentration 
+  /// between adjacent pixels.
+  /// The concentration of the fisher distribution is calculated such that the
+  /// probability of being within a given angle is chance. The given angle is 
+  /// calculated as the angle between two directions started as there closest 
+  /// on-cone positions with one then rotated around the direction to the light
+  /// source by the angle base + mult*ca where ca is the cloest angle between 
+  /// the two. Th final concentration calculated via this method is calmped.
+   void SetSmooth(real32 chance = 0.75,real32 base = 2.0,real32 mult = 1.0,real32 minK = 1.0,real32 maxK = 8.0);
+   
+  /// Sets the cone constraint parameters - simply a linearly interpolated set 
+  /// of concentrations depending on the angle with the light source.
+  /// Default to 24, 32, 24 respectivly.
+   void SetCone(real32 k0,real32 k45,real32 k90);
+  
+  /// Sets the number of iterations per hierachy level of the BP algorithm.
+  /// Defaults to 10.
+   void SetIters(nat32 iters);
+   
+  /// Sets parameters for the boundary constraint.
+   void SetBound(real32 k = 16.0,nat32 length = 8,real32 exp = 6.0);
+   
+  /// Sets parameters for the gradient constraint, as implimented 
+  /// with a disc distribution. k is multiplied by the gradient strength.
+   void SetGrad(real32 k = 2.0,nat32 length = 8,real32 exp = 6.0);
+
+  /// Sets the extraction method parameters - angle multiplier and momentum.
+  /// Defaults of 1.0 and 0.01 respectivly.
+   void SetExtract(real32 angMult,real32 momentum);
+
+
+  /// Blah.
+   void Run(time::Progress * prog = null<time::Progress*>());
+
+
+  /// Extracts the calculated needle map.
+   void GetNeedle(svt::Field<bs::Normal> & out) const;
+
+
+  /// &nbsp;
+   cstrconst TypeString() const;
+ 
+ 
+ private:
+  // Parameters...
+   real32 smoothChance;
+   real32 smoothBase;
+   real32 smoothMult;
+   real32 smoothMinK;
+   real32 smoothMaxK;
+   
+   real32 cone0;
+   real32 cone45;
+   real32 cone90;
+   
+   nat32 iters;
+   
+   real32 boundK;
+   nat32  boundLength;
+   real32 boundExp;
+   
+   real32 gradK;
+   nat32  gradLength;
+   real32 gradExp;
+
+   real32 angMult;
+   real32 momentum;
+
+
+  // Inputs...
+   svt::Field<real32> image;
+   svt::Field<real32> albedo;
+   bs::Normal toLight;
+  
+  // Outputs...
+   ds::Array2D<bs::Normal> result;
+};
+
+//------------------------------------------------------------------------------
  };
 };
 #endif
