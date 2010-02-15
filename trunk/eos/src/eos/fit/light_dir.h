@@ -158,7 +158,7 @@ class EOS_CLASS LightDir
      real32 irr;
      real32 minR; // r value for the minimum, where cost will be minC
      real32 minC; // minimum cost, we subtract this from the function so 0 is the minimum cost.
-    }; // C = s*r^2 + t*sqrt(1-r^2), where r = I/a + A (I = irr, a = albedo, A = ambient.)
+    }; // C = s*r + t*sqrt(1-r^2), where r = I/a + A (I = irr, a = albedo, A = ambient.)
     
    // Cost range structure, used in calculation of light source cost for a pixel...
     struct CostRange

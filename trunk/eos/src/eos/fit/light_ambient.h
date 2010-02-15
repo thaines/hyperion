@@ -21,7 +21,7 @@ namespace eos
  {
 //------------------------------------------------------------------------------
 /// Estimates the ambient (A) term for an image under the presumed lighting 
-/// equation I = a(L*n) + A. The pixels are provided with Fisher distributions
+/// equation I = a(L*n) + aA. The pixels are provided with Fisher distributions
 /// for surface orientation, and segments are provided in which constant
 /// albedo (a) is assumed.
 /// Outputs the albedo result as well.
@@ -56,8 +56,8 @@ class EOS_CLASS LightAmb
    void SetSegCapPP(real32 maxCost);
    
   /// Sets the irradiance errors standard deviation, this only matters for
-  /// calculating error when albedo is less than irradiance, as too small to
-  /// consider in other situations.
+  /// calculating error when albedo is less than irradiance, as presumed too 
+  /// small to matter in other situations.
   /// Default is 1/128, i.e. 2 values for a 2^8 level image.
    void SetIrrErr(real32 sd);
    
@@ -143,17 +143,18 @@ class EOS_CLASS LightAmb
 
    // This struct contains the parameters for the function being optimised
    // - i.e. the constants for each pixel...
-    struct Pixel
+    struct PixelAux
     {
-     real32 irr; // Irradiance.
-     real32 a; // Base value when albedo is less than (irradiance minus ambient).
-     real32 b;
-     real32 min; // r value of its minimum.
-    }; // Function is a*r + b*sqrt(1-r^2), where r is the variable.
+     real32 s;
+     real32 t;
+     real32 irr;
+     real32 minR; // r value for the minimum, where cost will be minC
+     real32 minC; // minimum cost, we subtract this from the function so 0 is the minimum cost.
+    }; // C = s*r + t*sqrt(1-r^2), where r = I/a + A (I = irr, a = albedo, A = ambient.)
    
    // Method that is given a single point in the sampling space - returns the 
    // cost for that point (For a specific segment.)...
-    real32 Cost(real32 amb,real32 alb,const ds::Array<Pixel> & pixel,nat32 start,nat32 size);
+    real32 Cost(real32 amb,real32 alb,const ds::Array<PixelAux> & pixel,nat32 start,nat32 size);
    
    // Method that is given an ambient and albedo range and outputs a cost
    // range for the minimum cost of a segment...
@@ -161,7 +162,7 @@ class EOS_CLASS LightAmb
     void CostRange(real32 lowAmb,real32 highAmb,
                    real32 lowAlb,real32 highAlb,
                    real32 & outLow,real32 & outHigh,
-                   const ds::Array<Pixel> & pixel,nat32 start,nat32 size);
+                   const ds::Array<PixelAux> & pixel,nat32 start,nat32 size);
 };
 
 //------------------------------------------------------------------------------
