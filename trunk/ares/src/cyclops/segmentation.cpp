@@ -6,25 +6,18 @@
 //------------------------------------------------------------------------------
 Segmentation::Segmentation(Cyclops & cyc)
 :cyclops(cyc),win(null<gui::Window*>()),
-needleVar(null<svt::Var*>()),origVar(null<svt::Var*>()),imageVar(null<svt::Var*>())
+inputVar(null<svt::Var*>()),imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 {
  // Create default images maps...
   bs::ColourRGB colourIni(0.0,0.0,0.0);
 
-  needleVar = new svt::Var(cyclops.Core());
-  needleVar->Setup2D(320,240);
-  needleVar->Add("rgb",colourIni);
-  needleVar->Commit();
-  needleVar->ByName("rgb",needleImage);
+  inputVar = new svt::Var(cyclops.Core());
+  inputVar->Setup2D(320,240);
+  inputVar->Add("rgb",colourIni);
+  inputVar->Commit();
+  inputVar->ByName("rgb",inputImage);
+  segmentation.SetInvalid();
 
-  origVar = new svt::Var(cyclops.Core());
-  origVar->Setup2D(320,240);
-  origVar->Add("rgb",colourIni);
-  origVar->Commit();
-  origVar->ByName("rgb",origImage);
-
-
- // Create default image...
   imageVar = new svt::Var(cyclops.Core());
   imageVar->Setup2D(320,240);
   imageVar->Add("rgb",colourIni);
@@ -38,14 +31,11 @@ needleVar(null<svt::Var*>()),origVar(null<svt::Var*>()),imageVar(null<svt::Var*>
   imgVar->Commit();
   imgVar->ByName("rgb",img);
   
-  
- // Make default camera response function flat...
-  crf.SetMult();
 
 
  // Build gui...
   win = static_cast<gui::Window*>(cyclops.Fact().Make("Window"));
-  win->SetTitle("Image Relighter");
+  win->SetTitle("Segmenter");
   cyclops.App().Attach(win);
   win->SetSize(image.Size(0)+16,image.Size(1)+96);
 
@@ -53,61 +43,184 @@ needleVar(null<svt::Var*>()),origVar(null<svt::Var*>()),imageVar(null<svt::Var*>
    win->SetChild(vert1);
 
    gui::Horizontal * horiz1 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
-   gui::Horizontal * horiz2 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
    vert1->AttachBottom(horiz1,false);
-   vert1->AttachBottom(horiz2,false);
 
    gui::Button * but1 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but2 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but3 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but4 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
-   gui::Button * but5 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Label * lab1 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab2 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab3 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab4 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab5 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
 
-   but1->SetChild(lab1); lab1->Set("Load Needle...");
-   but2->SetChild(lab2); lab2->Set("Load Image...");
-   but3->SetChild(lab3); lab3->Set("Render");
-   but4->SetChild(lab4); lab4->Set("Save Rendered...");
-   but5->SetChild(lab5); lab5->Set("Load crf...");
+   but1->SetChild(lab1); lab1->Set("Load Image...");
+   but2->SetChild(lab2); lab2->Set("Run");
+   but3->SetChild(lab3); lab3->Set("Save Segmentation...");
+   but4->SetChild(lab4); lab4->Set("Save View...");
+   
    
    viewSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
-   viewSelect->Append("Needle Map");
-   viewSelect->Append("Original Image");
-   viewSelect->Append("Corrected Image");
-   viewSelect->Append("Albedo Map");
-   viewSelect->Append("Relight Image");
-   viewSelect->Set(4);
+   viewSelect->Append("Input Image");
+   viewSelect->Append("Random Colours");
+   viewSelect->Append("Average Colours");
+   viewSelect->Append("Outlines");
+   viewSelect->Append("Random with Outlines");
+   viewSelect->Append("Average with Outlines");
+   viewSelect->Set(2);
+   
+   algSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
+   algSelect->Append("K Means Grid");
+   algSelect->Append("Mean Shift");
+   algSelect->Set(1);
+
 
    horiz1->AttachRight(but1,false);
    horiz1->AttachRight(but2,false);
-   horiz1->AttachRight(but5,false);
    horiz1->AttachRight(viewSelect,false);
+   horiz1->AttachRight(algSelect,false);
    horiz1->AttachRight(but3,false);
    horiz1->AttachRight(but4,false);
-    
+   
+   
+   
+   kMeanGrid = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
+   vert1->AttachBottom(kMeanGrid,false);
+   kMeanGrid->Visible(false);
+   kMeanGrid->Set("K Means Grid Parameters");
+   kMeanGrid->Expand(false);
+   
+   gui::Vertical * vert2 = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));         
+   gui::Horizontal * horiz2 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   gui::Horizontal * horiz3 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   kMeanGrid->SetChild(vert2);
+   vert2->AttachBottom(horiz2,false);
+   vert2->AttachBottom(horiz3,false);
+   
+   gui::Label * lab5 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab6 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   origLight = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
    gui::Label * lab7 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   newLight = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   albLab = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-  
-   lab6->Set(" Original Light");
-   origLight->Set("(0.0,0.0,1.0)");
-   lab7->Set(" New Light");
-   newLight->Set("(0.0,0.0,1.0)");
-   albLab->Set("-");
-  
+   gui::Label * lab8 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab9 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   
+   kmgDim = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   kmgMinSeg = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   kmgColMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   kmgSpatialMult = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   kmgMaxIters = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+
+   lab5->Set("    Grid Size");
+   lab6->Set(" Minimum Segment Size");
+   lab7->Set("    Colour Mult");
+   lab8->Set(" Spatial Mult");
+   lab9->Set(" Max Iters");
+   
+   kmgDim->Set("12");
+   kmgMinSeg->Set("32");
+   kmgColMult->Set("2.0");
+   kmgSpatialMult->Set("1.0");
+   kmgMaxIters->Set("1000");
+   
+   kmgDim->SetSize(48,24);
+   kmgMinSeg->SetSize(48,24);
+   kmgColMult->SetSize(48,24);
+   kmgSpatialMult->SetSize(48,24);
+   kmgMaxIters->SetSize(64,24);
+   
+   horiz2->AttachRight(lab5,false);
+   horiz2->AttachRight(kmgDim,false);
    horiz2->AttachRight(lab6,false);
-   horiz2->AttachRight(origLight,false);
-   horiz2->AttachRight(lab7,false);
-   horiz2->AttachRight(newLight,false);
-   horiz2->AttachRight(albLab,false);
-
-
+   horiz2->AttachRight(kmgMinSeg,false);
+   
+   horiz3->AttachRight(lab7,false);
+   horiz3->AttachRight(kmgColMult,false);
+   horiz3->AttachRight(lab8,false);
+   horiz3->AttachRight(kmgSpatialMult,false);
+   horiz3->AttachRight(lab9,false);
+   horiz3->AttachRight(kmgMaxIters,false);
+   
+   
+   meanShift = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
+   vert1->AttachBottom(meanShift,false);
+   meanShift->Visible(true);
+   meanShift->Set("Mean Shift Parameters");
+   meanShift->Expand(false);
+   
+   gui::Vertical * vert3 = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));         
+   gui::Horizontal * horiz4 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   gui::Horizontal * horiz5 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   gui::Horizontal * horiz6 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
+   meanShift->SetChild(vert3);
+   vert3->AttachBottom(horiz4,false);
+   vert3->AttachBottom(horiz5,false);
+   vert3->AttachBottom(horiz6,false);
+   
+   gui::Label * lab10 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab11 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab12 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab13 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab14 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab15 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab16 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab17 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   
+   msEdgeWindow = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   msEdgeMix = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   msSpatialSize = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   msColourSize = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   msMergeCutoff = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   msMinSeg = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   msAvgSteps = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   msMergeMax = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
+   
+   lab10->Set("    Edge Window");
+   lab11->Set(" Edge Mix");
+   lab12->Set("    Spatial Size");
+   lab13->Set(" Colour Size");
+   lab14->Set(" Merge Cutoff");
+   lab15->Set("    Minimum Segment Size");
+   lab16->Set(" Averaging Steps");
+   lab17->Set(" Border Merge Max");
+    
+   msEdgeWindow->Set("2");
+   msEdgeMix->Set("0.3");
+   msSpatialSize->Set("7.0");
+   msColourSize->Set("4.5");
+   msMergeCutoff->Set("2.25");
+   msMinSeg->Set("20");
+   msAvgSteps->Set("2");
+   msMergeMax->Set("0.9");
+   
+   msEdgeWindow->SetSize(48,24);
+   msEdgeMix->SetSize(48,24);
+   msSpatialSize->SetSize(48,24);
+   msColourSize->SetSize(48,24);
+   msMergeCutoff->SetSize(48,24);
+   msMinSeg->SetSize(48,24);
+   msAvgSteps->SetSize(48,24);
+   msMergeMax->SetSize(48,24);
+   
+   horiz4->AttachRight(lab10,false);
+   horiz4->AttachRight(msEdgeWindow,false);
+   horiz4->AttachRight(lab11,false);
+   horiz4->AttachRight(msEdgeMix,false);
+   horiz4->AttachRight(lab17,false);
+   horiz4->AttachRight(msMergeMax,false);
+   
+   horiz5->AttachRight(lab12,false);
+   horiz5->AttachRight(msSpatialSize,false);
+   horiz5->AttachRight(lab13,false);
+   horiz5->AttachRight(msColourSize,false);
+   horiz5->AttachRight(lab14,false);
+   horiz5->AttachRight(msMergeCutoff,false);
+   
+   horiz6->AttachRight(lab15,false);
+   horiz6->AttachRight(msMinSeg,false);
+   horiz6->AttachRight(lab16,false);
+   horiz6->AttachRight(msAvgSteps,false);
+   
+   
+   
    gui::Panel * panel = static_cast<gui::Panel*>(cyclops.Fact().Make("Panel"));
    vert1->AttachBottom(panel);
 
@@ -120,19 +233,18 @@ needleVar(null<svt::Var*>()),origVar(null<svt::Var*>()),imageVar(null<svt::Var*>
  // Event handlers...
   win->OnDeath(MakeCB(this,&Segmentation::Quit));
   canvas->OnResize(MakeCB(this,&Segmentation::Resize));
-  but1->OnClick(MakeCB(this,&Segmentation::LoadNeedle));
-  but2->OnClick(MakeCB(this,&Segmentation::LoadOrig));
-  but3->OnClick(MakeCB(this,&Segmentation::Render));
-  viewSelect->OnChange(MakeCB(this,&Segmentation::Render));
-  but4->OnClick(MakeCB(this,&Segmentation::SaveRender));
-  but5->OnClick(MakeCB(this,&Segmentation::LoadCRF));
+  but1->OnClick(MakeCB(this,&Segmentation::LoadImage));
+  but2->OnClick(MakeCB(this,&Segmentation::Run));
+  but3->OnClick(MakeCB(this,&Segmentation::SaveSeg));
+  but4->OnClick(MakeCB(this,&Segmentation::SaveView));
+  viewSelect->OnChange(MakeCB(this,&Segmentation::ChangeView));
+  algSelect->OnChange(MakeCB(this,&Segmentation::ChangeAlg));
 }
 
 Segmentation::~Segmentation()
 {
  delete win;
- delete needleVar;
- delete origVar;
+ delete inputVar;
  delete imageVar;
  delete imgVar;
 }
@@ -158,10 +270,10 @@ void Segmentation::Resize(gui::Base * obj,gui::Event * event)
   canvas->Update();
 }
 
-void Segmentation::LoadNeedle(gui::Base * obj,gui::Event * event)
+void Segmentation::LoadImage(gui::Base * obj,gui::Event * event)
 {
  str::String fn;
- if (cyclops.App().LoadFileDialog("Select Needle Map","*.bmp,*.jpg,*.png,*.tif",fn))
+ if (cyclops.App().LoadFileDialog("Select Image","*.bmp,*.jpg,*.png,*.tif",fn))
  {
   // Load image into memory...
    cstr filename = fn.ToStr();
@@ -172,61 +284,141 @@ void Segmentation::LoadNeedle(gui::Base * obj,gui::Event * event)
     cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load image");
     return;
    }
-   
+
   // Stick in right variables...
-   delete needleVar;
-   needleVar = tempVar;
-   needleVar->ByName("rgb",needleImage);
+   delete inputVar;
+   inputVar = tempVar;
+   inputVar->ByName("rgb",inputImage);
+   segmentation.SetInvalid();
 
   // Update the display...
    Update();
  }
 }
 
-void Segmentation::LoadOrig(gui::Base * obj,gui::Event * event)
+void Segmentation::Run(gui::Base * obj,gui::Event * event)
 {
- str::String fn;
- if (cyclops.App().LoadFileDialog("Select Original Image","*.bmp,*.jpg,*.png,*.tif",fn))
+ // If needed add segmentation info to the image...
+  if (!segmentation.Valid())
+  {
+   nat32 segIni = 0;
+   inputVar->Add("seg",segIni);
+   inputVar->Commit();
+   inputVar->ByName("rgb",inputImage);
+   inputVar->ByName("seg",segmentation);
+  }
+
+
+ // Run the selected algorithm...
+ switch (algSelect->Get())
  {
-  // Load image into memory...
-   cstr filename = fn.ToStr();
-   svt::Var * tempVar = filter::LoadImageRGB(cyclops.Core(),filename);
-   mem::Free(filename);
-   if (tempVar==null<svt::Var*>())
-   {
-    cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load image");
-    return;
-   }
+  case 0: // K Means Grid
+  {
+   // Get parameters...
+    nat32 dim = kmgDim->GetInt(12);
+    nat32 minSeg = kmgMinSeg->GetInt(32);
+    real32 colMult = kmgColMult->GetReal(2.0);
+    real32 spatialMult = kmgSpatialMult->GetReal(1.0);
+    nat32 maxIters = kmgMaxIters->GetInt(1000);
    
-  // Stick in right variables...
-   delete origVar;
-   origVar = tempVar;
-   origVar->ByName("rgb",origImage);
-
-  // Update the display...
-   Update();
+   // Get image in right colour space...
+    svt::Var tempVar(inputImage);
+    bs::ColourLuv luvIni(0.0,0.0,0.0);
+    tempVar.Add("luv",luvIni);
+    tempVar.Commit();
+    svt::Field<bs::ColourLuv> luvImage(&tempVar,"luv");
+    
+    filter::RGBtoLuv(inputImage,luvImage);
+   
+   // Create and fill in the algorithm object...
+    filter::MeanGridSeg mgs;
+    mgs.SetImage(luvImage);
+    mgs.SetSize(dim);
+    mgs.SetMinSeg(minSeg);
+    mgs.SetDist(colMult,spatialMult);
+    mgs.SetMaxIters(maxIters);
+  
+   // Run algorithm... 
+    mgs.Run(cyclops.BeginProg());
+    cyclops.EndProg();
+  
+   // Extract result...
+    mgs.GetSegments(segmentation);
+  }
+  break;
+  case 1: // Mean Shift
+  {
+   // Get parameters...
+    nat32 edgeWindow = msEdgeWindow->GetInt(2);
+    real32 edgeMix = msEdgeMix->GetReal(0.3);
+    real32 spatialSize = msSpatialSize->GetReal(7.0);
+    real32 colourSize = msColourSize->GetReal(4.5);
+    real32 mergeCutoff = msMergeCutoff->GetReal(2.25);
+    nat32 minSeg = msMinSeg->GetInt(20);
+    nat32 avgSteps = msAvgSteps->GetInt(2);
+    real32 mergeMax = msMergeMax->GetReal(0.9);
+  
+   // Get image in right colour space...
+    svt::Var tempVar(inputImage);
+    bs::ColourLuv luvIni(0.0,0.0,0.0);
+    bs::ColourL lIni(0.0);
+    tempVar.Add("luv",luvIni);
+    tempVar.Add("l",lIni);
+    tempVar.Commit();
+    svt::Field<bs::ColourLuv> luvImage(&tempVar,"luv");
+    svt::Field<bs::ColourL> lImage(&tempVar,"l");
+    
+    filter::RGBtoLuv(inputImage,luvImage);
+    filter::RGBtoL(inputImage,lImage);
+    
+   // Create and fill in the algorithm object...
+    filter::Synergism ms;
+    ms.SetImage(lImage,luvImage);
+    ms.DiffWindow(edgeWindow);
+    ms.SetMix(edgeMix);
+    ms.SetSpatial(spatialSize);
+    ms.SetRange(colourSize);
+    ms.SetCutoff(mergeCutoff);
+    ms.SetSegmentMin(minSeg);
+    ms.SetAverageSteps(avgSteps);
+    ms.SetMergeMax(mergeMax);
+   
+   // Run algorithm... 
+    ms.Run(cyclops.BeginProg());
+    cyclops.EndProg();
+  
+   // Extract result...
+    ms.GetSegments(segmentation);
+  }
+  break;
  }
+ 
+ 
+ // Update the visualisation...
+  Update();
 }
 
-void Segmentation::LoadCRF(gui::Base * obj,gui::Event * event)
-{
- str::String fn;
- if (cyclops.App().LoadFileDialog("Select Camera Response Function","*.crf",fn))
- {
-  // Load...
-   if (crf.Load(fn)==false)
-   {
-    cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load function");
-   }
- }
-}
-
-void Segmentation::Render(gui::Base * obj,gui::Event * event)
+void Segmentation::ChangeView(gui::Base * obj,gui::Event * event)
 {
  Update();
 }
 
-void Segmentation::SaveRender(gui::Base * obj,gui::Event * event)
+void Segmentation::ChangeAlg(gui::Base * obj,gui::Event * event)
+{
+ switch (algSelect->Get())
+ {
+  case 0:
+   kMeanGrid->Visible(true);
+   meanShift->Visible(false);
+  break;
+  case 1:
+   kMeanGrid->Visible(false);
+   meanShift->Visible(true);
+  break;
+ }
+}
+
+void Segmentation::SaveView(gui::Base * obj,gui::Event * event)
 {
  str::String fn("");
  if (cyclops.App().SaveFileDialog("Save Image",fn))
@@ -241,167 +433,105 @@ void Segmentation::SaveRender(gui::Base * obj,gui::Event * event)
  }
 }
 
+void Segmentation::SaveSeg(gui::Base * obj,gui::Event * event)
+{
+ if (segmentation.Valid())
+ {
+  // Get the filename...
+   str::String fn("");
+   if (cyclops.App().SaveFileDialog("Save Segmentation",fn))
+   {
+    svt::Var tempVar(segmentation);
+    nat32 segIni = 0;
+    tempVar.Add("seg",segIni);
+    tempVar.Commit();
+    svt::Field<nat32> seg(&tempVar,"seg");
+    
+    for (nat32 y=0;y<seg.Size(1);y++)
+    {
+     for (nat32 x=0;x<seg.Size(0);x++) seg.Get(x,y) = segmentation.Get(x,y);
+    }
+   
+    if (!fn.EndsWith(".seg")) fn << ".seg";
+    cstr ts = fn.ToStr();
+    if (!svt::Save(ts,&tempVar,true))
+    {
+     cyclops.App().MessageDialog(gui::App::MsgErr,"Error saving .seg file.");
+    }
+    mem::Free(ts);
+   }
+ }
+ else
+ {
+  cyclops.App().MessageDialog(gui::App::MsgErr,"You need to do segmentation first!");
+ }
+}
+
 void Segmentation::Update()
 {
- // Check sizes match, adjust/fail as scenario dictates...
-  if ((needleImage.Size(0)!=origImage.Size(0))||(needleImage.Size(1)!=origImage.Size(1))) return;
-  if ((image.Size(0)!=origImage.Size(0))||(image.Size(1)!=origImage.Size(1)))
+ // Check sizes match, adjust if need be...
+  if ((image.Size(0)!=inputImage.Size(0))||(image.Size(1)!=inputImage.Size(1)))
   {
-   imageVar->Setup2D(origImage.Size(0),origImage.Size(1));
+   imageVar->Setup2D(inputImage.Size(0),inputImage.Size(1));
    imageVar->Commit();
    imageVar->ByName("rgb",image);
   }
-  if ((img.Size(0)!=origImage.Size(0))||(img.Size(1)!=origImage.Size(1)))
+  if ((img.Size(0)!=inputImage.Size(0))||(img.Size(1)!=inputImage.Size(1)))
   {
-   imgVar->Setup2D(origImage.Size(0),origImage.Size(1));
+   imgVar->Setup2D(inputImage.Size(0),inputImage.Size(1));
    imgVar->Commit();
    imgVar->ByName("rgb",img);
-  }  
-
-
- // Get stuff the user provides...
-  bs::Normal origL;
-  {
-   str::String s = origLight->Get();
-   str::String::Cursor cur = s.GetCursor();
-   cur.ClearError();
-   cur >> origL;
-   if (cur.Error()) origL = bs::Normal(0.0,0.0,1.0);
-   origL.Normalise();
-  }
-   
-  bs::Normal newL;
-  {
-   str::String s = newLight->Get();
-   str::String::Cursor cur = s.GetCursor();
-   cur.ClearError();
-   cur >> newL;
-   if (cur.Error()) newL = bs::Normal(0.0,0.0,1.0);
-   newL.Normalise();
   }
 
  
  // Switch on mode and render correct image...
-  switch(viewSelect->Get())
+  nat32 mode = viewSelect->Get();
+  if (!segmentation.Valid()) mode = 0;
+  switch(mode)
   {
-   case 0: // Needle map
+   case 0: // Input image
    {
     for (nat32 y=0;y<image.Size(1);y++)
     {
-     for (nat32 x=0;x<image.Size(0);x++) image.Get(x,y) = needleImage.Get(x,y);
+     for (nat32 x=0;x<image.Size(0);x++) image.Get(x,y) = inputImage.Get(x,y);
     }
    }
    break;
-   case 1: // Original image
+   case 1: // Random Colours
    {
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++) image.Get(x,y) = origImage.Get(x,y);
-    }
+    filter::RenderSegsColour(segmentation,image);
    }
    break;
-   case 2: // Corrected image
+   case 2: // Average Colours
    {
-    real32 max = 0.01;
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++) 
-     {
-      real32 val = crf((origImage.Get(x,y).r+origImage.Get(x,y).g+origImage.Get(x,y).b)/3.0);
-      max = math::Max(max,val);
-      image.Get(x,y) = bs::ColourRGB(val,val,val);
-     }
-    }
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++) image.Get(x,y) /= max;
-    }
+    filter::RenderSegsMean(segmentation,inputImage,image);
    }
    break;
-   case 3: // Albedo map
+   case 3: // Outlines
    {
     for (nat32 y=0;y<image.Size(1);y++)
     {
-     for (nat32 x=0;x<image.Size(0);x++)
-     {
-      bs::ColourRGB & nc = needleImage.Get(x,y);
-      bs::Normal norm(nc.r*2.0-1.0,nc.g*2.0-1.0,nc.b);
-      real32 dot = norm*origL;
-      if (dot>0.0)
-      {
-       real32 l = crf((origImage.Get(x,y).r + origImage.Get(x,y).g + origImage.Get(x,y).b)/3.0);
-       real32 albedo = l/dot;
-       if (albedo<=1.0) image.Get(x,y) = bs::ColourRGB(albedo,albedo,albedo);
-                   else image.Get(x,y) = bs::ColourRGB(0.25,0.0,0.0);
-      }
-      else
-      {
-       image.Get(x,y) = bs::ColourRGB(0.0,0.0,0.25);
-      }
-     }
+     for (nat32 x=0;x<image.Size(0);x++) image.Get(x,y) = inputImage.Get(x,y);
     }
+    
+    filter::RenderSegsLines(segmentation,image,bs::ColourRGB(1.0,0.0,0.0));
    }
    break;
-   case 4: // Relight image
+   case 4: // Random with Outlines
    {
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++)
-     {
-      bs::ColourRGB & nc = needleImage.Get(x,y);
-      bs::Normal norm(nc.r*2.0-1.0,nc.g*2.0-1.0,nc.b);
-      real32 dot = norm*origL;
-      if (dot>0.0)
-      {
-       real32 mult = (norm*newL)/dot;
-       image.Get(x,y) = bs::ColourRGB(math::Clamp<real32>(origImage.Get(x,y).r*mult,0.0,1.0),
-                                      math::Clamp<real32>(origImage.Get(x,y).g*mult,0.0,1.0),
-                                      math::Clamp<real32>(origImage.Get(x,y).b*mult,0.0,1.0));
-      }
-      else
-      {
-       image.Get(x,y) = bs::ColourRGB(0.0,0.0,0.25);
-      }
-     }
-    }
+    filter::RenderSegsColour(segmentation,image);
+    
+    filter::RenderSegsLines(segmentation,image,bs::ColourRGB(1.0,0.0,0.0));
+   }
+   break;
+   case 5: // Average with Outlines
+   {
+    filter::RenderSegsMean(segmentation,inputImage,image);
+    
+    filter::RenderSegsLines(segmentation,image,bs::ColourRGB(1.0,0.0,0.0));
    }
    break;
   }
-  
- 
- // Calculate and output the albedo of the image assuming constant albedo...
- {
-  // Need actual normal map and corrected luminence map...
-   bs::Normal normIni(0.0,0.0,1.0);
-   real32 realIni = 0.0;
-   
-   svt::Var temp(needleImage);
-   temp.Add("needle",normIni);
-   temp.Add("l",realIni);
-   temp.Commit();
-   svt::Field<bs::Normal> needle(&temp,"needle");
-   svt::Field<real32> l(&temp,"l");
-   
-   for (nat32 y=0;y<needle.Size(1);y++)
-   {
-    for (nat32 x=0;x<needle.Size(0);x++)
-    {
-     l.Get(x,y) = crf((origImage.Get(x,y).r + origImage.Get(x,y).g + origImage.Get(x,y).b)/3.0);
-     needle.Get(x,y)[0] = needleImage.Get(x,y).r*2.0-1.0;
-     needle.Get(x,y)[1] = needleImage.Get(x,y).g*2.0-1.0;
-     needle.Get(x,y)[2] = needleImage.Get(x,y).b;
-    }
-   }
-   
-  // Calculate...
-   real32 a = crf.Inverse(sfs::AlbedoEstimate(l,needle,origL));
-   
-  
-  // Output...
-   str::String s;
-   s << a;
-   albLab->Set(s);
- }
 
 
  // Copy from image to img...

@@ -194,6 +194,7 @@
 #include "eos/filter/grad_bilateral.h"
 #include "eos/filter/smoothing.h"
 #include "eos/filter/mscr.h"
+#include "eos/filter/seg_k_mean_grid.h"
 
 #include "eos/stereo/sad.h"
 #include "eos/stereo/sad_seg_stereo.h"
