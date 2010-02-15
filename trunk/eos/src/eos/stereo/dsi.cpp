@@ -2213,7 +2213,7 @@ RegionDSC::~RegionDSC()
 DSC * RegionDSC::Clone() const
 {
  RegionDSC * ret = new RegionDSC(child,radius);
- ret->falloff = falloff;
+ ret->SetFalloff(falloff);
  return ret;
 }
 
@@ -2338,16 +2338,18 @@ real32 RegionDSC::Cost(nat32 leftX,nat32 rightX,nat32 y) const
 {
  real32 ret = 0.0;
  
+ nat32 i = 0;
  for (int32 v=-int32(radius);v<=int32(radius);v++)
  {
   for (int32 u=-int32(radius);u<=int32(radius);u++)
   {
-   nat32 i = (v+int32(radius))*dim + (u+int32(radius));
    int32 nxl = math::Clamp<int32>(int32(leftX)+u,0,child->WidthLeft()-1);
    int32 nxr = math::Clamp<int32>(int32(rightX)+u,0,child->WidthRight()-1);
    int32 ny = math::Clamp<int32>(int32(y)+v,0,child->HeightRight()-1);
    
    ret += weight[i]*child->Cost(nxl,nxr,ny);
+   
+   i += 1;
   }
  }
  
@@ -2357,6 +2359,178 @@ real32 RegionDSC::Cost(nat32 leftX,nat32 rightX,nat32 y) const
 cstrconst RegionDSC::TypeString() const
 {
  return "eos::stereo::RegionDSC";
+}
+
+//------------------------------------------------------------------------------
+LuvRegionDSC::LuvRegionDSC(const svt::Field<bs::ColourLuv> & le,const svt::Field<bs::ColourLuv> & ri,const DSC * dsc,nat32 r,real32 m,real32 cornerWeight)
+:radius(r),dim(r*2+1),mult(m),left(le),right(ri)
+{
+ SetFalloff(-math::Ln(cornerWeight)/math::Sqrt(2.0*real32(radius)*real32(radius)));
+ child = dsc->Clone();
+}
+
+LuvRegionDSC::~LuvRegionDSC()
+{
+ delete child;
+}
+
+DSC * LuvRegionDSC::Clone() const
+{
+ LuvRegionDSC * ret = new LuvRegionDSC(left,right,child,radius,mult);
+ ret->SetFalloff(falloff);
+ return ret;
+}
+
+void LuvRegionDSC::SetFalloff(real32 fo)
+{
+ falloff = fo;
+ 
+ // Recalculate the weight array...
+  real32 sum = 0.0;
+  weight.Size(dim*dim);
+  for (int32 v=-int32(radius);v<=int32(radius);v++)
+  {
+   for (int32 u=-int32(radius);u<=int32(radius);u++)
+   {
+    nat32 i = (v+int32(radius))*dim + (u+int32(radius));
+    weight[i] = math::Exp(-falloff*math::Sqrt(real32(v*v + u*u)));
+    sum += weight[i];
+   }
+  }
+  
+  for (nat32 i=0;i<weight.Size();i++) weight[i] /= sum;
+}
+
+nat32 LuvRegionDSC::Bytes() const
+{
+ return weight.Size()*child->Bytes();
+}
+
+real32 LuvRegionDSC::Cost(const byte * left,const byte * right) const
+{
+ real32 ret = 0.0;
+ for (nat32 i=0;i<weight.Size();i++)
+ {
+  ret += weight[i]*child->Cost(left,right);
+  left += child->Bytes();
+  right += child->Bytes();
+ }
+ return ret;
+}
+
+void LuvRegionDSC::Join(const byte * left,const byte * right,byte * out) const
+{
+ for (nat32 i=0;i<weight.Size();i++)
+ {
+  child->Join(left,right,out);
+  left += child->Bytes();
+  right += child->Bytes();
+  out += child->Bytes();
+ }
+}
+
+void LuvRegionDSC::Join(nat32 n,const byte ** in,byte * out) const
+{
+ for (nat32 i=0;i<weight.Size();i++)
+ {
+  child->Join(n,in,out);
+  
+  out += child->Bytes();
+  for (nat32 j=0;j<n;j++)
+  {
+   if (in[j]!=null<const byte*>()) in[j] += child->Bytes();
+  }
+ }
+ 
+ for (nat32 j=0;j<n;j++)
+ {
+  if (in[j]!=null<const byte*>()) in[j] -= weight.Size()*child->Bytes();
+ }
+}
+
+nat32 LuvRegionDSC::WidthLeft() const
+{
+ return child->WidthLeft();
+}
+
+nat32 LuvRegionDSC::HeightLeft() const
+{
+ return child->HeightLeft();
+}
+
+void LuvRegionDSC::Left(nat32 x,nat32 y,byte * out) const
+{
+ for (int32 v=-int32(radius);v<=int32(radius);v++)
+ {
+  for (int32 u=-int32(radius);u<=int32(radius);u++)
+  {
+   int32 nx = math::Clamp<int32>(int32(x)+u,0,child->WidthLeft()-1);
+   int32 ny = math::Clamp<int32>(int32(y)+v,0,child->HeightLeft()-1);
+   
+   child->Left(nx,ny,out);
+   out += child->Bytes();
+  }
+ }
+}
+
+nat32 LuvRegionDSC::WidthRight() const
+{
+ return child->WidthRight();
+}
+
+nat32 LuvRegionDSC::HeightRight() const
+{
+ return child->HeightRight();
+}
+
+void LuvRegionDSC::Right(nat32 x,nat32 y,byte * out) const
+{
+ for (int32 v=-int32(radius);v<=int32(radius);v++)
+ {
+  for (int32 u=-int32(radius);u<=int32(radius);u++)
+  {
+   int32 nx = math::Clamp<int32>(int32(x)+u,0,child->WidthRight()-1);
+   int32 ny = math::Clamp<int32>(int32(y)+v,0,child->HeightRight()-1);
+   
+   child->Right(nx,ny,out);
+   out += child->Bytes();
+  }
+ }
+}
+
+real32 LuvRegionDSC::Cost(nat32 leftX,nat32 rightX,nat32 y) const
+{
+ real32 ret = 0.0;
+ 
+ nat32 i = 0;
+ real32 totWeight = 0.0;
+ for (int32 v=-int32(radius);v<=int32(radius);v++)
+ {
+  for (int32 u=-int32(radius);u<=int32(radius);u++)
+  {
+   int32 nxl = math::Clamp<int32>(int32(leftX)+u,0,child->WidthLeft()-1);
+   int32 nxr = math::Clamp<int32>(int32(rightX)+u,0,child->WidthRight()-1);
+   int32 ny = math::Clamp<int32>(int32(y)+v,0,child->HeightRight()-1);
+   
+   real32 ld = left.Get(leftX,y).Diff(left.Get(nxl,ny));
+   real32 rd = right.Get(rightX,y).Diff(right.Get(nxr,ny));
+   real32 we = weight[i] * math::Exp(-mult*math::Min(ld,rd));
+   
+   ret += we*child->Cost(nxl,nxr,ny);
+   totWeight += we;
+   
+   i += 1;
+  }
+ }
+ 
+ ret /= totWeight;
+ 
+ return ret;
+}
+
+cstrconst LuvRegionDSC::TypeString() const
+{
+ return "eos::stereo::LuvRegionDSC";
 }
 
 //------------------------------------------------------------------------------
