@@ -76,6 +76,7 @@ class Cyclops
   void StartIntegration(gui::Base * obj,gui::Event * event);
   void StartLighting(gui::Base * obj,gui::Event * event);
   void StartSegmentation(gui::Base * obj,gui::Event * event);
+  void StartLightEst(gui::Base * obj,gui::Event * event);
 };
 
 //------------------------------------------------------------------------------

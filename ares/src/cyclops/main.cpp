@@ -35,6 +35,7 @@
 #include "cyclops/integration.h"
 #include "cyclops/lighting.h"
 #include "cyclops/segmentation.h"
+#include "cyclops/light_est.h"
 
 //------------------------------------------------------------------------------
 // Code for cyclops class...
@@ -127,6 +128,7 @@ Cyclops::Cyclops()
   gui::Button * but39 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but40 = static_cast<gui::Button*>(guiFact.Make("Button"));
   gui::Button * but41 = static_cast<gui::Button*>(guiFact.Make("Button"));
+  gui::Button * but42 = static_cast<gui::Button*>(guiFact.Make("Button"));  
 
   gui::Label * lab1 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab2 = static_cast<gui::Label*>(guiFact.Make("Label"));
@@ -169,6 +171,7 @@ Cyclops::Cyclops()
   gui::Label * lab39 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab40 = static_cast<gui::Label*>(guiFact.Make("Label"));
   gui::Label * lab41 = static_cast<gui::Label*>(guiFact.Make("Label"));
+  gui::Label * lab42 = static_cast<gui::Label*>(guiFact.Make("Label"));  
 
   but1->SetChild(lab1); lab1->Set("Intrinsic Calibration");
   but2->SetChild(lab2); lab2->Set("Protractor");
@@ -211,6 +214,7 @@ Cyclops::Cyclops()
   but39->SetChild(lab39); lab39->Set("Integration");
   but40->SetChild(lab40); lab40->Set("Re-lighter");
   but41->SetChild(lab41); lab41->Set("Segmentation");
+  but42->SetChild(lab42); lab42->Set("Light Estimation");
 
   vert0->AttachBottom(but19,false);
   vert0->AttachBottom(but21,false);
@@ -259,6 +263,7 @@ Cyclops::Cyclops()
 
   vert10->AttachBottom(but35,false);
   vert10->AttachBottom(but27,false);
+  vert10->AttachBottom(but42,false);
 
   vert11->AttachBottom(but38,false);
   vert11->AttachBottom(but39,false);
@@ -313,6 +318,7 @@ Cyclops::Cyclops()
   but39->OnClick(MakeCB(this,&Cyclops::StartIntegration));
   but40->OnClick(MakeCB(this,&Cyclops::StartLighting));
   but41->OnClick(MakeCB(this,&Cyclops::StartSegmentation));
+  but42->OnClick(MakeCB(this,&Cyclops::StartLightEst));
 
  // Enter the message pump...
   app->Go();
@@ -699,6 +705,11 @@ void Cyclops::StartLighting(gui::Base * obj,gui::Event * event)
 void Cyclops::StartSegmentation(gui::Base * obj,gui::Event * event)
 {
  new Segmentation(*this);
+}
+
+void Cyclops::StartLightEst(gui::Base * obj,gui::Event * event)
+{
+ new LightEst(*this);
 }
 
 //------------------------------------------------------------------------------
