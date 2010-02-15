@@ -344,23 +344,16 @@ void CameraPair::LeftToDefault(math::Mat<4,4,real64> * out)
 
 
  // Calculate the matrix to the camera...
-  math::Mat<4,4,real64> tr1;
+  math::Mat<4,4,real64> tr1; // Rotation
   math::Identity(tr1);
   math::SetSub(tr1,rot,0,0);
 
-  math::Mat<4,4,real64> tr2;
+  math::Mat<4,4,real64> tr2; // Translation
   math::Identity(tr2);
-  for (nat32 i=0;i<4;i++) tr2[i][3] = -trans[i];
+  for (nat32 i=0;i<4;i++) tr2[i][3] = trans[i];
 
   math::Mat<4,4,real64> tr;
-  math::Mult(tr1,tr2,tr);
-
-
- // Invert...
- {
-  math::Mat<4,4,real64> temp;
-  math::Inverse(tr,temp);
- }
+  math::Mult(tr2,tr1,tr);
 
 
  // Apply it, output if needed...
@@ -372,8 +365,8 @@ void CameraPair::LeftToDefault(math::Mat<4,4,real64> * out)
   math::Mult(rp,tr,temp);
   rp = temp;
 
-  LogDebug("[cam.pair] Adjusted pair to default positions {tranformation,left camera,right camera}" << LogDiv()
-           << tr << LogDiv() << lp << LogDiv() << rp);
+  LogDebug("[cam.pair] Adjusted pair to default positions {tranformation,left camera,right camera}" 
+           << LogDiv() << tr << LogDiv() << lp << LogDiv() << rp);
 
   if (out) *out = tr;
 }
