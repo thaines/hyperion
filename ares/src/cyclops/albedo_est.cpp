@@ -5,14 +5,15 @@
 
 //------------------------------------------------------------------------------
 AlbedoEst::AlbedoEst(Cyclops & cyc)
-:cyclops(cyc),win(null<gui::Window*>()),ambient(0.0),
+:cyclops(cyc),win(null<gui::Window*>()),
 irrVar(null<svt::Var*>()),segVar(null<svt::Var*>()),dispVar(null<svt::Var*>()),
 imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 {
  // Create default images maps...
   bs::ColourRGB colourIni(0.0,0.0,0.0);
+  bs::ColRGB colIni(0,0,0);
   nat32 segIni = 0;
-  math::Fisher fishIni;
+  real32 dispIni = 0.0;
 
   irrVar = new svt::Var(cyclops.Core());
   irrVar->Setup2D(320,240);
@@ -28,9 +29,9 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 
   dispVar = new svt::Var(cyclops.Core());
   dispVar->Setup2D(320,240);
-  dispVar->Add("fish",fishIni);
+  dispVar->Add("disp",dispIni);
   dispVar->Commit();
-  dispVar->ByName("fish",fish);
+  dispVar->ByName("disp",disp);
 
 
   imageVar = new svt::Var(cyclops.Core());
@@ -41,18 +42,19 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
 
   imgVar = new svt::Var(cyclops.Core());
   imgVar->Setup2D(320,240);
-  bs::ColRGB colIni(0,0,0);
   imgVar->Add("rgb",colIni);
   imgVar->Commit();
   imgVar->ByName("rgb",img);
 
- // Make default camera response function flat...
+
+ // Make default camera setup...
   crf.SetMult();
+  pair.SetDefault(320.0,240.0);
 
 
  // Build gui...
   win = static_cast<gui::Window*>(cyclops.Fact().Make("Window"));
-  win->SetTitle("Ambient Estimation");
+  win->SetTitle("Albedo Estimation");
   cyclops.App().Attach(win);
   win->SetSize(image.Size(0)+16,image.Size(1)+96);
 
@@ -65,10 +67,8 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    vert1->AttachBottom(horiz2,false);
 
    results = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   results2 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    results->Set("Not yet run");
    vert1->AttachBottom(results,false);
-   vert1->AttachBottom(results2,false);
 
    gui::Button * but1 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but2 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
@@ -76,134 +76,53 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    gui::Button * but4 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but5 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but6 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
+   gui::Button * but7 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
+   
    gui::Label * lab1 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab2 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab3 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab4 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab5 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab6 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab7 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    
    but1->SetChild(lab1); lab1->Set("Load Irradiance...");
    but2->SetChild(lab2); lab2->Set("Load Camera Response...");
    but3->SetChild(lab3); lab3->Set("Load Segmentation...");
    but4->SetChild(lab4); lab4->Set("Load Disparity...");
-   but5->SetChild(lab5); lab5->Set("Run");
-   but6->SetChild(lab6); lab6->Set("Save View...");   
+   but5->SetChild(lab5); lab5->Set("Load Camera Geometry...");
+   but6->SetChild(lab6); lab6->Set("Run");
+   but7->SetChild(lab7); lab7->Set("Save View...");
    
    lightDirection = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   gui::Label * lab15 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab8 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    
    lightDirection->Set("(0.0,0.0,1.0)");
-   lab15->Set(" Light Dir:");
+   lab8->Set(" Light Dir:");
 
 
    viewSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
    viewSelect->Append("Irradiance");
    viewSelect->Append("Corrected Irradiance");
    viewSelect->Append("Segmentation");
-   viewSelect->Append("Fisher Direction");
-   viewSelect->Append("Fisher Concentration (log10)");
+   viewSelect->Append("Disparity");
    viewSelect->Append("Linear Albedo");
    viewSelect->Append("Corrected Image");
    viewSelect->Append("Linear Corrected Image");
    viewSelect->Set(0);
-
-   algSelect = static_cast<gui::ComboBox*>(cyclops.Fact().Make("ComboBox"));
-   algSelect->Append("Haines & Wilson");
-   algSelect->Set(0);
 
 
    horiz1->AttachRight(but1,false);
    horiz1->AttachRight(but2,false);
    horiz1->AttachRight(but3,false);
    horiz1->AttachRight(but4,false);
-   horiz1->AttachRight(lab15,false);
-   horiz1->AttachRight(lightDirection,false);
-   horiz2->AttachRight(viewSelect,false);
-   horiz2->AttachRight(algSelect,false);
-   horiz2->AttachRight(but5,false);
-   horiz2->AttachRight(but6,false);
-
-
-
-   brutalFish = static_cast<gui::Expander*>(cyclops.Fact().Make("Expander"));
-   vert1->AttachBottom(brutalFish,false);
-   brutalFish->Visible(true);
-   brutalFish->Set("Haines & Wilson Parameters");
-   brutalFish->Expand(false);
-
-   gui::Vertical * vert2 = static_cast<gui::Vertical*>(cyclops.Fact().Make("Vertical"));
-   gui::Horizontal * horiz3 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
-   gui::Horizontal * horiz4 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
-   brutalFish->SetChild(vert2);
-   vert2->AttachBottom(horiz3,false);
-   vert2->AttachBottom(horiz4,false);
-
-   gui::Label * lab7 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab8 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab9 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab10 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab11 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab12 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab13 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-   gui::Label * lab14 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
-
-   bfMinAmb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfMaxAmb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfMinAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfMaxAlb = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfAmbRecursion = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));   
-   bfAlbRecursion = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfPruneThresh = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-   bfIrrErr = static_cast<gui::EditBox*>(cyclops.Fact().Make("EditBox"));
-
-   lab7->Set("  Minimum Ambient");
-   lab8->Set(" Maximum Ambient");
-   lab9->Set("  Minimum Albedo");
-   lab10->Set(" Maximum Albedo");
-   lab11->Set(" Ambient Recursion");
-   lab12->Set(" Albedo Recursion");
-   lab13->Set(" Pruning Threshold");
-   lab14->Set(" Irradiance Error sd");
+   horiz1->AttachRight(but5,false);
    
-
-   bfMinAmb->Set("0.001");
-   bfMaxAmb->Set("0.75");
-   bfMinAlb->Set("0.001");
-   bfMaxAlb->Set("1.5");
-   bfAmbRecursion->Set("7");
-   bfAlbRecursion->Set("7");
-   bfPruneThresh->Set("0.2");
-   bfIrrErr->Set("0.0078");
-
-   bfMinAmb->SetSize(48,24);
-   bfMaxAmb->SetSize(48,24);
-   bfMinAlb->SetSize(48,24);
-   bfMaxAlb->SetSize(48,24);
-   bfAmbRecursion->SetSize(48,24);
-   bfAlbRecursion->SetSize(48,24);
-   bfPruneThresh->SetSize(48,24);
-   bfIrrErr->SetSize(64,24);
-
-
-   horiz3->AttachRight(lab7,false);
-   horiz3->AttachRight(bfMinAmb,false);
-   horiz3->AttachRight(lab8,false);
-   horiz3->AttachRight(bfMaxAmb,false);
-   horiz3->AttachRight(lab11,false);
-   horiz3->AttachRight(bfAmbRecursion,false);
-   horiz3->AttachRight(lab13,false);
-   horiz3->AttachRight(bfPruneThresh,false);
-
-   horiz4->AttachRight(lab9,false);
-   horiz4->AttachRight(bfMinAlb,false);
-   horiz4->AttachRight(lab10,false);
-   horiz4->AttachRight(bfMaxAlb,false);
-   horiz4->AttachRight(lab12,false);
-   horiz4->AttachRight(bfAlbRecursion,false);
-   horiz4->AttachRight(lab14,false);
-   horiz4->AttachRight(bfIrrErr,false);
-
+   horiz2->AttachRight(lab8,false);
+   horiz2->AttachRight(lightDirection,false);
+   horiz2->AttachRight(viewSelect,false);
+   horiz2->AttachRight(but6,false);
+   horiz2->AttachRight(but7,false);
 
 
    gui::Panel * panel = static_cast<gui::Panel*>(cyclops.Fact().Make("Panel"));
@@ -222,10 +141,10 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
   but2->OnClick(MakeCB(this,&AlbedoEst::LoadCRF));
   but3->OnClick(MakeCB(this,&AlbedoEst::LoadSeg));
   but4->OnClick(MakeCB(this,&AlbedoEst::LoadDisp));
-  but5->OnClick(MakeCB(this,&AlbedoEst::Run));
-  but6->OnClick(MakeCB(this,&AlbedoEst::SaveView));
+  but5->OnClick(MakeCB(this,&AlbedoEst::LoadPair));
+  but6->OnClick(MakeCB(this,&AlbedoEst::Run));
+  but7->OnClick(MakeCB(this,&AlbedoEst::SaveView));
   viewSelect->OnChange(MakeCB(this,&AlbedoEst::ChangeView));
-  algSelect->OnChange(MakeCB(this,&AlbedoEst::ChangeAlg));
 }
 
 AlbedoEst::~AlbedoEst()
@@ -343,6 +262,7 @@ void AlbedoEst::LoadSeg(gui::Base * obj,gui::Event * event)
    Update();
  }
 }
+
 void AlbedoEst::LoadDisp(gui::Base * obj,gui::Event * event)
 {
  str::String fn;
@@ -377,24 +297,28 @@ void AlbedoEst::LoadDisp(gui::Base * obj,gui::Event * event)
     return;
    }
 
-   nat32 fishInd;
-   if ((floatVar->GetIndex(cyclops.TT()("fish"),fishInd)==false)||
-       (floatVar->FieldType(fishInd)!=cyclops.TT()("eos::math::Fisher")))
-   {
-    cyclops.App().MessageDialog(gui::App::MsgErr,"File is not augmented with orientation information.");
-    delete floatVar;
-    return;
-   }
-
 
   // Move the floatVar into the asReal array, deleting previous...
    delete dispVar;
    dispVar = floatVar;
-   dispVar->ByName("fish",fish);
+   dispVar->ByName("disp",disp);
+   dispVar->ByName("mask",dispMask);
 
 
   // Refresh the display...
    Update();
+ }
+}
+
+void AlbedoEst::LoadPair(gui::Base * obj,gui::Event * event)
+{
+ str::String fn;
+ if (cyclops.App().LoadFileDialog("Load Camera Calibration","*.pcc",fn))
+ {
+  if (pair.Load(fn)==false)
+  {
+   cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load pcc file");
+  }
  }
 }
 
@@ -409,24 +333,25 @@ void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
    cur >> toLight;
    if (cur.Error()) toLight = bs::Normal(0.0,0.0,1.0);
   }
-  
-  real32 minAmb = bfMinAmb->GetReal(0.001);
-  real32 maxAmb = bfMaxAmb->GetReal(0.75);
-  real32 minAlb = bfMinAlb->GetReal(0.001);
-  real32 maxAlb = bfMaxAlb->GetReal(1.5);
-  nat32 ambRec = bfAmbRecursion->GetInt(7);
-  nat32 albRec = bfAlbRecursion->GetInt(7);
-  real32 irrErr = bfIrrErr->GetReal(0.0078);
-  real32 pruneThresh = bfPruneThresh->GetReal(0.2);
 
 
- // Calculate the corrected irradiance...
+ // Setup some storage...
   svt::Var tempVar(irr);
   real32 irrIni = 0.0;
   tempVar.Add("irr",irrIni);
+  bit maskIni = true;
+  tempVar.Add("mask",maskIni);
+  bs::Normal needleIni(0.0,0.0,0.0);
+  tempVar.Add("needle",needleIni);
   tempVar.Commit();
   svt::Field<real32> irradiance(&tempVar,"irr");
+  svt::Field<bit> mask(&tempVar,"mask");
+  svt::Field<bs::Normal> needle(&tempVar,"needle");
+  
+  ds::Array2D< math::Vect<3,real32> > loc(irr.Size(0),irr.Size(1));
 
+
+ // Calculate the corrected irradiance...
   for (nat32 y=0;y<irr.Size(1);y++)
   {
    for (nat32 x=0;x<irr.Size(0);x++)
@@ -436,44 +361,137 @@ void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
   }
 
 
- // Setup the algorithm object...
-  fit::LightAmb la;
-  la.SetData(seg,irradiance,fish);
-  la.SetLightDir(toLight);
-  la.SetAlbRange(minAlb,maxAlb);
-  la.SetAmbRange(minAmb,maxAmb);
-  la.SetIrrErr(irrErr);
-  la.SetPruneThresh(pruneThresh);
-  la.SetSubdivs(ambRec,albRec);
- 
-
- // Run the algorithm...
-  la.Run(cyclops.BeginProg());
-  cyclops.EndProg();
-
-
- // Get the output...
-  ambient = la.BestAmb();
-
-
-  albedo.Size(la.SegmentCount());
-  real32 maxAlbedo = 0.0;
-  for (nat32 i=0;i<albedo.Size();i++)
+ // The below code needs the disparity positions as locations in 3D space...
+  for (nat32 y=0;y<disp.Size(1);y++)
   {
-   albedo[i] = la.SegmentAlbedo(i);
-   maxAlbedo = math::Max(maxAlbedo,albedo[i]);
+   for (nat32 x=0;x<disp.Size(0);x++)
+   {
+    pair.Triangulate(real32(x),real32(y),disp.Get(x,y),loc.Get(x,y));
+   }
   }
 
 
- // Display the output strings...
-  str::String s;
-  s << "Best ambient = " << ambient << " (Uncorrected = " << crf.Inverse(ambient) << ")";
-  results->Set(s);
+ // Get a mask of usable pixels, calculate surface orientations at same time...
+  for (nat32 y=0;y<disp.Size(1);y++)
+  {
+   for (nat32 x=0;x<disp.Size(0);x++)
+   {
+    if ((dispMask.Valid())&&(!dispMask.Get(x,y))) mask.Get(x,y) = false;
+    
+    bit useXP = (x+1<disp.Size(0))&&((!dispMask.Valid())||dispMask.Get(x+1,y));
+    bit useYP = (y+1<disp.Size(1))&&((!dispMask.Valid())||dispMask.Get(x,y+1));
+    bit useXN = (x>0)&&((!dispMask.Valid())||dispMask.Get(x-1,y));
+    bit useYN = (y>0)&&((!dispMask.Valid())||dispMask.Get(x,y-1));
+    
+    if ((useXP==false)&&(useXN==false)) mask.Get(x,y) = false;
+    if ((useYP==false)&&(useYN==false)) mask.Get(x,y) = false;
+    
+    if (mask.Get(x,y))
+    {
+     bs::Normal xDir;
+     if (useXP)
+     {
+      xDir = loc.Get(x+1,y);
+      xDir -= loc.Get(x,y);
+     }
+     else
+     {
+      xDir = loc.Get(x,y);
+      xDir -= loc.Get(x-1,y);
+     }
+     
+     bs::Normal yDir;
+     if (useYP)
+     {
+      yDir = loc.Get(x,y+1);
+      yDir -= loc.Get(x,y);
+     }
+     else
+     {
+      yDir = loc.Get(x,y);
+      yDir -= loc.Get(x,y-1);
+     }
+     
+     math::CrossProduct(xDir,yDir,needle.Get(x,y));
+    }
+   }
+  }
   
-  str::String s2;
-  s2 << "Highest albedo is " << maxAlbedo << ", which is " << crf.Inverse(maxAlbedo)
-     << " in the uncorrected irradiance.";
-  results2->Set(s2);
+  for (nat32 y=0;y<disp.Size(1);y++)
+  {
+   for (nat32 x=0;x<disp.Size(0);x++)
+   {
+    real32 dot = needle.Get(x,y) * toLight;
+    if ((dot<0.0)||(math::IsZero(dot))) mask.Get(x,y) = false;
+    if (math::IsZero(irradiance.Get(x,y))) mask.Get(x,y) = false;
+   }
+  }
+
+
+ // Count the number of segments and the size of each...
+  nat32 segCount = 0;
+  for (nat32 y=0;y<seg.Size(1);y++)
+  {
+   for (nat32 x=0;x<seg.Size(0);x++) segCount = math::Max(segCount,seg.Get(x,y)+1);
+  }
+  
+  ds::Array<nat32> segSize(segCount);
+  for (nat32 i=0;i<segCount;i++) segSize[i] = 0;
+  
+  for (nat32 y=0;y<seg.Size(1);y++)
+  {
+   for (nat32 x=0;x<seg.Size(0);x++)
+   {
+    if (mask.Get(x,y)) segSize[seg.Get(x,y)] += 1;
+   }
+  }
+ 
+ 
+ // Iterate each segment, collect all estimates together and calculate the mode...
+  time::Progress * prog = cyclops.BeginProg();
+  albedo.Size(segSize.Size());
+  prog->Push();
+  for (nat32 s=0;s<segSize.Size();s++)
+  {
+   prog->Report(s,segSize.Size());
+   if (segSize[s]>0)
+   {
+    ds::Array<real32> estimate(segSize[s]);
+    nat32 pos = 0;
+    for (nat32 y=0;y<irradiance.Size(1);y++)
+    {
+     for (nat32 x=0;x<irradiance.Size(0);x++)
+     {
+      if (mask.Get(x,y)&&(seg.Get(x,y)==s))
+      {
+       estimate[pos] = irradiance.Get(x,y) / (needle.Get(x,y) * toLight);
+       pos += 1;
+      }
+     }
+    }   
+    eos::log::Assert(pos==segSize[s]);
+   
+    estimate.SortNorm();
+    albedo[s] = estimate[estimate.Size()/2];
+   }
+   else
+   {
+    albedo[s] = 0.0;
+   }
+  }
+  prog->Pop();
+  cyclops.EndProg();
+
+
+ // Find the maximum albedo for output...
+  real32 maxA = 0.0;
+  for (nat32 i=0;i<albedo.Size();i++) maxA = math::Max(maxA,albedo[i]);
+
+
+ // Display the output string...
+  str::String s;
+  s << "Highest albedo = " << maxA;
+  results->Set(s);
 
 
  // Update the view...
@@ -483,11 +501,6 @@ void AlbedoEst::Run(gui::Base * obj,gui::Event * event)
 void AlbedoEst::ChangeView(gui::Base * obj,gui::Event * event)
 {
  Update();
-}
-
-void AlbedoEst::ChangeAlg(gui::Base * obj,gui::Event * event)
-{
- // Noop.
 }
 
 void AlbedoEst::SaveView(gui::Base * obj,gui::Event * event)
@@ -515,23 +528,23 @@ void AlbedoEst::Update()
   {
    case 0: // Irradiance
    case 1: // Corrected Irradiance
-   case 6: // Corrected Image
-   case 7: // Fully corrected image
+   case 5: // Corrected Image
+   case 6: // Linear corrected image
     width = irr.Size(0);
     height = irr.Size(1);
    break;
    case 2: // Segmentation
-   case 5: // Albedo
+   case 4: // Linear Albedo
     width = seg.Size(0);
     height = seg.Size(1);
    break;
-   case 3: // Fisher Direction
-   case 4: // Fisher Concentration
-    width = fish.Size(0);
-    height = fish.Size(1);
+   case 3: // Disparity
+    width = disp.Size(0);
+    height = disp.Size(1);
    break;
   }
 
+   
  // Check sizes match, adjust if need be...
   if ((image.Size(0)!=width)||(image.Size(1)!=height))
   {
@@ -590,56 +603,48 @@ void AlbedoEst::Update()
     filter::RenderSegsMean(seg,irr,image);
     filter::RenderSegsLines(seg,image,bs::ColourRGB(1.0,0.0,0.0));
    }
-   break;
-   case 3: // Fisher Direction
+   break;   
+   case 3: // Disparity
    {
-    for (nat32 y=0;y<image.Size(1);y++)
+    real32 minD =  math::Infinity<real32>();
+    real32 maxD = -math::Infinity<real32>();
+    for (nat32 y=0;y<disp.Size(1);y++)
     {
-     for (nat32 x=0;x<image.Size(0);x++)
+     for (nat32 x=0;x<disp.Size(0);x++)
      {
-      math::Fisher f = fish.Get(x,y);
-      real32 len = f.Length();
-      if (math::IsZero(len))
+      if ((!dispMask.Valid())||(dispMask.Get(x,y)))
       {
-       image.Get(x,y).r = 0.0;
-       image.Get(x,y).g = 0.0;
-       image.Get(x,y).b = 0.0;
+       real32 d = disp.Get(x,y);
+       minD = math::Min(minD,d);
+       maxD = math::Max(maxD,d);
+      }
+     }
+    }
+    
+    for (nat32 y=0;y<disp.Size(1);y++)
+    {
+     for (nat32 x=0;x<disp.Size(0);x++)
+     {
+      if ((!dispMask.Valid())||(dispMask.Get(x,y)))
+      {
+       real32 d = disp.Get(x,y);
+       real32 l = (d-minD)/(maxD-minD);
+       
+       image.Get(x,y).r = l;
+       image.Get(x,y).g = l;
+       image.Get(x,y).b = l;
       }
       else
       {
-       f /= len;
-
-       image.Get(x,y).r = (f[0]+1.0)*0.5;
-       image.Get(x,y).g = (f[1]+1.0)*0.5;
-       image.Get(x,y).b = f[2];
+       image.Get(x,y).r = 0.0;
+       image.Get(x,y).g = 0.0;
+       image.Get(x,y).b = 1.0;
       }
      }
     }
    }
-   break;
-   case 4: // Fisher Concentration
-   {
-    real32 max = 0.001;
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++)
-     {
-      real32 k = math::Log10(1.0 + fish.Get(x,y).Length());
-      max = math::Max(max,k);
-
-      image.Get(x,y).r = k;
-      image.Get(x,y).g = k;
-      image.Get(x,y).b = k;
-     }
-    }
-
-    for (nat32 y=0;y<image.Size(1);y++)
-    {
-     for (nat32 x=0;x<image.Size(0);x++) image.Get(x,y) /= max;
-    }
-   }
-   break;
-   case 5: // Linear Albedo
+   break;   
+   case 4: // Linear Albedo
    {
     real32 maxL = 0.001;
     for (nat32 y=0;y<image.Size(1);y++)
@@ -675,7 +680,7 @@ void AlbedoEst::Update()
     }
    }
    break;
-   case 6: // Corrected Image
+   case 5: // Corrected Image
    {
     for (nat32 y=0;y<image.Size(1);y++)
     {
@@ -683,8 +688,7 @@ void AlbedoEst::Update()
      {
       real32 l = (irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0;
       real32 cl = crf(l);
-      cl -= albedo[seg.Get(x,y)]*ambient;
-      cl = math::Max<real32>(0.0,cl);
+      cl /= albedo[seg.Get(x,y)];
       real32 ul = crf.Inverse(cl);
       ul /= l;
       if (math::IsFinite(ul))
@@ -703,7 +707,7 @@ void AlbedoEst::Update()
     }
    }
    break;
-   case 7: // Fully corrected Image
+   case 6: // Linear corrected Image
    {
     real32 max = 0.001;
     for (nat32 y=0;y<image.Size(1);y++)
@@ -712,10 +716,9 @@ void AlbedoEst::Update()
      {
       real32 l = (irr.Get(x,y).r+irr.Get(x,y).g+irr.Get(x,y).b)/3.0;
       real32 cl = crf(l);
-      cl -= albedo[seg.Get(x,y)]*ambient;
-      cl = math::Max<real32>(0.0,cl);
+      cl /= albedo[seg.Get(x,y)];
       max = math::Max(max,cl);
-      
+
       image.Get(x,y).r = cl;
       image.Get(x,y).g = cl;
       image.Get(x,y).b = cl;

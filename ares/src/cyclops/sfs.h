@@ -94,6 +94,9 @@ class SfS
   svt::Var * dataVar;
   svt::Field<bs::ColourRGB> image;
   svt::Field<bs::Normal> needle;
+  
+  svt::Var * albedoVar;
+  svt::Field<bs::ColourRGB> albedoMap;
 
   svt::Var * visVar;
   svt::Field<bs::ColRGB> visible;
@@ -105,6 +108,7 @@ class SfS
   void Resize(gui::Base * obj,gui::Event * event);
 
   void LoadImage(gui::Base * obj,gui::Event * event);
+  void LoadAlbedo(gui::Base * obj,gui::Event * event);
   void LoadCalib(gui::Base * obj,gui::Event * event);
   void Run(gui::Base * obj,gui::Event * event);
   void SaveNeedle(gui::Base * obj,gui::Event * event);

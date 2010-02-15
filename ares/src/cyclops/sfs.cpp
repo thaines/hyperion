@@ -6,7 +6,8 @@
 //------------------------------------------------------------------------------
 SfS::SfS(Cyclops & cyc)
 :cyclops(cyc),win(null<gui::Window*>()),
-dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
+dataVar(null<svt::Var*>()),albedoVar(null<svt::Var*>()),visVar(null<svt::Var*>()),
+hasRun(false)
 {
  // Create default images...
   bs::ColourRGB colourIni(0.0,0.0,0.0);
@@ -47,18 +48,22 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
    gui::Button * but2 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but3 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but4 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
+   gui::Button * but5 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Label * lab1 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab2 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab3 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab4 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab60 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
 
    but1->SetChild(lab1); lab1->Set("Load Image...");
    but2->SetChild(lab2); lab2->Set("Load Camera Response...");
    but3->SetChild(lab3); lab3->Set("Run");
    but4->SetChild(lab4); lab4->Set("Save Needle...");
+   but5->SetChild(lab60); lab60->Set("Load Albedo Map...");
    
    horiz1->AttachRight(but1,false);
    horiz1->AttachRight(but2,false);
+   horiz1->AttachRight(but5,false);
    horiz1->AttachRight(but3,false);
    horiz1->AttachRight(but4,false);
    
@@ -539,6 +544,7 @@ dataVar(null<svt::Var*>()),visVar(null<svt::Var*>()),hasRun(false)
   but2->OnClick(MakeCB(this,&SfS::LoadCalib));
   but3->OnClick(MakeCB(this,&SfS::Run));
   but4->OnClick(MakeCB(this,&SfS::SaveNeedle));
+  but5->OnClick(MakeCB(this,&SfS::LoadAlbedo));
   whichAlg->OnChange(MakeCB(this,&SfS::ChangeAlg));
 }
 
@@ -546,6 +552,7 @@ SfS::~SfS()
 {
  delete win;
  delete dataVar;
+ delete albedoVar;
  delete visVar; 
 }
 
@@ -600,6 +607,31 @@ void SfS::LoadImage(gui::Base * obj,gui::Event * event)
  }
 }
 
+void SfS::LoadAlbedo(gui::Base * obj,gui::Event * event)
+{
+ str::String fn;
+ if (cyclops.App().LoadFileDialog("Select Image","*.bmp,*.jpg,*.png,*.tif",fn))
+ {
+  // Load image into memory...
+   cstr filename = fn.ToStr();
+   svt::Var * newVar = filter::LoadImageRGB(cyclops.Core(),filename);
+   mem::Free(filename);
+   if (newVar==null<svt::Var*>())
+   {
+    cyclops.App().MessageDialog(gui::App::MsgErr,"Failed to load image");
+    return;
+   }
+
+   delete albedoVar;
+   albedoVar = newVar;
+   albedoVar->ByName("rgb",albedoMap);
+   hasRun = false;
+
+  // Redraw...
+   UpdateView();
+ }
+}
+
 void SfS::LoadCalib(gui::Base * obj,gui::Event * event)
 {
  str::String fn;
@@ -645,6 +677,7 @@ void SfS::Run(gui::Base * obj,gui::Event * event)
    {
     l.Get(x,y) = crf((image.Get(x,y).r+image.Get(x,y).g+image.Get(x,y).b)/3.0);
     a.Get(x,y) = alb;
+    if (albedoMap.Valid()) a.Get(x,y) *= albedoMap.Get(x,y).r;
    }
   }
 
