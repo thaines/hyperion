@@ -141,6 +141,8 @@ EOS_FUNC nat32 PointEllipsoidDir(const math::Vect<3> & ell,const math::Vect<3> &
    rootCount = math::RobustPolyRoot(poly,roots,temp,tol,limit);
   }
   
+  LogDebug("rootCount = " << rootCount);
+  
  
  // Turn the roots into locations on the ellipsoid, as possible - complex and 
  // dodgy roots are possible afterall...
@@ -156,7 +158,13 @@ EOS_FUNC nat32 PointEllipsoidDir(const math::Vect<3> & ell,const math::Vect<3> &
     real32 one = math::Sqrt(math::Sqr(out[ret][0]/a) + 
                             math::Sqr(out[ret][1]/b) + 
                             math::Sqr(out[ret][2]/c));
-    if (math::Abs(one-1.0)<tol) ++ret;
+    LogDebug("{i,one,pos}" << LogDiv() << i << LogDiv() << one << LogDiv() 
+             << out[ret] << LogDiv() << roots[i]);
+    if (math::Abs(one-1.0)<10.0*math::Sqrt(tol))
+    {
+     out[ret] *= scaler; // Convert back to the input coordinate system.
+     ++ret;
+    }
   }
 
 
