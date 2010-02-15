@@ -171,15 +171,15 @@ imageVar(null<svt::Var*>()),imgVar(null<svt::Var*>())
    lab14->Set(" Refine Subdivs");
    lab15->Set(" Irradiance Threshold");
 
-   bfMinAlb->Set("0.001");
-   bfMaxAlb->Set("1.5");
-   bfMaxSegCost->Set("0.1");
+   bfMinAlb->Set("0.1");
+   bfMaxAlb->Set("1.0");
+   bfMaxSegCost->Set("0.5");
    bfIrrErr->Set("0.0078");
-   bfPruneThresh->Set("0.2");
-   bfSampleSubdiv->Set("1");
+   bfPruneThresh->Set("0.1");
+   bfSampleSubdiv->Set("2");
    bfFurtherSubdiv->Set("3");
    bfAlbRecursion->Set("7");
-   bfIrrThresh->Set("0.2");
+   bfIrrThresh->Set("0.1");
 
    bfMinAlb->SetSize(48,24);
    bfMaxAlb->SetSize(48,24);

@@ -54,6 +54,53 @@ EOS_FUNC bit SaveReal(const svt::Field<real32> & map,cstrconst fn)
  return ret;
 }
 
+EOS_FUNC bit SaveSignedReal(const svt::Field<real32> & map,cstrconst fn)
+{
+ bs::ColourRGB rgbIni(0.0,0.0,0.0);
+ svt::Var temp(map);
+ temp.Add("rgb",rgbIni);
+ temp.Commit(false);
+ svt::Field<bs::ColourRGB> rgb(&temp,"rgb");
+ 
+ real32 min = math::Infinity<real32>();
+ real32 max = -math::Infinity<real32>();
+ for (nat32 y=0;y<map.Size(1);y++)
+ {
+  for (nat32 x=0;x<map.Size(0);x++)
+  {
+   if (math::IsFinite(map.Get(x,y)))
+   {
+    max = math::Max(max,map.Get(x,y));
+    min = math::Min(min,map.Get(x,y));
+   }
+  }
+ }
+ 
+ if ((max-min)<0.1) max = min+0.1;
+
+ for (nat32 y=0;y<map.Size(1);y++)
+ {
+  for (nat32 x=0;x<map.Size(0);x++)
+  {
+   if (math::IsFinite(map.Get(x,y)))
+   {
+    real32 v = (map.Get(x,y)-min) / (max-min);
+    rgb.Get(x,y) = bs::ColourRGB(v,v,v);
+   }
+   else rgb.Get(x,y) = bs::ColourRGB(0.0,0.0,1.0);
+  }
+ }
+ 
+ str::String filename(fn);
+ filename << ".bmp";
+ 
+ cstr n = filename.ToStr();
+ bit ret = filter::SaveImage(rgb,n,true);
+ mem::Free(n);
+
+ return ret;
+}
+
 EOS_FUNC bit SaveSeg(const svt::Field<nat32> & seg,cstrconst fn)
 {
  bs::ColourRGB rgbIni(0.0,0.0,0.0);
@@ -77,9 +124,9 @@ EOS_FUNC bit SaveSeg(const svt::Field<nat32> & seg,cstrconst fn)
 EOS_FUNC bit SaveDisparity(const svt::Field<real32> & disp,cstrconst fn,const svt::Field<bit> * mask)
 {
  // Image...
-  if (!SaveReal(disp,fn)) return false;
+  if (!SaveSignedReal(disp,fn)) return false;
 
- // ODF...
+ // dis...
   real32 dispIni = 0.0;
   bit maskIni = true;
   svt::Var temp(disp);
@@ -97,7 +144,7 @@ EOS_FUNC bit SaveDisparity(const svt::Field<real32> & disp,cstrconst fn,const sv
   }
  
   str::String filename(fn);
-  filename << ".obf";
+  filename << ".dis";
  
   cstr n = filename.ToStr();
   bit ret = svt::Save(n,&temp,true);

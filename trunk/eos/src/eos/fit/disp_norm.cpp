@@ -2,6 +2,9 @@
 // Copyright 2008 Tom Haines
 #include "eos/fit/disp_norm.h"
 
+#include "eos/file/csv.h"
+#include "eos/file/stereo_helpers.h"
+
 namespace eos
 {
  namespace fit
@@ -74,8 +77,8 @@ void DispNorm::Run(time::Progress * prog)
    else
    {
     real32 var = math::Sqr(minSd); // Variance obtained so far.
-   
     real32 mean = disp.Get(x,y);
+
     int32 minDisp = math::Clamp<int32>(int32(math::Round(mean))-int32(range),
                                        -x,int32(dsc->WidthRight())-x);
     int32 maxDisp = math::Clamp<int32>(int32(math::Round(mean))+int32(range),
