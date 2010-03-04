@@ -54,7 +54,7 @@ EXES_S3 = bp_stereo sur_bp_stereo text_to_svt bessel sfs_bp bp_test geo_test
 EXES_S4 = smes mscr exif
 
 all: $(EXES) prep_final
-	@echo Done
+	#@echo Done
 
 
 
@@ -916,8 +916,7 @@ $(DIRS):
 prep_final: ${DIRS}
 	-cp -d $(EOS_LIB)/*.* $(OUT)
 	-cp -R $(DEP)/* $(OUT)
-	#-cp /usr/local/lib/libIL.so $(OUT) # For my x64 setup.
-	@echo Extra files copied in
+	#@echo Extra files copied in
 
 ifeq ($(PLATFORM),win)
 line_count:

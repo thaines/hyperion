@@ -632,9 +632,14 @@ void SfS_BP_Nice::Run(time::Progress * prog)
  // Extract the results...
   prog->Report(step++,steps);
   result.Resize(image.Size(0),image.Size(1));
+  resultDist.Resize(image.Size(0),image.Size(1));
   for (nat32 y=0;y<result.Height();y++)
   {
-   for (nat32 x=0;x<result.Width();x++) sfsbp.GetDir(x,y,result.Get(x,y));
+   for (nat32 x=0;x<result.Width();x++)
+   {
+    sfsbp.GetDir(x,y,result.Get(x,y));
+    sfsbp.GetDist(x,y,resultDist.Get(x,y));
+   }
   }
   
  
@@ -666,6 +671,14 @@ void SfS_BP_Nice::GetNeedle(svt::Field<bs::Normal> & out) const
  for (nat32 y=0;y<out.Size(1);y++)
  {
   for (nat32 x=0;x<out.Size(0);x++) out.Get(x,y) = result.Get(x,y);
+ }
+}
+
+void SfS_BP_Nice::GetDist(svt::Field<math::FisherBingham> & out) const
+{
+ for (nat32 y=0;y<out.Size(1);y++)
+ {
+  for (nat32 x=0;x<out.Size(0);x++) out.Get(x,y) = resultDist.Get(x,y);
  }
 }
 
@@ -1064,11 +1077,13 @@ void SfS_BP_Nice2::Run(time::Progress * prog)
   nffb.Run(prog);
   
   result.Resize(image.Size(0),image.Size(1));
+  resultDist.Resize(image.Size(0),image.Size(1));
   for (nat32 y=0;y<image.Size(1);y++)
   {
    for (nat32 x=0;x<image.Size(0);x++)
    {
     sfsbp.GetDir(x,y,result.Get(x,y));
+    sfsbp.GetDist(x,y,resultDist.Get(x,y));
    }
   }
 
@@ -1081,6 +1096,14 @@ void SfS_BP_Nice2::GetNeedle(svt::Field<bs::Normal> & out) const
  for (nat32 y=0;y<out.Size(1);y++)
  {
   for (nat32 x=0;x<out.Size(0);x++) out.Get(x,y) = result.Get(x,y);
+ }
+}
+
+void SfS_BP_Nice2::GetDist(svt::Field<math::FisherBingham> & out) const
+{
+ for (nat32 y=0;y<out.Size(1);y++)
+ {
+  for (nat32 x=0;x<out.Size(0);x++) out.Get(x,y) = resultDist.Get(x,y);
  }
 }
 
@@ -1412,11 +1435,13 @@ void SfS_BP_Nice3::Run(time::Progress * prog)
   nffb.Run(prog);
   
   result.Resize(image.Size(0),image.Size(1));
+  resultDist.Resize(image.Size(0),image.Size(1));
   for (nat32 y=0;y<image.Size(1);y++)
   {
    for (nat32 x=0;x<image.Size(0);x++)
    {
     sfsbp.GetDir(x,y,result.Get(x,y));
+    sfsbp.GetDist(x,y,resultDist.Get(x,y));
    }
   }
 
@@ -1429,6 +1454,14 @@ void SfS_BP_Nice3::GetNeedle(svt::Field<bs::Normal> & out) const
  for (nat32 y=0;y<out.Size(1);y++)
  {
   for (nat32 x=0;x<out.Size(0);x++) out.Get(x,y) = result.Get(x,y);
+ }
+}
+
+void SfS_BP_Nice3::GetDist(svt::Field<math::FisherBingham> & out) const
+{
+ for (nat32 y=0;y<out.Size(1);y++)
+ {
+  for (nat32 x=0;x<out.Size(0);x++) out.Get(x,y) = resultDist.Get(x,y);
  }
 }
 

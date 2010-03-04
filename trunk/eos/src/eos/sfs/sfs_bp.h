@@ -225,7 +225,10 @@ class EOS_CLASS SfS_BP_Nice
   /// Extracts the calculated needle map.
    void GetNeedle(svt::Field<bs::Normal> & out) const;
 
+  /// Extracts the calculated distributions.
+   void GetDist(svt::Field<math::FisherBingham> & out) const;
 
+   
   /// &nbsp;
    cstrconst TypeString() const;
 
@@ -257,6 +260,7 @@ class EOS_CLASS SfS_BP_Nice
   
   // Outputs...
    ds::Array2D<bs::Normal> result;
+   ds::Array2D<math::FisherBingham> resultDist;
 };
 
 //------------------------------------------------------------------------------
@@ -364,6 +368,9 @@ class EOS_CLASS SfS_BP_Nice2
   /// Extracts the calculated needle map.
    void GetNeedle(svt::Field<bs::Normal> & out) const;
 
+  /// Extracts the calculated distributions.
+   void GetDist(svt::Field<math::FisherBingham> & out) const;
+
 
   /// &nbsp;
    cstrconst TypeString() const;
@@ -395,6 +402,7 @@ class EOS_CLASS SfS_BP_Nice2
   
   // Outputs...
    ds::Array2D<bs::Normal> result;
+   ds::Array2D<math::FisherBingham> resultDist;
 };
 
 //------------------------------------------------------------------------------
@@ -513,6 +521,9 @@ class EOS_CLASS SfS_BP_Nice3
   /// Extracts the calculated needle map.
    void GetNeedle(svt::Field<bs::Normal> & out) const;
 
+  /// Extracts the calculated distributions.
+   void GetDist(svt::Field<math::FisherBingham> & out) const;
+
 
   /// &nbsp;
    cstrconst TypeString() const;
@@ -551,6 +562,7 @@ class EOS_CLASS SfS_BP_Nice3
   
   // Outputs...
    ds::Array2D<bs::Normal> result;
+   ds::Array2D<math::FisherBingham> resultDist;
    
   // Helper function...
    real32 SmoothK(real32 irrA,real32 irrB,const FisherAngProb & fap) const;

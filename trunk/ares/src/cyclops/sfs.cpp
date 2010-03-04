@@ -29,14 +29,17 @@ hasRun(false)
   bs::ColourRGB colourIni(0.0,0.0,0.0);
   bs::ColRGB colIni(0,0,0);
   bs::Normal needleIni(0.0,0.0,0.0);
+  math::FisherBingham distIni;
 
   dataVar = new svt::Var(cyclops.Core());
   dataVar->Setup2D(320,240);
   dataVar->Add("rgb",colourIni);
   dataVar->Add("needle",needleIni);
+  dataVar->Add("dist",distIni);
   dataVar->Commit();
   dataVar->ByName("rgb",image);
   dataVar->ByName("needle",needle);
+  dataVar->ByName("dist",dist);
 
   visVar = new svt::Var(cyclops.Core());
   visVar->Setup2D(320,240);
@@ -64,24 +67,30 @@ hasRun(false)
    gui::Button * but2 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but3 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Button * but4 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
-   gui::Button * but5 = static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
+   gui::Button * but5 =
+static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
+   gui::Button * but7 =
+static_cast<gui::Button*>(cyclops.Fact().Make("Button"));
    gui::Label * lab1 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab2 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab3 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab4 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
    gui::Label * lab60 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
+   gui::Label * lab62 = static_cast<gui::Label*>(cyclops.Fact().Make("Label"));
 
    but1->SetChild(lab1); lab1->Set("Load Image...");
    but2->SetChild(lab2); lab2->Set("Load Camera Response...");
    but3->SetChild(lab3); lab3->Set("Run");
    but4->SetChild(lab4); lab4->Set("Save Needle...");
    but5->SetChild(lab60); lab60->Set("Load Albedo Map...");
+   but7->SetChild(lab62); lab62->Set("Save Distributions...");
    
    horiz1->AttachRight(but1,false);
    horiz1->AttachRight(but2,false);
    horiz1->AttachRight(but5,false);
    horiz1->AttachRight(but3,false);
    horiz1->AttachRight(but4,false);
+   horiz1->AttachRight(but7,false);
    
 
    gui::Horizontal * horiz2 = static_cast<gui::Horizontal*>(cyclops.Fact().Make("Horizontal"));
@@ -569,6 +578,7 @@ hasRun(false)
   but4->OnClick(MakeCB(this,&SfS::SaveNeedle));
   but5->OnClick(MakeCB(this,&SfS::LoadAlbedo));
   but6->OnClick(MakeCB(this,&SfS::LoadInitialNeedle));
+  but7->OnClick(MakeCB(this,&SfS::SaveDistText));
   whichAlg->OnChange(MakeCB(this,&SfS::ChangeAlg));
 }
 
@@ -620,10 +630,13 @@ void SfS::LoadImage(gui::Base * obj,gui::Event * event)
    delete dataVar;
    dataVar = newVar;
    bs::Normal needleIni(0.0,0.0,0.0);
+   math::FisherBingham distIni;
    dataVar->Add("needle",needleIni);
+   dataVar->Add("dist",distIni);
    dataVar->Commit();
    dataVar->ByName("rgb",image);
    dataVar->ByName("needle",needle);
+   dataVar->ByName("dist",dist);
    
    hasRun = false;
 
@@ -835,6 +848,7 @@ void SfS::Run(gui::Base * obj,gui::Event * event)
     
     // Extract the result...
      alg.GetNeedle(needle);
+     alg.GetDist(dist);
    }
    break;
    case 3: // Haines & Wilson #2...
@@ -869,6 +883,7 @@ void SfS::Run(gui::Base * obj,gui::Event * event)
     
     // Extract the result...
      alg.GetNeedle(needle);
+     alg.GetDist(dist);
    }
    break;
    case 4: // Haines & Wilson #3...
@@ -910,6 +925,7 @@ void SfS::Run(gui::Base * obj,gui::Event * event)
     
     // Extract the result...
      alg.GetNeedle(needle);
+     alg.GetDist(dist);
    }
    break;  
   }      
@@ -968,6 +984,50 @@ void SfS::SaveNeedle(gui::Base * obj,gui::Event * event)
       cyclops.App().MessageDialog(gui::App::MsgErr,"Error saving needle map image.");
      }
      mem::Free(ts);
+   }
+ }
+}
+
+void SfS::SaveDistText(gui::Base * obj,gui::Event * event)
+{
+ if (hasRun==false)
+ {
+  cyclops.App().MessageDialog(gui::App::MsgErr,"Algorithm has not been run!");
+ }
+ else
+ {
+  // Ask the user for a filename...
+   str::String fn("*.txt");
+   if (cyclops.App().SaveFileDialog("Save FB8 Distributions",fn))
+   {
+    if (!fn.EndsWith(".txt")) fn << ".txt";
+    file::File<io::Text> out(fn,file::way_ow,file::mode_write);
+    if (out.Active())
+    {
+     eos::file::Cursor<io::Text> o = out.GetCursor();
+     o << "# First non-comment line of file is the width and then the height, all further lines represent the distribution of a single pixel.\n";
+     o << "# Ordering is row major, i.e. it outputs pixels row by row.\n";
+     o << "# Note that the origin is bottom left, so it is upsidedown compared to how an image is typically stored.\n";
+     o << "# Distributions are represented as 'f[0] f[1] f[2] b[0][0] b[0][1] b[0][2] b[1][1] b[1][2] b[2][2]'\n";
+     o << "# Where f is the Fisher vector and b the Bingham matrix.\n";
+     o << "# As the Bingham matrix is symmetric not all values need be stored.\n";
+     o << dist.Size(0) << " " << dist.Size(1) << "\n";
+     for (nat32 y=0;y<dist.Size(1);y++)
+     {
+      for (nat32 x=0;x<dist.Size(0);x++)
+      {
+       math::FisherBingham & fb = dist.Get(x,y);
+       o << fb.fisher[0] << " " << fb.fisher[1] << " " << fb.fisher[2] << " ";
+       o << fb.bingham[0][0] << " " << fb.bingham[0][1] << " " << fb.bingham[0][2] << " ";
+       o << fb.bingham[1][1] << " " << fb.bingham[1][2] << " " << fb.bingham[2][2] << "\n";
+      }
+     }
+     out.Close();
+    }
+    else
+    {
+     cyclops.App().MessageDialog(gui::App::MsgErr,"Could not open file for writting"); 
+    }
    }
  }
 }
