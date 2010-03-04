@@ -53,7 +53,7 @@ clean:
 
 
 all: eos prep_final
-	@echo Done
+	#@echo Done
 
 
 

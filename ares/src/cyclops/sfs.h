@@ -109,6 +109,7 @@ class SfS
   svt::Var * dataVar;
   svt::Field<bs::ColourRGB> image;
   svt::Field<bs::Normal> needle;
+  svt::Field<math::FisherBingham> dist;
   
   svt::Var * albedoVar;
   svt::Field<bs::ColourRGB> albedoMap;
@@ -131,6 +132,7 @@ class SfS
   void LoadInitialNeedle(gui::Base * obj,gui::Event * event);
   void Run(gui::Base * obj,gui::Event * event);
   void SaveNeedle(gui::Base * obj,gui::Event * event);
+  void SaveDistText(gui::Base * obj,gui::Event * event);
 
   void ChangeAlg(gui::Base * obj,gui::Event * event);
 
